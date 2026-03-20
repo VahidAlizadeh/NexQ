@@ -30,6 +30,8 @@ export function LocalModelManager({ compact, engineFilter }: LocalModelManagerPr
   const { downloads, startDownload, cancelDownload } = useModelDownload();
   const activeWhisperModel = useConfigStore((s) => s.activeWhisperModel);
   const setActiveWhisperModel = useConfigStore((s) => s.setActiveWhisperModel);
+  const activeModelPerEngine = useConfigStore((s) => s.activeModelPerEngine);
+  const setActiveModelForEngine = useConfigStore((s) => s.setActiveModelForEngine);
 
   async function loadEngines() {
     setLoading(true);
@@ -49,22 +51,27 @@ export function LocalModelManager({ compact, engineFilter }: LocalModelManagerPr
     loadEngines();
   }, []);
 
-  // When a download completes: reload engines, auto-activate if no active model
+  // When a download completes: reload engines, auto-activate if no active model for that engine
   useEffect(() => {
-    const completed = Object.values(downloads).find(
-      (d) => d.status === "complete"
+    const completed = Object.entries(downloads).find(
+      ([, d]) => d.status === "complete"
     );
     if (completed) {
       loadEngines().then((data) => {
-        // Auto-activate first downloaded model if none active
-        if (!activeWhisperModel) {
-          const whisperEngine = data.find((e) => e.engine === "whisper_cpp");
-          const firstDownloaded = whisperEngine?.models.find(
-            (m) => m.is_downloaded
-          );
-          if (firstDownloaded) {
-            setActiveWhisperModel(firstDownloaded.id);
-            showToast(`Model "${firstDownloaded.name}" activated`, "success");
+        for (const engine of data) {
+          const engineActiveModel = activeModelPerEngine[engine.engine];
+          if (!engineActiveModel) {
+            const firstDownloaded = engine.models.find(
+              (m) => !m.id.startsWith("binary-") && m.is_downloaded
+            );
+            if (firstDownloaded) {
+              setActiveModelForEngine(engine.engine, firstDownloaded.id);
+              // Keep legacy field in sync for whisper_cpp
+              if (engine.engine === "whisper_cpp") {
+                setActiveWhisperModel(firstDownloaded.id);
+              }
+              showToast(`Model "${firstDownloaded.name}" activated for ${engine.name}`, "success");
+            }
           }
         }
       });
@@ -108,7 +115,8 @@ export function LocalModelManager({ compact, engineFilter }: LocalModelManagerPr
                 progress?.status === "downloading" ||
                 progress?.status === "verifying" ||
                 progress?.status === "extracting";
-              const isActive = activeWhisperModel === model.id;
+              // Per-engine active model: check if THIS model is active for THIS engine
+              const isActive = (activeModelPerEngine[model.engine] ?? activeWhisperModel) === model.id;
 
               return (
                 <ModelRow
@@ -123,7 +131,10 @@ export function LocalModelManager({ compact, engineFilter }: LocalModelManagerPr
                   onDelete={async () => {
                     try {
                       await deleteLocalSTTModel(model.engine, model.id);
-                      if (isActive) setActiveWhisperModel(null);
+                      if (isActive) {
+                        setActiveModelForEngine(model.engine, null);
+                        if (model.engine === "whisper_cpp") setActiveWhisperModel(null);
+                      }
                       showToast(`Deleted ${model.name}`, "success");
                       loadEngines();
                     } catch (err) {
@@ -131,8 +142,10 @@ export function LocalModelManager({ compact, engineFilter }: LocalModelManagerPr
                     }
                   }}
                   onSetActive={() => {
-                    setActiveWhisperModel(model.id);
-                    showToast(`Activated "${model.name}"`, "success");
+                    setActiveModelForEngine(model.engine, model.id);
+                    // Keep legacy field in sync for whisper_cpp
+                    if (model.engine === "whisper_cpp") setActiveWhisperModel(model.id);
+                    showToast(`Activated "${model.name}" for ${engine.name}`, "success");
                   }}
                 />
               );

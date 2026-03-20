@@ -730,15 +730,16 @@ pub async fn start_capture_per_party(
 
     let state = app.state::<AppState>();
 
-    // Check if already capturing
+    // If already capturing, stop first (allows mid-meeting hot-swap)
     {
-        let guard = state
+        let mut guard = state
             .audio
             .lock()
             .map_err(|_| "Audio state lock poisoned".to_string())?;
-        if let Some(ref mgr) = *guard {
+        if let Some(ref mut mgr) = *guard {
             if mgr.is_capturing() {
-                return Err("Capture already in progress".to_string());
+                log::info!("start_capture_per_party: stopping existing capture for hot-swap");
+                mgr.stop_capture();
             }
         }
     }
@@ -845,24 +846,33 @@ pub async fn start_capture_per_party(
         }
     }
 
+    // Unique session prefix to avoid segment ID collisions across mid-meeting restarts.
+    // Each restart of start_capture_per_party gets a distinct prefix, so segment IDs
+    // like "you_a3_1" won't collide with "you_b7_1" from a previous session.
+    let session_prefix = format!("{:x}", std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() % 0xFFFF);
+
     // Emit transcript events from "You" STT (speaker = "User")
     // If the provider supplies segment_id (dual-pass whisper.cpp), use it directly.
     // Otherwise, use the legacy counter-based scheme.
     if you_stt_provider.is_some() {
         let stt_app = app.clone();
+        let prefix = session_prefix.clone();
         tokio::spawn(async move {
             let mut counter = 0u64;
             while let Some(result) = you_stt_rx.recv().await {
                 let seg_id = if let Some(ref custom_id) = result.segment_id {
-                    format!("you_{}", custom_id)
+                    format!("you_{}_{}", prefix, custom_id)
                 } else {
                     if result.is_final {
                         counter += 1;
                     }
                     if result.is_final {
-                        format!("you_{}", counter)
+                        format!("you_{}_{}", prefix, counter)
                     } else {
-                        format!("you_{}", counter + 1)
+                        format!("you_{}_{}", prefix, counter + 1)
                     }
                 };
                 let event_name = if result.is_final {
@@ -888,19 +898,20 @@ pub async fn start_capture_per_party(
     // Emit transcript events from "Them" STT (speaker = "Them")
     if them_stt_provider.is_some() {
         let stt_app = app.clone();
+        let prefix = session_prefix.clone();
         tokio::spawn(async move {
             let mut counter = 0u64;
             while let Some(result) = them_stt_rx.recv().await {
                 let seg_id = if let Some(ref custom_id) = result.segment_id {
-                    format!("them_{}", custom_id)
+                    format!("them_{}_{}", prefix, custom_id)
                 } else {
                     if result.is_final {
                         counter += 1;
                     }
                     if result.is_final {
-                        format!("them_{}", counter)
+                        format!("them_{}_{}", prefix, counter)
                     } else {
-                        format!("them_{}", counter + 1)
+                        format!("them_{}_{}", prefix, counter + 1)
                     }
                 };
                 let event_name = if result.is_final {
@@ -945,10 +956,10 @@ pub async fn start_capture_per_party(
         let mut mic_chunk_count: u64 = 0;
         let mut system_chunk_count: u64 = 0;
 
-        // Time-based stats instead of counter-based (every 30s, not every ~10s)
+        // Time-based stats — emit only every 120s to reduce dev log noise
         let mut last_mic_stats = std::time::Instant::now();
         let mut last_sys_stats = std::time::Instant::now();
-        let stats_interval = std::time::Duration::from_secs(30);
+        let stats_interval = std::time::Duration::from_secs(120);
 
         // Track feed_audio errors per provider (emit once, not every chunk)
         let mut you_feed_error_emitted = false;

@@ -236,6 +236,13 @@ impl STTProvider for SherpaSidecarSTT {
         let language = self.language.clone();
         let tx = result_tx.clone();
 
+        // Capture wall-clock start time so we can convert process-relative
+        // timestamps to absolute epoch time (survives mid-meeting restarts)
+        let process_start_epoch_ms: u64 = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+
         let stdout_task = tokio::task::spawn_blocking(move || {
             let reader = BufReader::new(child_stdout);
             for line_result in reader.lines() {
@@ -273,7 +280,10 @@ impl STTProvider for SherpaSidecarSTT {
                     continue;
                 }
 
-                let timestamp_ms = (parsed.end_time * 1000.0) as u64;
+                // Convert process-relative end_time to absolute epoch timestamp.
+                // This ensures timestamps remain meaningful even after mid-meeting
+                // provider restarts (the old code used raw end_time which reset to 0).
+                let timestamp_ms = process_start_epoch_ms + (parsed.end_time * 1000.0) as u64;
 
                 let result = TranscriptResult {
                     text,

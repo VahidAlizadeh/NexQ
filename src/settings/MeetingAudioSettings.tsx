@@ -547,7 +547,10 @@ function PartyPanel({
   function handleProviderChange(newProvider: STTProviderType) {
     const updates: Partial<PartyAudioConfig> = { stt_provider: newProvider };
     if (newProvider === "sherpa_onnx" || newProvider === "ort_streaming") {
-      if (activeWhisperModel) updates.local_model_id = activeWhisperModel;
+      // Use per-engine active model, falling back to legacy activeWhisperModel
+      const activeModelPerEngine = useConfigStore.getState().activeModelPerEngine;
+      const engineModel = activeModelPerEngine[newProvider] ?? activeWhisperModel;
+      if (engineModel) updates.local_model_id = engineModel;
     }
     onChange(updates);
   }

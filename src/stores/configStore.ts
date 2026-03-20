@@ -98,6 +98,10 @@ interface ConfigState {
   // Local STT — globally active whisper model (e.g., "base", "small")
   activeWhisperModel: string | null;
 
+  // Per-engine active models — each engine independently selects its own model
+  // Keys are engine IDs (e.g., "sherpa_onnx", "ort_streaming", "whisper_cpp")
+  activeModelPerEngine: Record<string, string>;
+
   // Cloud providers that have been tested and verified (persisted)
   verifiedCloudProviders: string[];
 
@@ -151,6 +155,8 @@ interface ConfigState {
   saveCustomPreset: (name: string) => void;
   deleteCustomPreset: (name: string) => void;
   setActiveWhisperModel: (modelId: string | null) => void;
+  setActiveModelForEngine: (engineId: string, modelId: string | null) => void;
+  getActiveModelForEngine: (engineId: string) => string | null;
   setWhisperDualPass: (config: WhisperDualPassConfig) => void;
   setDeepgramConfig: (config: DeepgramConfig) => void;
   setGroqConfig: (config: GroqConfig) => void;
@@ -177,6 +183,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
   meetingAudioConfig: null,
   customPresets: [],
   activeWhisperModel: null,
+  activeModelPerEngine: {},
   verifiedCloudProviders: [],
   whisperDualPass: { shortChunkSecs: 1.0, longChunkSecs: 3.0, pauseSecs: 1.5 },
   deepgramConfig: DEFAULT_DEEPGRAM_CONFIG,
@@ -296,6 +303,38 @@ export const useConfigStore = create<ConfigState>((set) => ({
       }
     }
   },
+  setActiveModelForEngine: (engineId, modelId) => {
+    const state = useConfigStore.getState();
+    const updated = { ...state.activeModelPerEngine };
+    if (modelId) {
+      updated[engineId] = modelId;
+    } else {
+      delete updated[engineId];
+    }
+    set({ activeModelPerEngine: updated });
+    persistValue("activeModelPerEngine", updated);
+    // Also update local_model_id on any party using this engine
+    if (state.meetingAudioConfig && modelId) {
+      const cfg = { ...state.meetingAudioConfig };
+      let changed = false;
+      if (cfg.you.stt_provider === engineId) {
+        cfg.you = { ...cfg.you, local_model_id: modelId };
+        changed = true;
+      }
+      if (cfg.them.stt_provider === engineId) {
+        cfg.them = { ...cfg.them, local_model_id: modelId };
+        changed = true;
+      }
+      if (changed) {
+        set({ meetingAudioConfig: cfg });
+        persistValue("meetingAudioConfig", cfg);
+      }
+    }
+  },
+  getActiveModelForEngine: (engineId: string): string | null => {
+    const state = useConfigStore.getState();
+    return state.activeModelPerEngine[engineId] ?? null;
+  },
   setWhisperDualPass: (config) => {
     set({ whisperDualPass: config });
     persistValue("whisperDualPass", config);
@@ -397,6 +436,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
       const deepgramConfig = await store.get<DeepgramConfig>("deepgramConfig");
       const groqConfig = await store.get<GroqConfig>("groqConfig");
       const pauseThresholdMs = await store.get<number>("pauseThresholdMs");
+      const activeModelPerEngine = await store.get<Record<string, string>>("activeModelPerEngine");
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
@@ -497,6 +537,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
         ...(firstRunCompleted != null && { firstRunCompleted }),
         ...(hotkeys != null && { hotkeys }),
         ...(activeWhisperModel !== undefined && { activeWhisperModel }),
+        ...(activeModelPerEngine != null && { activeModelPerEngine }),
         ...(whisperDualPass != null && { whisperDualPass }),
         ...(contextStrategy != null && { contextStrategy }),
         ...(verifiedCloudProviders != null && { verifiedCloudProviders }),

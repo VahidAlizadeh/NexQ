@@ -81,6 +81,8 @@ export function useSpeechRecognition() {
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const segmentCounterRef = useRef(0);
   const shouldRestartRef = useRef(false);
+  // Unique prefix per session to prevent ID collisions on mid-meeting restarts
+  const sessionPrefixRef = useRef("");
 
   useEffect(() => {
     if (!isRecording) {
@@ -146,6 +148,8 @@ export function useSpeechRecognition() {
 
     recognitionRef.current = recognition;
     shouldRestartRef.current = true;
+    // Generate unique prefix for this session to avoid ID collisions on restart
+    sessionPrefixRef.current = Date.now().toString(36).slice(-4);
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -156,7 +160,7 @@ export function useSpeechRecognition() {
         if (!transcript) continue;
 
         // Use the SAME id for interim and final so final replaces interim in-place
-        const segId = `web_${segmentCounterRef.current + 1}`;
+        const segId = `web_${sessionPrefixRef.current}_${segmentCounterRef.current + 1}`;
 
         if (result.isFinal) {
           segmentCounterRef.current += 1;

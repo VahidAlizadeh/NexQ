@@ -23,22 +23,58 @@ import { ContextStrategySettings } from "./ContextStrategySettings";
 import { AIActionsSettings } from "./AIActionsSettings";
 import { Sparkles } from "lucide-react";
 
-type SettingsTab = "meeting_audio" | "llm" | "ai_actions" | "context_strategy" | "stt" | "hotkeys" | "general" | "about";
+type SettingsTab = "meeting_audio" | "llm" | "stt" | "ai_actions" | "context_strategy" | "hotkeys" | "general" | "about";
 
-const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-  { id: "meeting_audio", label: "Meeting Audio", icon: <Headphones className="h-4 w-4" /> },
-  { id: "llm", label: "LLM", icon: <Brain className="h-4 w-4" /> },
-  { id: "ai_actions", label: "AI Actions", icon: <Sparkles className="h-4 w-4" /> },
-  { id: "context_strategy", label: "Context Strategy", icon: <Database className="h-4 w-4" /> },
-  { id: "stt", label: "STT Providers", icon: <Mic className="h-4 w-4" /> },
-  { id: "hotkeys", label: "Hotkeys", icon: <Keyboard className="h-4 w-4" /> },
+// ── Tab groups for sidebar (contextually organized, importance-ordered) ──
+interface TabItem {
+  id: SettingsTab;
+  label: string;
+  icon: React.ReactNode;
+}
+
+interface TabGroup {
+  label: string;
+  items: TabItem[];
+}
+
+const TAB_GROUPS: TabGroup[] = [
   {
-    id: "general",
-    label: "General",
-    icon: <SlidersHorizontal className="h-4 w-4" />,
+    label: "Meeting",
+    items: [
+      { id: "meeting_audio", label: "Audio & Devices", icon: <Headphones className="h-4 w-4" /> },
+    ],
   },
-  { id: "about", label: "About", icon: <Info className="h-4 w-4" /> },
+  {
+    label: "Providers",
+    items: [
+      { id: "llm", label: "LLM Providers", icon: <Brain className="h-4 w-4" /> },
+      { id: "stt", label: "STT Providers", icon: <Mic className="h-4 w-4" /> },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
+      { id: "ai_actions", label: "AI Actions", icon: <Sparkles className="h-4 w-4" /> },
+      { id: "context_strategy", label: "Context Strategy", icon: <Database className="h-4 w-4" /> },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { id: "hotkeys", label: "Hotkeys", icon: <Keyboard className="h-4 w-4" /> },
+      { id: "general", label: "General", icon: <SlidersHorizontal className="h-4 w-4" /> },
+      { id: "about", label: "About", icon: <Info className="h-4 w-4" /> },
+    ],
+  },
 ];
+
+// Flat list for modal tabs (same order)
+const ALL_TABS: TabItem[] = TAB_GROUPS.flatMap((g) => g.items);
+
+// Tab labels for header display
+const TAB_LABELS: Record<SettingsTab, string> = Object.fromEntries(
+  ALL_TABS.map((t) => [t.id, t.label])
+) as Record<SettingsTab, string>;
 
 interface SettingsOverlayProps {
   isModal?: boolean;
@@ -126,8 +162,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
     }
   }, [isModal, handleCloseModal, setCurrentView]);
 
-  // Get label for current tab
-  const currentTabLabel = tabs.find((t) => t.id === activeTab)?.label ?? "Settings";
+  const currentTabLabel = TAB_LABELS[activeTab] ?? "Settings";
 
   // Wider content area for two-column settings pages
   const contentMaxW = activeTab === "ai_actions" ? "max-w-4xl" : "max-w-2xl";
@@ -157,7 +192,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
             <div className="flex items-center gap-1">
               <button
                 onClick={handleRunWizard}
-                className="rounded-lg p-1.5 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+                className="rounded-lg p-1.5 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground cursor-pointer"
                 title="Run Setup Wizard"
                 aria-label="Run setup wizard"
               >
@@ -165,7 +200,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
               </button>
               <button
                 onClick={handleCloseModal}
-                className="rounded-lg p-1.5 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+                className="rounded-lg p-1.5 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground cursor-pointer"
                 title="Close (Esc)"
                 aria-label="Close settings"
               >
@@ -174,13 +209,13 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex border-b border-border/30 px-2">
-            {tabs.map((tab) => (
+          {/* Tab Navigation (horizontal, uses flat list) */}
+          <div className="flex border-b border-border/30 px-2 overflow-x-auto">
+            {ALL_TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3.5 py-2.5 text-sm transition-all duration-150 ${
+                className={`flex items-center gap-1.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition-all duration-150 cursor-pointer ${
                   activeTab === tab.id
                     ? "border-b-2 border-primary text-foreground"
                     : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
@@ -204,11 +239,11 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
     <div className="flex h-full w-full bg-background">
       {/* Sidebar */}
       <aside className="flex w-56 shrink-0 flex-col border-r border-border/30 bg-card/50">
-        {/* Logo / Back */}
+        {/* Back Button */}
         <div className="flex items-center gap-3 border-b border-border/20 px-4 py-4">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
             title="Back to Launcher"
             aria-label="Back to launcher"
           >
@@ -217,28 +252,47 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
           </button>
         </div>
 
-        {/* Heading */}
-        <div className="px-5 pt-5 pb-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-            Settings
-          </h2>
-        </div>
+        {/* Grouped Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-1">
+          {TAB_GROUPS.map((group, gi) => (
+            <div key={group.label} className={gi > 0 ? "mt-4" : ""}>
+              {/* Group label */}
+              <div className="mb-1 px-3 flex items-center gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+                  {group.label}
+                </span>
+                <div className="flex-1 h-px bg-border/10" />
+              </div>
 
-        {/* Nav Items */}
-        <nav className="flex-1 space-y-0.5 px-3 py-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                activeTab === tab.id
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
+              {/* Group items */}
+              <div className="space-y-0.5">
+                {group.items.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 cursor-pointer ${
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                      }`}
+                    >
+                      {/* Active indicator bar */}
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary" />
+                      )}
+                      <span className={`shrink-0 transition-colors duration-150 ${
+                        isActive ? "text-primary" : "text-muted-foreground/50 group-hover:text-foreground/60"
+                      }`}>
+                        {tab.icon}
+                      </span>
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -246,7 +300,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
         <div className="border-t border-border/20 px-3 py-3">
           <button
             onClick={handleRunWizard}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
             title="Run Setup Wizard"
             aria-label="Run setup wizard"
           >

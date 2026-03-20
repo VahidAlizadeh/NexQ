@@ -199,7 +199,7 @@ export function CallLogPanel() {
               }`}
             >
               {filteredEntries.length === 0 ? (
-                <div className="flex h-full min-h-[100px] flex-col items-center justify-center gap-2 text-muted-foreground/40">
+                <div className="flex h-full min-h-[100px] flex-col items-center justify-center gap-2 text-muted-foreground/60">
                   <FileSearch className="h-6 w-6" />
                   <span className="text-[11px]">
                     {entries.length === 0
@@ -227,7 +227,7 @@ export function CallLogPanel() {
               </div>
             ) : (
               filteredEntries.length > 0 && (
-                <div className="flex-1 flex items-center justify-center text-muted-foreground/30">
+                <div className="flex-1 flex items-center justify-center text-muted-foreground/60">
                   <span className="text-[11px]">
                     Click an entry to view prompt details
                   </span>

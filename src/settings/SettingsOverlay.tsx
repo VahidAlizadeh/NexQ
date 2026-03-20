@@ -258,10 +258,10 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
             <div key={group.label} className={gi > 0 ? "mt-4" : ""}>
               {/* Group label */}
               <div className="mb-1 px-3 flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
                   {group.label}
                 </span>
-                <div className="flex-1 h-px bg-border/10" />
+                <div className="flex-1 h-px bg-border/20" />
               </div>
 
               {/* Group items */}
@@ -283,7 +283,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary" />
                       )}
                       <span className={`shrink-0 transition-colors duration-150 ${
-                        isActive ? "text-primary" : "text-muted-foreground/50 group-hover:text-foreground/60"
+                        isActive ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground/70"
                       }`}>
                         {tab.icon}
                       </span>

@@ -56,12 +56,12 @@ export function RecentMeetings({
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border/20 bg-secondary/10 py-14">
         <div className="mb-3 rounded-full bg-secondary/50 p-3.5">
-          <Mic className="h-4.5 w-4.5 text-muted-foreground/30" />
+          <Mic className="h-4.5 w-4.5 text-muted-foreground/60" />
         </div>
         <p className="text-xs font-medium text-muted-foreground/50">
           No meetings yet
         </p>
-        <p className="mt-1 text-[10px] text-muted-foreground/30">
+        <p className="mt-1 text-[10px] text-muted-foreground/60">
           Start a meeting to see it here
         </p>
       </div>
@@ -74,7 +74,7 @@ export function RecentMeetings({
     <div className="space-y-4">
       {Array.from(grouped.entries()).map(([dateGroup, groupMeetings]) => (
         <div key={dateGroup}>
-          <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/30">
+          <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             {dateGroup}
           </h3>
           <div className="space-y-1.5">

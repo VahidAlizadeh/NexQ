@@ -133,7 +133,7 @@ export function ModeButtons() {
                     ? "bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20"
                     : isCustom
                       ? "text-amber-400/60 hover:bg-amber-500/10 hover:text-amber-400 border border-amber-500/10"
-                      : "text-muted-foreground/45 hover:bg-accent/50 hover:text-foreground"
+                      : "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
               } ${isStreaming && !isActive ? "opacity-20 cursor-not-allowed" : ""}`}
             >
               {isActive ? <Loader2 className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}
@@ -157,7 +157,7 @@ export function ModeButtons() {
             }}
             placeholder="Type your question..."
             autoFocus
-            className="flex-1 min-w-0 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/40 outline-none"
+            className="flex-1 min-w-0 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
           />
           <button
             onClick={handleAskSubmit}
@@ -169,7 +169,7 @@ export function ModeButtons() {
           </button>
           <button
             onClick={() => setAskInputVisible(false)}
-            className="rounded-md p-1 text-muted-foreground/40 hover:bg-accent hover:text-muted-foreground transition-colors"
+            className="rounded-md p-1 text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground transition-colors"
             title="Close (Esc)"
           >
             <X className="h-3 w-3" />

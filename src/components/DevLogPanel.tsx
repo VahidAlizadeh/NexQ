@@ -148,23 +148,23 @@ function DevLogContent({
     <>
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-border/15 px-3 py-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
           Dev Log
         </span>
         <div className="flex items-center gap-1">
-          <span className="text-[9px] tabular-nums text-muted-foreground/30">
+          <span className="text-[9px] tabular-nums text-muted-foreground/60">
             {entries.length} entries
           </span>
           <button
             onClick={handleCopyAll}
-            className="rounded p-1 text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground"
+            className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
             title="Copy all"
           >
             <Copy className="h-3 w-3" />
           </button>
           <button
             onClick={clear}
-            className="rounded p-1 text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground"
+            className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
             title="Clear"
           >
             <Trash2 className="h-3 w-3" />
@@ -172,7 +172,7 @@ function DevLogContent({
           {onDetach && (
             <button
               onClick={onDetach}
-              className="rounded p-1 text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground"
+              className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
               title="Open in separate window"
             >
               <ExternalLink className="h-3 w-3" />
@@ -181,7 +181,7 @@ function DevLogContent({
           {onClose && (
             <button
               onClick={onClose}
-              className="rounded p-1 text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground"
+              className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
               title="Close (Esc)"
             >
               <X className="h-3 w-3" />
@@ -197,7 +197,7 @@ function DevLogContent({
         className="flex-1 overflow-y-auto p-1.5 font-mono text-[10px] leading-relaxed"
       >
         {entries.length === 0 ? (
-          <div className="flex h-full min-h-[60px] items-center justify-center text-muted-foreground/25">
+          <div className="flex h-full min-h-[60px] items-center justify-center text-muted-foreground/60">
             Waiting for STT events...
           </div>
         ) : (
@@ -206,7 +206,7 @@ function DevLogContent({
               key={entry.id}
               className="flex gap-1.5 rounded px-1 py-0.5 hover:bg-accent/20"
             >
-              <span className="shrink-0 tabular-nums text-muted-foreground/30">
+              <span className="shrink-0 tabular-nums text-muted-foreground/60">
                 {entry.timestamp.toLocaleTimeString()}
               </span>
               <span
@@ -220,7 +220,7 @@ function DevLogContent({
               >
                 {entry.level.substring(0, 3)}
               </span>
-              <span className="shrink-0 text-muted-foreground/40">
+              <span className="shrink-0 text-muted-foreground/60">
                 [{entry.source}]
               </span>
               <span className="break-all text-foreground/80">

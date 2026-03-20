@@ -50,7 +50,7 @@ export function CustomInstructions() {
         <label className="text-xs font-semibold text-muted-foreground">
           Custom Instructions
         </label>
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground/70">
           <span>{charCount} chars</span>
           <span>~{tokenCount} tokens</span>
         </div>
@@ -60,7 +60,7 @@ export function CustomInstructions() {
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Add custom instructions for AI responses..."
         rows={3}
-        className="w-full resize-none rounded-xl border border-border/40 bg-secondary/20 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 transition-colors focus:border-primary/40 focus:bg-secondary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
+        className="w-full resize-none rounded-xl border border-border/40 bg-secondary/20 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-primary/40 focus:bg-secondary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
       />
     </div>
   );

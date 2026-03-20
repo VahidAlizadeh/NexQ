@@ -256,16 +256,16 @@ export function LauncherView() {
           {/* Search */}
           <div className="px-3 pt-3 pb-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/30" />
+              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search..."
-                className="w-full rounded-lg border border-border/20 bg-background/50 py-1.5 pl-7.5 pr-7 text-[11px] text-foreground placeholder:text-muted-foreground/30 focus:border-primary/30 focus:outline-none"
+                className="w-full rounded-lg border border-border/20 bg-background/50 py-1.5 pl-7.5 pr-7 text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:outline-none"
               />
               {searchQuery && (
-                <button onClick={() => handleSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-foreground cursor-pointer">
+                <button onClick={() => handleSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground cursor-pointer">
                   <X className="h-2.5 w-2.5" />
                 </button>
               )}
@@ -284,7 +284,7 @@ export function LauncherView() {
                   key={key}
                   onClick={() => setFilter(key)}
                   className={`rounded px-1.5 py-0.5 text-[9px] font-medium transition-colors cursor-pointer ${
-                    filter === key ? "bg-primary/10 text-primary" : "text-muted-foreground/40 hover:text-muted-foreground"
+                    filter === key ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:text-muted-foreground"
                   }`}
                 >
                   {key === "favorites" && <Star className="mr-0.5 inline h-2 w-2" />}
@@ -293,7 +293,7 @@ export function LauncherView() {
               ))}
             </div>
             {recentMeetings.length > 0 && (
-              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/20 hover:text-red-400 cursor-pointer" title="Delete all">
+              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/50 hover:text-red-400 cursor-pointer" title="Delete all">
                 <Trash2 className="h-3 w-3" />
               </button>
             )}
@@ -301,7 +301,7 @@ export function LauncherView() {
 
           {/* Count */}
           <div className="px-3 pb-1.5">
-            <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/25">
+            <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/60">
               {displayedMeetings.length} meeting{displayedMeetings.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -356,8 +356,8 @@ export function LauncherView() {
 
             {/* Section label */}
             <div className="flex items-center gap-2 pt-1">
-              <Database className="h-3 w-3 text-muted-foreground/30" />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/30">
+              <Database className="h-3 w-3 text-muted-foreground/60" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                 Meeting Context
               </span>
               <div className="flex-1 border-t border-border/10" />
@@ -445,7 +445,7 @@ export function LauncherView() {
             {/* Sources */}
             {resources.length > 0 && (
               <div>
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/30">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                   Sources ({resources.length})
                 </div>
                 <div className="space-y-2">
@@ -472,9 +472,9 @@ export function LauncherView() {
       {/* ═══ FOOTER ═══ */}
       <footer className="flex items-center justify-between border-t border-border/15">
         <ServiceStatusBar />
-        <div className="flex items-center gap-2 pr-5 text-[11px] text-muted-foreground/40">
+        <div className="flex items-center gap-2 pr-5 text-[11px] text-muted-foreground/60">
           <span>&copy; {new Date().getFullYear()} {NEXQ_DEVELOPER}</span>
-          <span className="text-muted-foreground/20">|</span>
+          <span className="text-muted-foreground/40">|</span>
           <span className="font-medium">NexQ v{NEXQ_VERSION}</span>
         </div>
       </footer>

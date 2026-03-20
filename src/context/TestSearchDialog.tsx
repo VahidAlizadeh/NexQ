@@ -322,7 +322,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
           {/* Empty state — not yet searched */}
           {testSearchResults.length === 0 && !isBusy && !hasSearched && !error && !aiError && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <MessageSquare className="h-8 w-8 text-muted-foreground/20 mb-3" />
+              <MessageSquare className="h-8 w-8 text-muted-foreground/50 mb-3" />
               <p className="text-xs text-muted-foreground/60">
                 Ask a question to search your documents and get an AI answer
               </p>
@@ -368,7 +368,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                     {aiResponse && (
                       <button
                         onClick={handleCopyResponse}
-                        className="rounded p-0.5 text-muted-foreground/40 hover:text-foreground"
+                        className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground"
                         title="Copy response"
                       >
                         {copiedId === "ai-response" ? (
@@ -391,7 +391,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
           {/* No results found after search */}
           {testSearchResults.length === 0 && !isBusy && hasSearched && !error && !aiError && !aiResponse && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Search className="h-8 w-8 text-muted-foreground/20 mb-3" />
+              <Search className="h-8 w-8 text-muted-foreground/50 mb-3" />
               <p className="text-xs font-medium text-muted-foreground mb-1">
                 No results found
               </p>
@@ -462,7 +462,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                           e.stopPropagation();
                           handleCopyChunk(result.chunk_id, result.text);
                         }}
-                        className="rounded-lg p-1 text-muted-foreground/40 transition-colors hover:bg-accent hover:text-foreground"
+                        className="rounded-lg p-1 text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
                         title="Copy chunk"
                       >
                         {copiedId === result.chunk_id ? (
@@ -472,9 +472,9 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                         )}
                       </button>
                       {isExpanded ? (
-                        <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/60" />
                       ) : (
-                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" />
                       )}
                     </div>
 

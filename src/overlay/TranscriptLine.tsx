@@ -92,7 +92,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
     >
       {/* Timestamp */}
       <span
-        className="mt-0.5 shrink-0 text-[10px] tabular-nums text-muted-foreground/35"
+        className="mt-0.5 shrink-0 text-[10px] tabular-nums text-muted-foreground/60"
         title={fullTimestamp}
       >
         {isHovered ? fullTimestamp : shortTimestamp}
@@ -119,7 +119,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
       {/* Confidence indicator for low-confidence results */}
       {segment.is_final && segment.confidence > 0 && segment.confidence < 0.7 && (
         <span
-          className="mt-px shrink-0 text-[9px] text-muted-foreground/30"
+          className="mt-px shrink-0 text-[9px] text-muted-foreground/60"
           title={`Confidence: ${Math.round(segment.confidence * 100)}%`}
         >
           ?

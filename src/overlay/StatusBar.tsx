@@ -77,7 +77,7 @@ export function StatusBar() {
   return (
     <div className="flex flex-col gap-1">
       {/* Row 1: Service indicators */}
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground/60">
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
         <div className="flex items-center gap-2">
           {/* LLM indicator */}
           <ServiceIndicator
@@ -116,7 +116,7 @@ export function StatusBar() {
               <span className="text-border/30">|</span>
               <span className="tabular-nums">
                 {isStreaming ? (
-                  <span className="animate-pulse text-primary/50">streaming</span>
+                  <span className="animate-pulse text-primary/80">streaming</span>
                 ) : (
                   `${latencyMs}ms`
                 )}
@@ -173,7 +173,7 @@ function ServiceIndicator({
   return (
     <div
       className={`flex items-center gap-1 transition-colors duration-200 ${
-        active ? activeColor : "text-muted-foreground/40"
+        active ? activeColor : "text-muted-foreground/60"
       }`}
       title={title}
     >
@@ -182,7 +182,7 @@ function ServiceIndicator({
         {active && (
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75" />
         )}
-        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${active ? "bg-current" : "bg-muted-foreground/20"}`} />
+        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${active ? "bg-current" : "bg-muted-foreground/30"}`} />
       </span>
       {icon}
       <span className="truncate max-w-[80px]">{label}</span>

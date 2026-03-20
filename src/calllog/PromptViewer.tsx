@@ -156,9 +156,9 @@ function CollapsibleSection({
         className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent/20 transition-colors"
       >
         {expanded ? (
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/60" />
         ) : (
-          <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+          <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
         )}
 
         {badge && (
@@ -188,7 +188,7 @@ function CollapsibleSection({
             } whitespace-pre-wrap break-words`}
           >
             {content || (
-              <span className="italic text-muted-foreground/40">
+              <span className="italic text-muted-foreground/60">
                 (empty)
               </span>
             )}
@@ -435,7 +435,7 @@ function SectionCopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="rounded p-0.5 text-muted-foreground/30 transition-colors hover:text-foreground"
+      className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
       title="Copy"
     >
       {copied ? (

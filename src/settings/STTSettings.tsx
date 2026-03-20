@@ -886,7 +886,7 @@ function PauseThresholdSetting() {
           {(pauseThresholdMs / 1000).toFixed(1)}s
         </span>
       </div>
-      <div className="mt-1.5 flex justify-between text-[9px] text-muted-foreground/50">
+      <div className="mt-1.5 flex justify-between text-[9px] text-muted-foreground/70">
         <span>0.5s (more lines)</span>
         <span>5.0s (longer paragraphs)</span>
       </div>
@@ -1083,8 +1083,8 @@ function DeepgramAdvancedSettings() {
               className="w-full h-1.5 rounded-full bg-muted appearance-none cursor-pointer accent-primary"
             />
             <div className="flex justify-between mt-0.5">
-              <span className="text-[9px] text-muted-foreground/50">10ms (fast)</span>
-              <span className="text-[9px] text-muted-foreground/50">2000ms (slow)</span>
+              <span className="text-[9px] text-muted-foreground/70">10ms (fast)</span>
+              <span className="text-[9px] text-muted-foreground/70">2000ms (slow)</span>
             </div>
             <p className="mt-1 text-[9px] text-muted-foreground/60">
               Returns transcript when this much silence is detected. 10–999ms gives best results.
@@ -1184,7 +1184,7 @@ function DeepgramAdvancedSettings() {
               </div>
             )}
             {deepgramConfig.keyterms.length === 0 && (
-              <p className="text-[9px] text-muted-foreground/50">No keyterms — model uses default recognition</p>
+              <p className="text-[9px] text-muted-foreground/70">No keyterms — model uses default recognition</p>
             )}
           </div>
         </div>
@@ -1213,7 +1213,7 @@ function DeepgramToggle({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-medium text-foreground">{label}</span>
-          <code className="text-[9px] text-muted-foreground/50">{param}={checked ? "true" : "false"}</code>
+          <code className="text-[9px] text-muted-foreground/70">{param}={checked ? "true" : "false"}</code>
         </div>
         <p className="text-[9px] text-muted-foreground/60 leading-tight mt-0.5">{description}</p>
       </div>
@@ -1437,7 +1437,7 @@ function GroqAdvancedSettings() {
                 <p className="text-[9px] text-muted-foreground/70 leading-tight mt-0.5">{model.description}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[9px] font-mono text-emerald-500">${model.costPerHour.toFixed(3)}/hr</span>
-                  <span className="text-[9px] text-muted-foreground/50">{model.speedFactor}</span>
+                  <span className="text-[9px] text-muted-foreground/70">{model.speedFactor}</span>
                 </div>
               </div>
             </button>
@@ -1467,8 +1467,8 @@ function GroqAdvancedSettings() {
           className="w-full h-1.5 rounded-full bg-muted appearance-none cursor-pointer accent-primary"
         />
         <div className="flex justify-between mt-0.5">
-          <span className="text-[9px] text-muted-foreground/50">2s (fast, less context)</span>
-          <span className="text-[9px] text-muted-foreground/50">15s (slow, more context)</span>
+          <span className="text-[9px] text-muted-foreground/70">2s (fast, less context)</span>
+          <span className="text-[9px] text-muted-foreground/70">15s (slow, more context)</span>
         </div>
         <p className="mt-1 text-[9px] text-muted-foreground/60">
           Shorter = faster responses but less context per API call. Minimum billed: 10s.
@@ -1491,7 +1491,7 @@ function GroqAdvancedSettings() {
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-medium text-foreground">Temperature</span>
-                <code className="text-[9px] text-muted-foreground/50">temperature={groqConfig.temperature}</code>
+                <code className="text-[9px] text-muted-foreground/70">temperature={groqConfig.temperature}</code>
               </div>
               <span className="text-[10px] font-mono text-primary tabular-nums">{groqConfig.temperature.toFixed(1)}</span>
             </div>
@@ -1505,8 +1505,8 @@ function GroqAdvancedSettings() {
               className="w-full h-1.5 rounded-full bg-muted appearance-none cursor-pointer accent-primary"
             />
             <div className="flex justify-between mt-0.5">
-              <span className="text-[9px] text-muted-foreground/50">0 (deterministic)</span>
-              <span className="text-[9px] text-muted-foreground/50">1 (creative)</span>
+              <span className="text-[9px] text-muted-foreground/70">0 (deterministic)</span>
+              <span className="text-[9px] text-muted-foreground/70">1 (creative)</span>
             </div>
             <p className="mt-1 text-[9px] text-muted-foreground/60">
               Lower values give more consistent results. 0 is recommended for transcription.
@@ -1517,7 +1517,7 @@ function GroqAdvancedSettings() {
           <div className="px-5 py-3 border-b border-border/20">
             <div className="flex items-center gap-1.5 mb-2">
               <span className="text-xs font-medium text-foreground">Response Format</span>
-              <code className="text-[9px] text-muted-foreground/50">response_format={groqConfig.response_format}</code>
+              <code className="text-[9px] text-muted-foreground/70">response_format={groqConfig.response_format}</code>
             </div>
             <div className="flex gap-1.5">
               {(["json", "verbose_json", "text"] as const).map((fmt) => (
@@ -1593,7 +1593,7 @@ function GroqAdvancedSettings() {
               className="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 resize-none"
             />
             {groqConfig.prompt && (
-              <p className="mt-1 text-[9px] text-muted-foreground/50">
+              <p className="mt-1 text-[9px] text-muted-foreground/70">
                 ~{Math.ceil(groqConfig.prompt.length / 4)} tokens (max 224)
               </p>
             )}

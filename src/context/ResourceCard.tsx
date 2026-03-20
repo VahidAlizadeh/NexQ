@@ -98,7 +98,7 @@ export function ResourceCard({ resource, onRemove }: ResourceCardProps) {
 
         {/* Preview snippet */}
         {resource.preview && (
-          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground/70">
+          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
             {resource.preview}
           </p>
         )}
@@ -109,7 +109,7 @@ export function ResourceCard({ resource, onRemove }: ResourceCardProps) {
         <button
           onClick={handleReindex}
           disabled={isReindexing}
-          className="flex-shrink-0 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100"
+          className="flex-shrink-0 rounded-lg p-1.5 text-muted-foreground/60 transition-colors hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100"
           title="Re-index file"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isReindexing ? "animate-spin" : ""}`} />
@@ -122,7 +122,7 @@ export function ResourceCard({ resource, onRemove }: ResourceCardProps) {
         className={`flex-shrink-0 rounded-lg p-1.5 transition-colors ${
           confirmRemove
             ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
-            : "text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100"
+            : "text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100"
         }`}
         title={confirmRemove ? "Click again to confirm removal" : "Remove file"}
       >

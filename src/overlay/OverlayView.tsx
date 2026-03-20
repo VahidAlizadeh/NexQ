@@ -107,7 +107,7 @@ export function OverlayView() {
         style={{ borderBottom: "1px solid hsl(var(--border) / 0.12)" }}
       >
         <div className="flex items-center gap-2.5" data-tauri-drag-region>
-          <GripHorizontal className="h-3 w-3 text-muted-foreground/20" />
+          <GripHorizontal className="h-3 w-3 text-muted-foreground/40" />
           <span className="text-[12px] font-semibold text-foreground/90 truncate max-w-[160px]" title={meetingTitle}>
             {meetingTitle}
           </span>
@@ -117,7 +117,7 @@ export function OverlayView() {
               <span className="text-[10px] font-bold text-red-400 tracking-wide">REC</span>
             </div>
           )}
-          <span className="text-[11px] text-muted-foreground/40 tabular-nums font-medium">
+          <span className="text-[11px] text-muted-foreground/60 tabular-nums font-medium">
             {elapsedMs > 0 ? formatDuration(elapsedMs) : "00:00"}
           </span>
         </div>
@@ -201,7 +201,7 @@ function HeaderBtn({ icon, active, onClick, tooltip }: { icon: React.ReactNode; 
     <button
       onClick={onClick}
       className={`rounded-lg p-1.5 transition-all duration-150 cursor-pointer ${
-        active ? "bg-primary/10 text-primary" : "text-muted-foreground/35 hover:bg-accent/60 hover:text-foreground"
+        active ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:bg-accent/60 hover:text-foreground"
       }`}
       title={tooltip}
     >
@@ -215,7 +215,7 @@ function HeaderBtn({ icon, active, onClick, tooltip }: { icon: React.ReactNode; 
 function PanelHeader({ label, fmt }: { label: string; fmt: ReturnType<typeof useTextFormat> }) {
   return (
     <div className="flex items-center justify-between border-b border-border/8 px-3 py-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/35">{label}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">{label}</span>
       <FormatToolbar {...fmt} />
     </div>
   );
@@ -230,15 +230,15 @@ function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isMod
   return (
     <div className="flex items-center gap-0.5 relative">
       {/* Zoom out */}
-      <button onClick={zoomOut} className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer" title={`Zoom out (${zoomPct}%)`}>
+      <button onClick={zoomOut} className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer" title={`Zoom out (${zoomPct}%)`}>
         <MinusIcon className="h-3 w-3" />
       </button>
 
       {/* Zoom label */}
-      <span className="w-8 text-center text-[9px] tabular-nums text-muted-foreground/35 select-none">{zoomPct}%</span>
+      <span className="w-8 text-center text-[9px] tabular-nums text-muted-foreground/60 select-none">{zoomPct}%</span>
 
       {/* Zoom in */}
-      <button onClick={zoomIn} className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer" title={`Zoom in (${zoomPct}%)`}>
+      <button onClick={zoomIn} className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer" title={`Zoom in (${zoomPct}%)`}>
         <Plus className="h-3 w-3" />
       </button>
 
@@ -248,7 +248,7 @@ function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isMod
       <button
         onClick={toggleBold}
         className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors cursor-pointer ${
-          fmt.bold ? "bg-primary/10 text-primary" : "text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground"
+          fmt.bold ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
         }`}
         title="Toggle bold"
       >
@@ -259,7 +259,7 @@ function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isMod
       <div className="relative">
         <button
           onClick={() => setShowFontMenu(!showFontMenu)}
-          className="flex h-6 items-center gap-0.5 rounded-md px-1.5 text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
+          className="flex h-6 items-center gap-0.5 rounded-md px-1.5 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
           title="Font style"
         >
           <span className="text-[9px] font-medium">{currentFontLabel}</span>
@@ -287,7 +287,7 @@ function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isMod
       <button
         onClick={reset}
         className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors cursor-pointer ${
-          isModified ? "text-muted-foreground/40 hover:bg-accent/50 hover:text-foreground" : "text-muted-foreground/15 cursor-default"
+          isModified ? "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground" : "text-muted-foreground/15 cursor-default"
         }`}
         title="Reset formatting"
         disabled={!isModified}

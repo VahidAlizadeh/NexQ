@@ -273,10 +273,10 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
         <>
           <Divider />
           <div className="flex items-center gap-1">
-            <Zap className={`h-3 w-3 ${isStreaming ? "text-primary/60 animate-pulse" : "text-muted-foreground/30"}`} />
-            <span className="text-[11px] tabular-nums font-medium text-muted-foreground/60">
+            <Zap className={`h-3 w-3 ${isStreaming ? "text-primary animate-pulse" : "text-muted-foreground/60"}`} />
+            <span className="text-[11px] tabular-nums font-medium text-muted-foreground">
               {isStreaming ? (
-                <span className="text-primary/60 animate-pulse">streaming</span>
+                <span className="text-primary animate-pulse">streaming</span>
               ) : (
                 `${latencyMs}ms`
               )}
@@ -348,25 +348,25 @@ function ServiceChip({
           <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${c.dot} opacity-50`} />
         )}
         <span className={`relative inline-flex h-2 w-2 rounded-full transition-colors duration-200 ${
-          active ? c.dot : "bg-muted-foreground/20"
+          active ? c.dot : "bg-muted-foreground/30"
         }`} />
       </span>
 
       {/* Icon */}
-      <span className={`shrink-0 transition-colors duration-200 ${active ? c.active : "text-muted-foreground/40"}`}>
+      <span className={`shrink-0 transition-colors duration-200 ${active ? c.active : "text-muted-foreground/60"}`}>
         {icon}
       </span>
 
       {/* Text */}
       <div className="flex items-center gap-1 min-w-0">
         <span className={`text-[11px] font-medium truncate max-w-[100px] transition-colors duration-200 ${
-          active ? "text-foreground/80" : "text-muted-foreground/55"
+          active ? "text-foreground/90" : "text-muted-foreground/70"
         }`}>
           {provider}
         </span>
         {model && (
           <span className={`text-[10px] truncate max-w-[70px] transition-colors duration-200 ${
-            active ? "text-foreground/50" : "text-muted-foreground/30"
+            active ? "text-foreground/60" : "text-muted-foreground/60"
           }`}>
             {model}
           </span>
@@ -423,13 +423,13 @@ function STTChip({
           <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${c.dot} opacity-50`} />
         )}
         <span className={`relative inline-flex h-2 w-2 rounded-full transition-colors duration-200 ${
-          muted ? "bg-red-400/40" : active ? c.dot : "bg-muted-foreground/20"
+          muted ? "bg-red-400/50" : active ? c.dot : "bg-muted-foreground/30"
         }`} />
       </span>
 
       {/* Icon */}
       <span className={`shrink-0 transition-colors duration-200 ${
-        muted ? "text-red-400/50" : active ? c.active : "text-muted-foreground/40"
+        muted ? "text-red-400/60" : active ? c.active : "text-muted-foreground/60"
       }`}>
         {icon}
       </span>
@@ -438,19 +438,19 @@ function STTChip({
       <div className="flex items-center gap-1 min-w-0">
         {label && (
           <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide transition-colors duration-200 ${
-            muted ? "text-red-400/40" : active ? c.active : "text-muted-foreground/35"
+            muted ? "text-red-400/50" : active ? c.active : "text-muted-foreground/60"
           }`}>
             {label}
           </span>
         )}
         <span className={`text-[11px] font-medium truncate max-w-[100px] transition-colors duration-200 ${
-          muted ? "text-red-400/30 line-through" : active ? "text-foreground/80" : "text-muted-foreground/55"
+          muted ? "text-red-400/50 line-through" : active ? "text-foreground/90" : "text-muted-foreground/70"
         }`}>
           {provider}
         </span>
         {model && !muted && (
           <span className={`text-[10px] truncate max-w-[70px] transition-colors duration-200 ${
-            active ? "text-foreground/50" : "text-muted-foreground/30"
+            active ? "text-foreground/60" : "text-muted-foreground/60"
           }`}>
             {model}
           </span>
@@ -460,7 +460,7 @@ function STTChip({
       {/* Chevron — visible only when interactive */}
       {interactive && (
         <ChevronUp className={`h-2.5 w-2.5 shrink-0 transition-all duration-200 ${
-          pickerOpen ? "text-foreground/50 rotate-0" : "text-muted-foreground/25 rotate-180"
+          pickerOpen ? "text-foreground/60 rotate-0" : "text-muted-foreground/50 rotate-180"
         }`} />
       )}
     </div>
@@ -486,7 +486,7 @@ function MuteButton({
       className={`shrink-0 rounded-full p-1 transition-all duration-150 cursor-pointer ${
         muted
           ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-          : "text-muted-foreground/25 hover:text-foreground/50 hover:bg-accent/40"
+          : "text-muted-foreground/60 hover:text-foreground/70 hover:bg-accent/40"
       }`}
       title={muted ? `Unmute ${label}` : `Mute ${label}`}
     >
@@ -581,14 +581,14 @@ function STTPickerDropdown({
       className="absolute bottom-full left-0 mb-2 min-w-[200px] rounded-xl border border-border/30 bg-popover/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
     >
       {loading ? (
-        <div className="px-4 py-3 text-[11px] text-muted-foreground/50">Loading providers...</div>
+        <div className="px-4 py-3 text-[11px] text-muted-foreground">Loading providers...</div>
       ) : (
         <>
           {localOpts.length > 0 && (
             <div>
               <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
                 <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Local & Built-in
                 </span>
               </div>
@@ -616,7 +616,7 @@ function STTPickerDropdown({
             <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
               <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
                 <Cloud className="h-2.5 w-2.5 text-blue-400" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Cloud
                 </span>
               </div>
@@ -641,7 +641,7 @@ function STTPickerDropdown({
           )}
 
           {localOpts.length === 0 && cloudOpts.length === 0 && (
-            <p className="px-4 py-3 text-[10px] text-muted-foreground/40">
+            <p className="px-4 py-3 text-[10px] text-muted-foreground/60">
               No providers available — configure in Settings
             </p>
           )}
@@ -747,7 +747,7 @@ function LLMPickerDropdown({
         <div>
           <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
             <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Local</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Local</span>
           </div>
           {localOpts.map((opt) => {
             const Icon = opt.IconComponent;
@@ -763,7 +763,7 @@ function LLMPickerDropdown({
               >
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-emerald-400"}`} />
                 <span className="flex-1 text-left font-medium">{opt.label}</span>
-                {isActive && <span className="text-[9px] text-primary/60">active</span>}
+                {isActive && <span className="text-[9px] text-primary/80">active</span>}
               </button>
             );
           })}
@@ -774,7 +774,7 @@ function LLMPickerDropdown({
         <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
           <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
             <Cloud className="h-2.5 w-2.5 text-blue-400" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Cloud</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Cloud</span>
           </div>
           {cloudOpts.map((opt) => {
             const Icon = opt.IconComponent;
@@ -790,7 +790,7 @@ function LLMPickerDropdown({
               >
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-blue-400"}`} />
                 <span className="flex-1 text-left font-medium">{opt.label}</span>
-                {isActive && <span className="text-[9px] text-primary/60">active</span>}
+                {isActive && <span className="text-[9px] text-primary/80">active</span>}
               </button>
             );
           })}
@@ -798,7 +798,7 @@ function LLMPickerDropdown({
       )}
 
       {available.length === 0 && (
-        <div className="px-4 py-3 text-[10px] text-muted-foreground/40">
+        <div className="px-4 py-3 text-[10px] text-muted-foreground/60">
           No verified providers — test connection in Settings first
         </div>
       )}
@@ -807,11 +807,11 @@ function LLMPickerDropdown({
       <div className="border-t border-border/10">
         <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
           <Brain className="h-2.5 w-2.5 text-violet-400" />
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
             Model — {LLM_LABELS[pendingProvider] || pendingProvider}
           </span>
           {modelsLoading && (
-            <span className="text-[9px] text-muted-foreground/30 animate-pulse ml-auto">loading...</span>
+            <span className="text-[9px] text-muted-foreground/60 animate-pulse ml-auto">loading...</span>
           )}
         </div>
         {models.length > 0 ? (
@@ -833,7 +833,7 @@ function LLMPickerDropdown({
             })}
           </div>
         ) : !modelsLoading ? (
-          <div className="px-3 py-2 text-[10px] text-muted-foreground/40">
+          <div className="px-3 py-2 text-[10px] text-muted-foreground/60">
             No models available
           </div>
         ) : null}

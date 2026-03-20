@@ -312,7 +312,7 @@ export function MeetingAudioSettings() {
 
       {/* ── Quick Presets ── */}
       <div className="flex items-center gap-2 rounded-xl border border-border/25 bg-card/40 px-4 py-2.5">
-        <span className="mr-1 shrink-0 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+        <span className="mr-1 shrink-0 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
           Presets
         </span>
         {BUILT_IN_PRESETS.map((preset) => (
@@ -366,7 +366,7 @@ export function MeetingAudioSettings() {
       <div className="flex items-center justify-between rounded-xl border border-border/25 bg-card/40 px-4 py-3">
         <div>
           <p className="text-xs font-medium text-foreground">Record to file</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground/50">Save meeting audio as WAV</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground/70">Save meeting audio as WAV</p>
         </div>
         <button
           onClick={() => handleRecordingToggle(!config.recording_enabled)}
@@ -398,7 +398,7 @@ export function MeetingAudioSettings() {
             <button
               onClick={loadDevices}
               disabled={loadingDevices}
-              className="cursor-pointer rounded p-0.5 text-muted-foreground/40 transition-colors hover:text-foreground"
+              className="cursor-pointer rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
             >
               <RefreshCw className={`h-3 w-3 ${loadingDevices ? "animate-spin" : ""}`} />
             </button>
@@ -425,7 +425,7 @@ export function MeetingAudioSettings() {
               />
             ))}
           </div>
-          <p className="mt-2 shrink-0 text-[9px] text-muted-foreground/40">
+          <p className="mt-2 shrink-0 text-[9px] text-muted-foreground/60">
             All devices streaming live (~60 fps)
           </p>
         </div>
@@ -440,13 +440,13 @@ export function MeetingAudioSettings() {
               <button
                 onClick={loadSessions}
                 disabled={loadingSessions}
-                className="cursor-pointer rounded p-0.5 text-muted-foreground/40 transition-colors hover:text-foreground"
+                className="cursor-pointer rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
               >
                 <RefreshCw className={`h-3 w-3 ${loadingSessions ? "animate-spin" : ""}`} />
               </button>
             </div>
             {sessions.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground/50">
+              <p className="text-[11px] text-muted-foreground/70">
                 {loadingSessions ? "Loading..." : "No active audio sessions detected"}
               </p>
             ) : (
@@ -562,7 +562,7 @@ function PartyPanel({
         </div>
         <div className="min-w-0 flex-1">
           <p className={`text-xs font-bold uppercase tracking-wider ${c.iconColor}`}>{label}</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground/45">Audio source & recognition</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground/60">Audio source & recognition</p>
         </div>
         {/* Live activity indicator */}
         <div className="flex shrink-0 items-center gap-1.5">
@@ -583,7 +583,7 @@ function PartyPanel({
 
         {/* Source device */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             Source
           </label>
           <select
@@ -638,7 +638,7 @@ function PartyPanel({
 
         {/* STT Provider */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             Speech to Text
           </label>
           <ProviderSelect
@@ -825,7 +825,7 @@ function DeviceLevelRow({
 
   return (
     <div className="flex items-center gap-2">
-      <span className={isSelected ? "text-primary" : "text-muted-foreground/40"}>{icon}</span>
+      <span className={isSelected ? "text-primary" : "text-muted-foreground/60"}>{icon}</span>
       <span className={`w-28 truncate text-[10px] ${isSelected ? "font-medium text-foreground" : "text-muted-foreground/60"}`}>
         {name}
       </span>
@@ -849,7 +849,7 @@ function DeviceLevelRow({
           />
         )}
       </div>
-      <span className="w-7 text-right text-[10px] tabular-nums text-muted-foreground/50">
+      <span className="w-7 text-right text-[10px] tabular-nums text-muted-foreground/70">
         {clampedLevel > 0.005 ? `${Math.round(scaled * 100)}%` : "\u2014"}
       </span>
     </div>

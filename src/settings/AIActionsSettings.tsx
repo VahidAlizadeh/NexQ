@@ -127,7 +127,7 @@ function SectionHeader({
       </div>
       <div>
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        <p className="text-[10px] text-muted-foreground/60">{subtitle}</p>
+        <p className="text-[10px] text-muted-foreground">{subtitle}</p>
       </div>
     </div>
   );
@@ -154,7 +154,7 @@ function HelpButton({
       className={`inline-flex items-center justify-center rounded-full border transition-colors ${
         isOpen
           ? "border-primary/40 bg-primary/10 text-primary"
-          : "border-border/30 text-muted-foreground/40 hover:border-border/60 hover:text-muted-foreground"
+          : "border-border/40 text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground"
       } h-[18px] w-[18px]`}
       title="Show explanation"
     >
@@ -445,7 +445,7 @@ export function AIActionsSettings() {
             {/* Active preset summary */}
             {presetSummary && (
               <div className="rounded-lg border border-primary/10 bg-primary/[0.04] px-3 py-2 flex items-center gap-2">
-                <span className="text-[10px] font-medium text-primary/60 uppercase tracking-wider shrink-0">
+                <span className="text-[10px] font-medium text-primary/80 uppercase tracking-wider shrink-0">
                   Active
                 </span>
                 <span className="text-[11px] text-foreground/80">{presetSummary}</span>
@@ -461,7 +461,7 @@ export function AIActionsSettings() {
                   Additional Instructions
                   <HelpButton id="instructions" activeId={openHelp} onToggle={toggleHelp} />
                 </label>
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground/70">
                   <span>{configs.customInstructions.length} chars</span>
                   <span>~{instructionTokens} tokens</span>
                 </div>
@@ -472,7 +472,7 @@ export function AIActionsSettings() {
                 value={configs.customInstructions}
                 onChange={(e) => handleCustomInstructionsChange(e.target.value)}
                 placeholder="Add extra instructions beyond the presets above..."
-                className="mt-2 w-full resize-none rounded-lg border border-border/50 bg-secondary/30 px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                className="mt-2 w-full resize-none rounded-lg border border-border/50 bg-secondary/30 px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
               />
             </div>
           </div>
@@ -530,7 +530,7 @@ export function AIActionsSettings() {
                   }
                   className="mt-2 w-full cursor-pointer accent-primary"
                 />
-                <div className="mt-1 flex justify-between text-[10px] text-muted-foreground/50">
+                <div className="mt-1 flex justify-between text-[10px] text-muted-foreground/70">
                   <span>Precise 0.0</span>
                   <span>Creative 1.0</span>
                 </div>
@@ -573,7 +573,7 @@ export function AIActionsSettings() {
                   }
                   className="mt-2 w-full cursor-pointer accent-primary"
                 />
-                <div className="mt-1 flex justify-between text-[10px] text-muted-foreground/50">
+                <div className="mt-1 flex justify-between text-[10px] text-muted-foreground/70">
                   <span>1 min</span>
                   <span>30 min</span>
                 </div>
@@ -619,7 +619,7 @@ export function AIActionsSettings() {
 
         {/* Built-in Actions */}
         <div>
-          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-2">
+          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
             Built-in ({builtInActions.length})
           </h4>
           <div className="rounded-lg border border-border/20 divide-y divide-border/15 overflow-hidden">
@@ -645,7 +645,7 @@ export function AIActionsSettings() {
 
         {/* Custom Actions */}
         <div className="mt-5">
-          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-2">
+          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
             Custom ({customActions.length})
           </h4>
 
@@ -672,7 +672,7 @@ export function AIActionsSettings() {
           )}
 
           {customActions.length === 0 && !showNewActionForm && (
-            <p className="py-2 text-center text-[10px] text-muted-foreground/40">
+            <p className="py-2 text-center text-[10px] text-muted-foreground/60">
               No custom actions yet
             </p>
           )}
@@ -684,14 +684,14 @@ export function AIActionsSettings() {
                 value={newActionName}
                 onChange={(e) => setNewActionName(e.target.value)}
                 placeholder="Action name"
-                className="w-full rounded-lg border border-border/50 bg-secondary/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                className="w-full rounded-lg border border-border/50 bg-secondary/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
               />
               <textarea
                 rows={3}
                 value={newActionPrompt}
                 onChange={(e) => setNewActionPrompt(e.target.value)}
                 placeholder="System prompt for this action..."
-                className="w-full resize-none rounded-lg border border-border/50 bg-secondary/30 px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                className="w-full resize-none rounded-lg border border-border/50 bg-secondary/30 px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
               />
               <div className="flex gap-2">
                 <button
@@ -787,18 +787,18 @@ function ActionCard({
         className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors duration-150 hover:bg-secondary/20"
       >
         {isExpanded ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground/70 shrink-0" />
         ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+          <ChevronRight className="h-3 w-3 text-muted-foreground/70 shrink-0" />
         )}
         <span className="text-xs font-medium text-foreground shrink-0">
           {action.name}
         </span>
-        <span className="text-[10px] text-muted-foreground/40 shrink-0">
+        <span className="text-[10px] text-muted-foreground/60 shrink-0">
           {action.mode}
         </span>
         {description && (
-          <span className="hidden sm:inline text-[10px] text-muted-foreground/30 truncate">
+          <span className="hidden sm:inline text-[10px] text-muted-foreground/60 truncate">
             &mdash; {description}
           </span>
         )}
@@ -806,7 +806,7 @@ function ActionCard({
           {onDelete && (
             <button
               onClick={handleDeleteClick}
-              className="rounded-md p-1 text-muted-foreground/50 transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"
+              className="rounded-md p-1 text-muted-foreground/60 transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"
               aria-label={`Delete ${action.name}`}
             >
               <Trash2 className="h-3 w-3" />
@@ -825,7 +825,7 @@ function ActionCard({
         <div className="border-t border-border/15 bg-secondary/[0.06] px-3.5 py-3.5 space-y-3.5">
           {/* Purpose */}
           {description && (
-            <p className="text-[11px] text-muted-foreground/60 italic">
+            <p className="text-[11px] text-muted-foreground/80 italic">
               {description}
             </p>
           )}
@@ -851,7 +851,7 @@ function ActionCard({
               rows={3}
               value={action.systemPrompt}
               onChange={(e) => onPromptChange(e.target.value)}
-              className="w-full resize-none rounded-lg border border-border/50 bg-secondary/30 px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+              className="w-full resize-none rounded-lg border border-border/50 bg-secondary/30 px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
             />
           </div>
 
@@ -940,7 +940,7 @@ function ActionCard({
                     )}
                   </div>
                   {action.transcriptWindowSeconds !== null && (
-                    <div className="mt-1 flex justify-between text-[9px] text-muted-foreground/40">
+                    <div className="mt-1 flex justify-between text-[9px] text-muted-foreground/60">
                       <span>All</span>
                       <span>30 min</span>
                     </div>

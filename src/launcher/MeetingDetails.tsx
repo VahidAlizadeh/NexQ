@@ -114,9 +114,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
           </h2>
           <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
             <span>{formatRelativeTime(meeting.start_time)}</span>
-            <span className="text-muted-foreground/30">&middot;</span>
+            <span className="text-muted-foreground/60">&middot;</span>
             <span>{durationDisplay}</span>
-            <span className="text-muted-foreground/30">&middot;</span>
+            <span className="text-muted-foreground/60">&middot;</span>
             <span>{meeting.transcript.length} segments</span>
           </div>
         </div>
@@ -208,7 +208,7 @@ function TabButton({
 function TranscriptView({ segments }: { segments: TranscriptSegment[] }) {
   if (segments.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40">
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/60">
         <FileText className="mb-4 h-7 w-7" />
         <p className="text-sm font-medium">No transcript segments</p>
       </div>
@@ -219,7 +219,7 @@ function TranscriptView({ segments }: { segments: TranscriptSegment[] }) {
     <div className="space-y-0.5 p-5">
       {segments.map((segment, i) => (
         <div key={segment.id || i} className="flex gap-3 rounded-lg px-3 py-2 hover:bg-secondary/20">
-          <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-muted-foreground/40">
+          <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-muted-foreground/60">
             {formatTimestamp(segment.timestamp_ms)}
           </span>
           <span
@@ -247,7 +247,7 @@ function AIInteractionLog({
 }) {
   if (interactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40">
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/60">
         <MessageSquare className="mb-4 h-7 w-7" />
         <p className="text-sm font-medium">No AI interactions recorded</p>
       </div>
@@ -276,13 +276,13 @@ function AIInteractionLog({
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="text-[10px] tabular-nums text-muted-foreground/40">
+                <span className="text-[10px] tabular-nums text-muted-foreground/60">
                   {interaction.latency_ms}ms
                 </span>
                 {isExpanded ? (
-                  <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/40" />
+                  <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/60" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/40" />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" />
                 )}
               </div>
             </button>
@@ -290,7 +290,7 @@ function AIInteractionLog({
               <div className="border-t border-border/10 px-4 py-3.5">
                 <div className="mb-2.5 flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
                   <span>{interaction.provider}/{interaction.model}</span>
-                  <span className="text-muted-foreground/30">&middot;</span>
+                  <span className="text-muted-foreground/60">&middot;</span>
                   <span>{formatRelativeTime(interaction.timestamp)}</span>
                 </div>
                 <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground/80">
@@ -310,10 +310,10 @@ function AIInteractionLog({
 function SummaryView({ summary }: { summary: string | null }) {
   if (!summary) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40">
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/60">
         <Sparkles className="mb-4 h-7 w-7" />
         <p className="text-sm font-medium">No summary available</p>
-        <p className="mt-1.5 text-xs text-muted-foreground/30">
+        <p className="mt-1.5 text-xs text-muted-foreground/60">
           Summaries are generated when meetings end
         </p>
       </div>

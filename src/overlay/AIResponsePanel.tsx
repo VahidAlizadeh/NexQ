@@ -137,7 +137,7 @@ export function AIResponsePanel() {
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
               <Loader2 className="h-3 w-3 animate-spin text-primary/50" />
-              <span className="text-[10px] font-medium text-primary/60">
+              <span className="text-[10px] font-medium text-primary">
                 {currentMode ? getModeLabel(currentMode) : "Generating"}...
               </span>
             </div>
@@ -155,7 +155,7 @@ export function AIResponsePanel() {
           <div className="space-y-2.5">
             {currentMode && (
               <div className="flex items-center justify-between">
-                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-medium text-primary/60">
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-medium text-primary/80">
                   {getModeLabel(currentMode)}
                 </span>
                 <div className="flex items-center gap-1">
@@ -199,7 +199,7 @@ export function AIResponsePanel() {
         {activeTab !== "current" && displayContent && displayResponse && (
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-medium text-primary/60">
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-medium text-primary/80">
                 {getModeLabel(displayResponse.mode)}
               </span>
               <div className="flex items-center gap-1">
@@ -238,12 +238,12 @@ export function AIResponsePanel() {
         {activeTab === "current" && !isStreaming && !currentContent && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/30">
-              <Sparkles className="h-5 w-5 text-muted-foreground/30" />
+              <Sparkles className="h-5 w-5 text-muted-foreground/50" />
             </div>
-            <p className="text-xs text-muted-foreground/50">
+            <p className="text-xs text-muted-foreground/70">
               Press Space for AI assistance
             </p>
-            <p className="text-[10px] text-muted-foreground/30">
+            <p className="text-[10px] text-muted-foreground/60">
               or use Ctrl+1-5 for specific modes
             </p>
           </div>
@@ -275,10 +275,10 @@ function TabButton({
         active
           ? "bg-primary/15 text-primary"
           : secondary
-            ? "text-muted-foreground/50 hover:bg-muted/30 hover:text-muted-foreground"
+            ? "text-muted-foreground/70 hover:bg-muted/30 hover:text-muted-foreground"
             : pinned
-              ? "text-amber-400/60 hover:bg-amber-400/10 hover:text-amber-400"
-              : "text-muted-foreground/60 hover:bg-muted/30 hover:text-muted-foreground"
+              ? "text-amber-400/70 hover:bg-amber-400/10 hover:text-amber-400"
+              : "text-muted-foreground/70 hover:bg-muted/30 hover:text-muted-foreground"
       }`}
     >
       {pinned && <Pin className="mr-0.5 inline-block h-2.5 w-2.5" />}
@@ -304,7 +304,7 @@ function ActionButton({
       className={`rounded-lg p-1.5 transition-colors duration-150 ${
         active
           ? "text-green-400"
-          : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-accent"
+          : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent"
       }`}
       title={title}
     >

@@ -229,7 +229,7 @@ export function HotkeySettings() {
       </div>
 
       {/* Info */}
-      <p className="text-[11px] text-muted-foreground/50">
+      <p className="text-[11px] text-muted-foreground/70">
         Changes are saved automatically. Global shortcuts require Ctrl or Cmd modifier.
       </p>
     </div>

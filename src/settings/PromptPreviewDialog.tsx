@@ -168,7 +168,7 @@ export function PromptPreviewDialog({
             <p className="text-[10px] text-muted-foreground mt-1.5">
               ~{systemTokens.toLocaleString()} tokens
               {actionConfig.isDefaultPrompt && (
-                <span className="ml-2 text-muted-foreground/50">
+                <span className="ml-2 text-muted-foreground/70">
                   (default prompt)
                 </span>
               )}
@@ -275,7 +275,7 @@ function SectionBadge({
       className={`rounded-md border px-2.5 py-1.5 text-xs ${
         active
           ? "border-primary/30 bg-primary/5 text-foreground"
-          : "border-border/20 bg-muted/10 text-muted-foreground/50 line-through"
+          : "border-border/20 bg-muted/10 text-muted-foreground/70 line-through"
       }`}
     >
       {label}

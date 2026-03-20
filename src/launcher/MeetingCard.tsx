@@ -120,7 +120,7 @@ export function MeetingCard({
           className={`shrink-0 rounded-md p-0.5 transition-colors ${
             isFavorite
               ? "text-amber-400"
-              : "text-muted-foreground/20 opacity-0 group-hover:opacity-100 hover:text-amber-400/60"
+              : "text-muted-foreground/40 opacity-0 group-hover:opacity-100 hover:text-amber-400/70"
           }`}
           title={isFavorite ? "Unstar" : "Star"}
         >
@@ -173,7 +173,7 @@ export function MeetingCard({
 
           {/* Badges row */}
           <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-muted-foreground/50">
+            <span className="text-[10px] text-muted-foreground/70">
               {formatRelativeTime(meeting.start_time)}
             </span>
 
@@ -182,14 +182,14 @@ export function MeetingCard({
                 LIVE
               </span>
             ) : (
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/40">
+              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
                 <Clock className="h-2.5 w-2.5" />
                 {durationDisplay}
               </span>
             )}
 
             {meeting.segment_count > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/40">
+              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
                 <MessageSquare className="h-2.5 w-2.5" />
                 {meeting.segment_count}
               </span>
@@ -226,21 +226,21 @@ export function MeetingCard({
             <>
               <button
                 onClick={handleStartEdit}
-                className="rounded-md p-1 text-muted-foreground/40 hover:bg-secondary hover:text-foreground"
+                className="rounded-md p-1 text-muted-foreground/60 hover:bg-secondary hover:text-foreground"
                 title="Rename"
               >
                 <Pencil className="h-3 w-3" />
               </button>
               <button
                 onClick={handleDeleteClick}
-                className="rounded-md p-1 text-muted-foreground/40 hover:bg-destructive/10 hover:text-red-400"
+                className="rounded-md p-1 text-muted-foreground/60 hover:bg-destructive/10 hover:text-red-400"
                 title="Delete"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
             </>
           )}
-          <ChevronRight className="ml-0.5 h-3.5 w-3.5 text-muted-foreground/20" />
+          <ChevronRight className="ml-0.5 h-3.5 w-3.5 text-muted-foreground/50" />
         </div>
       </div>
     </div>

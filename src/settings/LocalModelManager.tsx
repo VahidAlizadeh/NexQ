@@ -344,7 +344,7 @@ function RatingBadge({ label, value, max }: { label: string; value: number; max:
         <Star
           key={i}
           className={`h-2 w-2 ${
-            i < value ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+            i < value ? "fill-amber-400 text-amber-400" : "text-muted-foreground/50"
           }`}
         />
       ))}

@@ -117,18 +117,18 @@ export function FileUpload() {
           <>
             <CloudUpload
               className={`mb-2 h-8 w-8 transition-colors duration-200 ${
-                isDragOver ? "text-primary" : "text-muted-foreground/40"
+                isDragOver ? "text-primary" : "text-muted-foreground/60"
               }`}
             />
             <p className="text-sm font-medium text-muted-foreground">
               {isDragOver ? "Drop to upload" : "Drag files here"}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground/60">
+            <p className="mt-1 text-xs text-muted-foreground">
               PDF, TXT, Markdown, or DOCX
             </p>
             <button
               onClick={handleBrowse}
-              className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary/80 transition-colors hover:bg-primary/10 hover:text-primary"
+              className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 hover:text-primary"
             >
               Browse Files
             </button>

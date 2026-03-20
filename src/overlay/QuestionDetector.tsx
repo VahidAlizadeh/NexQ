@@ -71,7 +71,7 @@ export function QuestionDetector() {
         onClick={() => latest && handleAssist(0)}
       >
         <div className="relative mt-0.5 shrink-0">
-          <HelpCircle className={`h-5 w-5 transition-colors ${latest ? "text-blue-400" : "text-muted-foreground/25"}`} />
+          <HelpCircle className={`h-5 w-5 transition-colors ${latest ? "text-blue-400" : "text-muted-foreground/50"}`} />
           {latest && !latest.assisted && (
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
           )}
@@ -88,7 +88,7 @@ export function QuestionDetector() {
               &ldquo;{latest.text}&rdquo;
             </p>
           ) : (
-            <p className="text-[12px] text-muted-foreground/40 italic">
+            <p className="text-[12px] text-muted-foreground/60 italic">
               Detected questions from &ldquo;Them&rdquo; will appear here
             </p>
           )}
@@ -142,7 +142,7 @@ export function QuestionDetector() {
                     </div>
                   ) : (
                     <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
-                      <Clock className="h-2.5 w-2.5 text-muted-foreground/40" />
+                      <Clock className="h-2.5 w-2.5 text-muted-foreground/60" />
                     </div>
                   )}
                 </div>

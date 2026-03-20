@@ -33,8 +33,8 @@ export function ContextPanel() {
     <div className="flex h-full flex-col gap-5 overflow-y-auto p-5">
       {/* Panel header */}
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-primary/60" />
-        <h2 className="text-sm font-semibold text-foreground/80">Meeting Context</h2>
+        <FileText className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold text-foreground">Meeting Context</h2>
         {contextStrategy === "local_rag" && (
           <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
             <span>RAG Active</span>
@@ -55,7 +55,7 @@ export function ContextPanel() {
       {resources.length > 0 && (
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center gap-2">
-            <FileText className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-medium text-muted-foreground">
               Loaded Context ({resources.length} file
               {resources.length !== 1 ? "s" : ""})

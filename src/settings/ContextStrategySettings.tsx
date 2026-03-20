@@ -300,7 +300,7 @@ function HelpButton({
       className={`inline-flex items-center justify-center rounded-full border transition-colors ${
         isOpen
           ? "border-primary/40 bg-primary/10 text-primary"
-          : "border-border/30 text-muted-foreground/40 hover:border-border/60 hover:text-muted-foreground"
+          : "border-border/30 text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground"
       } h-[18px] w-[18px]`}
       title="Show explanation"
     >
@@ -569,7 +569,7 @@ export function ContextStrategySettings() {
                 );
               })}
             </div>
-            <p className="mt-2.5 text-[10px] text-muted-foreground/50 leading-relaxed">
+            <p className="mt-2.5 text-[10px] text-muted-foreground/70 leading-relaxed">
               Latency = query embedding + chunk search. Fastest uses keyword-only (no embedding).
               Accurate presets produce smaller chunks and retrieve more — requires index rebuild.
             </p>
@@ -671,7 +671,7 @@ export function ContextStrategySettings() {
                     {pullProgress && pullProgress.total > 0 && (
                       <span className="font-mono">
                         {Math.round((pullProgress.completed / pullProgress.total) * 100)}%
-                        <span className="text-muted-foreground/50 ml-1">
+                        <span className="text-muted-foreground/70 ml-1">
                           ({formatBytes(pullProgress.completed)} / {formatBytes(pullProgress.total)})
                         </span>
                       </span>

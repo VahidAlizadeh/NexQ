@@ -70,12 +70,12 @@ export function TranscriptPanel() {
           <Mic
             className={`h-5 w-5 ${
               isRecording
-                ? "text-primary/50 animate-pulse"
-                : "text-muted-foreground/30"
+                ? "text-primary/70 animate-pulse"
+                : "text-muted-foreground/50"
             }`}
           />
         </div>
-        <p className="text-xs text-muted-foreground/50">
+        <p className="text-xs text-muted-foreground/70">
           {isRecording
             ? "Listening for speech..."
             : "Transcript will appear here..."}
@@ -88,22 +88,22 @@ export function TranscriptPanel() {
     <div className="flex h-full flex-col">
       {/* Search bar (shown when there's a search query or toggled) */}
       <div className="flex items-center gap-2 rounded-lg bg-muted/20 mx-1 mt-1 mb-1.5 px-2.5 py-1.5">
-        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search transcript..."
-          className="flex-1 bg-transparent text-[11px] text-foreground/80 placeholder:text-muted-foreground/30 outline-none"
+          className="flex-1 bg-transparent text-[11px] text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
         />
         {searchQuery && (
           <>
-            <span className="text-[10px] text-muted-foreground/40">
+            <span className="text-[10px] text-muted-foreground/60">
               {matchCount} match{matchCount !== 1 ? "es" : ""}
             </span>
             <button
               onClick={() => setSearchQuery("")}
-              className="rounded-full p-0.5 text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/50"
+              className="rounded-full p-0.5 text-muted-foreground/60 hover:text-foreground/70 hover:bg-accent/50"
             >
               <X className="h-3 w-3" />
             </button>
@@ -160,7 +160,7 @@ export function TranscriptPanel() {
             setAutoScroll(true);
             bottomRef.current?.scrollIntoView({ behavior: "smooth" });
           }}
-          className="mx-auto mb-1.5 rounded-full bg-primary/10 px-4 py-1 text-[10px] font-medium text-primary/70 shadow-sm transition-colors hover:bg-primary/20"
+          className="mx-auto mb-1.5 rounded-full bg-primary/10 px-4 py-1 text-[10px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20"
         >
           Scroll to latest
         </button>
@@ -207,7 +207,7 @@ function AudioActivityBar({
         className={`shrink-0 rounded-md p-1 transition-all duration-150 cursor-pointer ${
           muted
             ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-            : `hover:bg-accent/50 ${isActive ? textClass : "text-muted-foreground/40"}`
+            : `hover:bg-accent/50 ${isActive ? textClass : "text-muted-foreground/60"}`
         }`}
         title={muted ? `Unmute ${label}` : `Mute ${label}`}
       >
@@ -215,7 +215,7 @@ function AudioActivityBar({
       </button>
 
       <span className={`shrink-0 text-[11px] font-semibold transition-colors duration-150 w-8 ${
-        muted ? "text-red-400/50" : isActive ? textClass : "text-muted-foreground/50"
+        muted ? "text-red-400/60" : isActive ? textClass : "text-muted-foreground/60"
       }`}>
         {label}
       </span>
@@ -233,7 +233,7 @@ function AudioActivityBar({
       </div>
 
       <span className={`shrink-0 w-10 text-right text-[10px] font-medium tabular-nums transition-colors duration-150 ${
-        muted ? "text-red-400/40" : isActive ? textClass : "text-muted-foreground/40"
+        muted ? "text-red-400/40" : isActive ? textClass : "text-muted-foreground/60"
       }`}>
         {muted ? "Muted" : `${barWidth}%`}
       </span>

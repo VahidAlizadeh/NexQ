@@ -1,10 +1,46 @@
 use tauri::{command, AppHandle, Emitter, State};
 
-use crate::intelligence::action_config::AllActionConfigs;
+use crate::intelligence::action_config::{AllActionConfigs, InstructionPresets};
 use crate::intelligence::IntelligenceEngine;
 use crate::llm::provider::GenerationParams;
 use crate::rag;
 use crate::state::AppState;
+
+/// Compose instruction presets + custom text into a single string.
+/// Mirrors the frontend's `composeInstructions()` in aiActionsStore.ts.
+fn compose_instructions(presets: &InstructionPresets, custom: &str) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    if let Some(tone) = &presets.tone {
+        parts.push(format!("{} tone.", tone));
+    }
+    if let Some(fmt) = &presets.format {
+        let text = match fmt.as_str() {
+            "bullets" => "Use bullet points.".to_string(),
+            "paragraphs" => "Use paragraphs.".to_string(),
+            "numbered" => "Use a numbered list.".to_string(),
+            "oneliner" => "Keep it to one line.".to_string(),
+            other => format!("Use {} format.", other),
+        };
+        parts.push(text);
+    }
+    if let Some(length) = &presets.length {
+        let text = match length.as_str() {
+            "brief" => "Brief responses.".to_string(),
+            "standard" => "Standard length responses.".to_string(),
+            "detailed" => "Detailed responses.".to_string(),
+            other => format!("{} responses.", other),
+        };
+        parts.push(text);
+    }
+    let prefix = parts.join(" ");
+    if !prefix.is_empty() && !custom.is_empty() {
+        format!("{} {}", prefix, custom)
+    } else if !prefix.is_empty() {
+        prefix
+    } else {
+        custom.to_string()
+    }
+}
 
 #[command]
 pub async fn generate_assist(
@@ -14,7 +50,7 @@ pub async fn generate_assist(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     // Extract what we need from the intelligence engine under its lock
-    let (transcript_text, last_question, cancel_flag, action_config_snapshot) = {
+    let (transcript_text, last_question, cancel_flag, action_config_snapshot, composed_instructions) = {
         let intel = state
             .intelligence
             .as_ref()
@@ -33,6 +69,13 @@ pub async fn generate_assist(
         let action_cfg = engine.get_action_config(&mode).cloned();
         let global_defaults = engine.get_action_configs().global_defaults.clone();
 
+        // Compose instructions from AllActionConfigs (reliable path — same sync as system prompts)
+        let all_configs = engine.get_action_configs();
+        let composed = compose_instructions(
+            &all_configs.instruction_presets,
+            &all_configs.custom_instructions,
+        );
+
         // Determine transcript window: per-action override or global default
         let window_seconds = action_cfg
             .as_ref()
@@ -49,7 +92,7 @@ pub async fn generate_assist(
         let question = engine.last_detected_question().cloned();
         let cancel = engine.cancel_flag();
 
-        (transcript, question, cancel, (action_cfg, global_defaults))
+        (transcript, question, cancel, (action_cfg, global_defaults), composed)
     };
 
     let (action_cfg, global_defaults) = action_config_snapshot;
@@ -61,13 +104,21 @@ pub async fn generate_assist(
     let include_instructions = action_cfg.as_ref().map(|c| c.include_custom_instructions).unwrap_or(true);
     let rag_top_k = action_cfg.as_ref().and_then(|c| c.rag_top_k).unwrap_or(global_defaults.rag_top_k);
 
-    // Resolve system prompt: from action config or fallback to default
-    let system_prompt = action_cfg
+    // Resolve base system prompt: from action config or fallback to default template
+    let base_system_prompt = action_cfg
         .as_ref()
         .map(|c| c.system_prompt.clone())
         .unwrap_or_else(|| {
             crate::intelligence::prompt_templates::get_system_prompt(&mode).to_string()
         });
+
+    // Append composed instructions (tone + format + length + custom text) to system prompt.
+    // These are behavioral directives that belong in the system context, not as reference materials.
+    let system_prompt = if include_instructions && !composed_instructions.is_empty() {
+        format!("{}\n\nAdditional Instructions: {}", base_system_prompt, composed_instructions)
+    } else {
+        base_system_prompt
+    };
 
     // Build generation params from per-action overrides or global defaults
     let temperature = action_cfg
@@ -79,23 +130,13 @@ pub async fn generate_assist(
         max_tokens: None,
     };
 
-    // Get context — build from independent sources (custom instructions + RAG chunks)
+    // Get context — RAG chunks only.
+    // Composed instructions now go in system prompt (above), not here.
     // Key principle: NEVER fall back to full file dump. If RAG fails, just skip RAG chunks.
     let context_text = {
         let mut parts: Vec<String> = Vec::new();
 
-        // 1. Custom instructions (if the action includes them)
-        if include_instructions {
-            let instr = state.context.as_ref()
-                .and_then(|c| c.lock().ok())
-                .map(|c| c.get_custom_instructions().to_string())
-                .unwrap_or_default();
-            if !instr.is_empty() {
-                parts.push(instr);
-            }
-        }
-
-        // 2. RAG chunks (if action includes them AND RAG is enabled globally)
+        // RAG chunks (if action includes them AND RAG is enabled globally)
         if include_rag {
             let rag_enabled = state.rag.as_ref()
                 .and_then(|r| r.lock().ok())

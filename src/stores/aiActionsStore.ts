@@ -177,10 +177,15 @@ export const useAIActionsStore = create<AIActionsState>((set, get) => ({
           actions: { ...defaults.actions, ...saved.actions },
         };
         set({ configs: merged, isLoaded: true });
-        // Sync to backend
+        // Sync to backend (action configs + composed instructions)
         updateActionConfigs(merged).catch((e) =>
           console.warn("[aiActionsStore] Failed to sync configs to backend:", e)
         );
+        // Also sync composed instructions to ContextManager (belt-and-suspenders)
+        const composed = composeInstructions(merged.instructionPresets, merged.customInstructions);
+        if (composed) {
+          ipcSetCustomInstructions(composed).catch(() => {});
+        }
       } else {
         // No saved config — try loading from backend
         try {

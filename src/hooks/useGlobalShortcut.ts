@@ -115,7 +115,8 @@ export function useGlobalShortcut() {
         case "Digit5":
           if (!e.ctrlKey && !e.metaKey && !e.altKey && isVisible("AskQuestion")) {
             e.preventDefault();
-            generateAssist("AskQuestion").catch(() => {});
+            // Open/focus the Ask input instead of triggering generation directly
+            window.dispatchEvent(new Event("nexq:toggle-ask-input"));
           }
           break;
       }

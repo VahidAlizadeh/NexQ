@@ -162,8 +162,8 @@ export async function getLLMProviders(): Promise<string[]> {
 
 // == IPC: Intelligence (Sub-PRD 6) ==
 
-export async function generateAssist(mode: string): Promise<void> {
-  return invoke("generate_assist", { mode });
+export async function generateAssist(mode: string, customQuestion?: string): Promise<void> {
+  return invoke("generate_assist", { mode, customQuestion });
 }
 
 export async function cancelGeneration(): Promise<void> {

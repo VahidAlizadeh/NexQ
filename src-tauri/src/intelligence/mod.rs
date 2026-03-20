@@ -95,6 +95,8 @@ impl IntelligenceEngine {
         include_context: bool,
         include_transcript: bool,
         include_question: bool,
+        include_rag: bool,
+        include_instructions: bool,
         llm_provider: Arc<tokio::sync::Mutex<Box<dyn crate::llm::provider::LLMProvider>>>,
         model: String,
         provider_name: String,
@@ -124,13 +126,29 @@ impl IntelligenceEngine {
             return Ok(());
         }
 
-        // Emit stream start with the correct mode
+        // Extract actual messages for the call log
+        let system_msg = messages.iter()
+            .find(|m| m.role == "system")
+            .map(|m| m.content.clone())
+            .unwrap_or_default();
+        let user_msg = messages.iter()
+            .find(|m| m.role == "user")
+            .map(|m| m.content.clone())
+            .unwrap_or_default();
+
+        // Emit stream start with actual prompt data
         let _ = app_handle.emit(
             "llm_stream_start",
             crate::llm::provider::StreamStartPayload {
                 mode: mode.to_string(),
                 model: model.clone(),
                 provider: provider_name.clone(),
+                system_prompt: system_msg,
+                user_prompt: user_msg,
+                include_transcript,
+                include_rag,
+                include_instructions,
+                include_question,
             },
         );
 

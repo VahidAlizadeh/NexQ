@@ -10,7 +10,7 @@ import { ToastContainer } from "./components/Toast";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useTheme } from "./hooks/useTheme";
 import { useGlobalShortcut } from "./hooks/useGlobalShortcut";
-import { CallLogSidebar } from "./calllog";
+import { CallLogPanel } from "./calllog";
 import { ActiveMeetingProvider } from "./components/ActiveMeetingProvider";
 import { listen } from "@tauri-apps/api/event";
 import type { AppView } from "./lib/types";
@@ -113,7 +113,12 @@ function App() {
         )}
         {resolvedView === "overlay" && (
           <ErrorBoundary fallbackMessage="Failed to load overlay">
-            <OverlayView />
+            <div className="flex h-full">
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <OverlayView />
+              </div>
+              <CallLogPanel />
+            </div>
           </ErrorBoundary>
         )}
         {resolvedView === "wizard" && (
@@ -133,8 +138,7 @@ function App() {
           regardless of which view is displayed */}
       <ActiveMeetingProvider />
       <ToastContainer />
-      {/* Call log sidebar — only available during active meeting */}
-      {resolvedView === "overlay" && <CallLogSidebar />}
+      {/* Call log panel is now integrated into the overlay flex layout above */}
     </div>
   );
 }

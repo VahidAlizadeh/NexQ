@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStreamStore } from "../stores/streamStore";
 import { useAIActionsStore } from "../stores/aiActionsStore";
 import { generateAssist, cancelGeneration } from "../lib/ipc";
@@ -46,6 +46,13 @@ export function ModeButtons() {
   const actions = useAIActionsStore((s) => s.configs.actions);
   const [askInputText, setAskInputText] = useState("");
   const [askInputVisible, setAskInputVisible] = useState(false);
+
+  // Listen for keyboard shortcut (Digit5) to toggle ask input
+  useEffect(() => {
+    const handler = () => setAskInputVisible((v) => !v);
+    window.addEventListener("nexq:toggle-ask-input", handler);
+    return () => window.removeEventListener("nexq:toggle-ask-input", handler);
+  }, []);
 
   // Build ordered list: built-in modes first (in order), then custom actions
   const visibleModes = useMemo(() => {
@@ -100,7 +107,7 @@ export function ModeButtons() {
   const handleAskSubmit = useCallback(() => {
     const text = askInputText.trim();
     if (!text || isStreaming) return;
-    generateAssist("AskQuestion").catch((err) =>
+    generateAssist("AskQuestion", text).catch((err) =>
       showToast(err instanceof Error ? err.message : "Failed", "error")
     );
     setAskInputText("");

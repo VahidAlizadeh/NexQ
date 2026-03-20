@@ -82,6 +82,12 @@ pub struct StreamStartPayload {
     pub mode: String,
     pub model: String,
     pub provider: String,
+    pub system_prompt: String,
+    pub user_prompt: String,
+    pub include_transcript: bool,
+    pub include_rag: bool,
+    pub include_instructions: bool,
+    pub include_question: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

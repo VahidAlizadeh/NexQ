@@ -380,6 +380,8 @@ pub async fn test_rag_answer(
         true,           // include_context
         false,          // include_transcript (none for test)
         false,          // include_question
+        true,           // include_rag (this is a RAG test)
+        false,          // include_instructions
         provider_arc,
         model_name,
         provider_name,

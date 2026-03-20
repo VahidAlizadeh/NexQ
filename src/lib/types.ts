@@ -358,6 +358,12 @@ export interface StreamStartEvent {
   mode: IntelligenceMode;
   model: string;
   provider: string;
+  system_prompt: string;
+  user_prompt: string;
+  include_transcript: boolean;
+  include_rag: boolean;
+  include_instructions: boolean;
+  include_question: boolean;
 }
 
 export interface StreamEndEvent {
@@ -401,7 +407,15 @@ export interface LogEntry {
   // Content
   responseContent: string;
   responseContentClean: string;
-  // Prompt snapshot (captured from frontend state at call time)
+  // Actual prompt data (from backend stream start event)
+  actualSystemPrompt: string;
+  actualUserPrompt: string;
+  // Context source flags (from backend)
+  includeTranscript: boolean;
+  includeRag: boolean;
+  includeInstructions: boolean;
+  includeQuestion: boolean;
+  // Legacy fields (kept for backward compat, empty for new entries)
   snapshotTranscript: string;
   snapshotContext: string;
   reconstructedSystemPrompt: string;

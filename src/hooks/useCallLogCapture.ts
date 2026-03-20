@@ -1,6 +1,7 @@
 // ============================================================================
 // useCallLogCapture — Subscribes to LLM stream events and records them
-// in callLogStore. Mounted in OverlayView alongside useStreamBuffer.
+// in callLogStore. Now captures ACTUAL prompt data from backend events
+// instead of reconstructing from frontend stores.
 // ============================================================================
 
 import { useEffect, useRef } from "react";
@@ -11,13 +12,14 @@ import {
   onStreamError,
 } from "../lib/events";
 import { useCallLogStore } from "../stores/callLogStore";
-import { useTranscriptStore } from "../stores/transcriptStore";
-import { useContextStore } from "../stores/contextStore";
-import { getSystemPromptForMode } from "../lib/promptTemplates";
 import type { IntelligenceMode, LogEntry } from "../lib/types";
+
+/** Timeout (ms) for stale "sending" entries — auto-transition to error */
+const SENDING_TIMEOUT_MS = 10_000;
 
 export function useCallLogCapture() {
   const activeCallId = useRef<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const unlisteners: Array<Promise<() => void>> = [];
@@ -28,29 +30,6 @@ export function useCallLogCapture() {
         activeCallId.current = id;
 
         const mode = event.mode as IntelligenceMode;
-
-        // Snapshot transcript context
-        const segments = useTranscriptStore.getState().segments;
-        const snapshotTranscript = segments
-          .filter((s) => s.is_final)
-          .slice(-20)
-          .map((s) => `[${s.speaker}]: ${s.text}`)
-          .join("\n");
-
-        // Snapshot context files summary
-        const { resources, customInstructions } = useContextStore.getState();
-        const contextParts: string[] = [];
-        if (resources.length > 0) {
-          contextParts.push(
-            `${resources.length} file(s): ${resources.map((r) => r.name).join(", ")}`
-          );
-        }
-        if (customInstructions) {
-          contextParts.push(
-            `Custom instructions (${customInstructions.length} chars)`
-          );
-        }
-        const snapshotContext = contextParts.join(" | ") || "(none)";
 
         const entry: LogEntry = {
           id,
@@ -66,19 +45,46 @@ export function useCallLogCapture() {
           latencyMs: null,
           responseContent: "",
           responseContentClean: "",
-          snapshotTranscript,
-          snapshotContext,
-          reconstructedSystemPrompt: getSystemPromptForMode(mode),
+          // Actual prompt data from backend
+          actualSystemPrompt: event.system_prompt,
+          actualUserPrompt: event.user_prompt,
+          // Context source flags
+          includeTranscript: event.include_transcript,
+          includeRag: event.include_rag,
+          includeInstructions: event.include_instructions,
+          includeQuestion: event.include_question,
+          // Legacy fields (empty for new entries)
+          snapshotTranscript: "",
+          snapshotContext: "",
+          reconstructedSystemPrompt: "",
           errorMessage: null,
         };
 
         useCallLogStore.getState().beginEntry(entry);
+
+        // Safety timeout: if entry stays in "sending" for >10s, mark as error
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          const entries = useCallLogStore.getState().entries;
+          const e = entries.find((x) => x.id === id);
+          if (e && e.status === "sending") {
+            useCallLogStore
+              .getState()
+              .failEntry(id, "Timed out waiting for response");
+            activeCallId.current = null;
+          }
+        }, SENDING_TIMEOUT_MS);
       })
     );
 
     unlisteners.push(
       onStreamToken((event) => {
         if (activeCallId.current) {
+          // Clear sending timeout on first token
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
           useCallLogStore
             .getState()
             .appendToken(activeCallId.current, event.token);
@@ -88,6 +94,10 @@ export function useCallLogCapture() {
 
     unlisteners.push(
       onStreamEnd((event) => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
         if (activeCallId.current) {
           useCallLogStore
             .getState()
@@ -103,6 +113,10 @@ export function useCallLogCapture() {
 
     unlisteners.push(
       onStreamError((error) => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
         if (activeCallId.current) {
           useCallLogStore.getState().failEntry(activeCallId.current, error);
           activeCallId.current = null;
@@ -111,6 +125,7 @@ export function useCallLogCapture() {
     );
 
     return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       unlisteners.forEach((p) => p.then((unlisten) => unlisten()));
     };
   }, []);

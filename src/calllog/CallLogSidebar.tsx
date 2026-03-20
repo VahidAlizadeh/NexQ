@@ -133,7 +133,7 @@ export function CallLogSidebar() {
               {entries.length > 0 && (
                 <button
                   onClick={clearAll}
-                  className="rounded p-1 text-muted-foreground/50 transition-colors hover:bg-accent hover:text-destructive"
+                  className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-accent hover:text-destructive"
                   title="Clear all"
                 >
                   <Trash2 className="h-3 w-3" />
@@ -141,7 +141,7 @@ export function CallLogSidebar() {
               )}
               <button
                 onClick={handleClose}
-                className="rounded p-1 text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground"
+                className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
                 title="Close (Esc)"
               >
                 <X className="h-3.5 w-3.5" />
@@ -170,7 +170,7 @@ export function CallLogSidebar() {
                       className={
                         isActive
                           ? "text-primary/70"
-                          : "text-muted-foreground/50"
+                          : "text-muted-foreground/70"
                       }
                     >
                       {count}
@@ -208,7 +208,7 @@ export function CallLogSidebar() {
         {/* Entry list */}
         <div className="flex-1 overflow-y-auto">
           {filteredEntries.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground/40">
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground/60">
               <FileSearch className="h-6 w-6" />
               <span className="text-xs">
                 {entries.length === 0
@@ -219,7 +219,7 @@ export function CallLogSidebar() {
           ) : (
             <div className="flex flex-col gap-1.5 p-2">
               {filteredEntries.map((entry) => (
-                <CallLogEntry key={entry.id} entry={entry} />
+                <CallLogEntry key={entry.id} entry={entry} isSelected={false} />
               ))}
             </div>
           )}
@@ -245,7 +245,7 @@ function StatTile({
       <span className={`text-xs font-medium tabular-nums ${valueClass}`}>
         {value}
       </span>
-      <span className="text-[9px] text-muted-foreground/50">{label}</span>
+      <span className="text-[9px] text-muted-foreground/70">{label}</span>
     </div>
   );
 }

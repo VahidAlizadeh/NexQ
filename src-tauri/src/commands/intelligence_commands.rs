@@ -9,6 +9,7 @@ use crate::state::AppState;
 #[command]
 pub async fn generate_assist(
     mode: String,
+    custom_question: Option<String>,
     app_handle: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
@@ -78,80 +79,65 @@ pub async fn generate_assist(
         max_tokens: None,
     };
 
-    // Get context — respect per-action include_rag_chunks and include_custom_instructions
-    let context_text = if include_rag {
-        let rag_enabled = state.rag.as_ref()
-            .and_then(|r| r.lock().ok())
-            .map(|r| r.config().enabled)
-            .unwrap_or(false);
+    // Get context — build from independent sources (custom instructions + RAG chunks)
+    // Key principle: NEVER fall back to full file dump. If RAG fails, just skip RAG chunks.
+    let context_text = {
+        let mut parts: Vec<String> = Vec::new();
 
-        if rag_enabled {
-            // Build query from question or recent transcript
-            let query = last_question.as_ref()
-                .map(|q| q.text.clone())
-                .unwrap_or_else(|| transcript_text.chars().take(500).collect());
+        // 1. Custom instructions (if the action includes them)
+        if include_instructions {
+            let instr = state.context.as_ref()
+                .and_then(|c| c.lock().ok())
+                .map(|c| c.get_custom_instructions().to_string())
+                .unwrap_or_default();
+            if !instr.is_empty() {
+                parts.push(instr);
+            }
+        }
 
-            // Try RAG search
-            let rag_result = if let (Some(rag_arc), Some(db_arc)) =
-                (state.rag.as_ref(), state.database.as_ref()) {
-                let (mut config, embedder_url, embedding_model) = {
-                    let rag_guard = rag_arc.lock().map_err(|e| e.to_string())?;
-                    (rag_guard.config().clone(), rag_guard.embedder_url(), rag_guard.embedding_model())
-                };
-                // Apply per-action top_k override
-                config.top_k = rag_top_k;
-                rag::RagManager::search_async(db_arc, &query, &config, &embedder_url, &embedding_model).await
-            } else {
-                Err("RAG not initialized".to_string())
-            };
+        // 2. RAG chunks (if action includes them AND RAG is enabled globally)
+        if include_rag {
+            let rag_enabled = state.rag.as_ref()
+                .and_then(|r| r.lock().ok())
+                .map(|r| r.config().enabled)
+                .unwrap_or(false);
 
-            match rag_result {
-                Ok(chunks) if !chunks.is_empty() => {
-                    let custom_instr = if include_instructions {
-                        state.context.as_ref()
-                            .and_then(|c| c.lock().ok())
-                            .map(|c| c.get_custom_instructions().to_string())
-                            .unwrap_or_default()
-                    } else {
-                        String::new()
+            if rag_enabled {
+                let query = last_question.as_ref()
+                    .map(|q| q.text.clone())
+                    .unwrap_or_else(|| transcript_text.chars().take(500).collect());
+
+                let rag_result = if let (Some(rag_arc), Some(db_arc)) =
+                    (state.rag.as_ref(), state.database.as_ref()) {
+                    let (mut config, embedder_url, embedding_model) = {
+                        let rag_guard = rag_arc.lock().map_err(|e| e.to_string())?;
+                        (rag_guard.config().clone(), rag_guard.embedder_url(), rag_guard.embedding_model())
                     };
-                    rag::prompt_builder::build_rag_context(&chunks, &custom_instr)
-                }
-                _ => {
-                    // Fallback to full context stuffing
-                    let ctx = state.context.as_ref()
-                        .ok_or_else(|| "Context manager not initialized".to_string())?;
-                    let ctx_mgr = ctx.lock()
-                        .map_err(|e| format!("Failed to lock context manager: {}", e))?;
-                    if include_instructions {
-                        ctx_mgr.get_assembled_context()
-                    } else {
-                        // Get context without custom instructions
-                        ctx_mgr.get_assembled_context()
+                    config.top_k = rag_top_k;
+                    rag::RagManager::search_async(db_arc, &query, &config, &embedder_url, &embedding_model).await
+                } else {
+                    Err("RAG not initialized".to_string())
+                };
+
+                match rag_result {
+                    Ok(chunks) if !chunks.is_empty() => {
+                        parts.push(rag::prompt_builder::build_rag_context(&chunks, ""));
+                    }
+                    Ok(_) => {
+                        log::debug!("RAG search returned no results for mode={}", mode);
+                    }
+                    Err(e) => {
+                        log::warn!("RAG search failed for mode={}: {}", mode, e);
                     }
                 }
             }
-        } else {
-            let ctx = state.context.as_ref()
-                .ok_or_else(|| "Context manager not initialized".to_string())?;
-            let ctx_mgr = ctx.lock()
-                .map_err(|e| format!("Failed to lock context manager: {}", e))?;
-            ctx_mgr.get_assembled_context()
         }
-    } else {
-        // RAG chunks disabled for this action — still include custom instructions if enabled
-        if include_instructions {
-            state.context.as_ref()
-                .and_then(|c| c.lock().ok())
-                .map(|c| c.get_custom_instructions().to_string())
-                .unwrap_or_default()
-        } else {
-            String::new()
-        }
+
+        parts.join("\n\n")
     };
 
-    // Determine include_context flag (whether to render Reference Materials in prompt)
-    let include_context = include_rag || include_instructions;
+    // include_context = whether context_text has content to include
+    let include_context = !context_text.is_empty();
 
     // Get the LLM provider and model info
     let (provider_arc, model, provider_name) = {
@@ -185,13 +171,15 @@ pub async fn generate_assist(
     let result = IntelligenceEngine::generate_assist(
         &system_prompt,
         &mode_clone,
-        None, // custom_question — could be extended for AskQuestion mode
+        custom_question.as_deref(),
         transcript_text,
         last_question,
         context_text,
         include_context,
         include_transcript,
         include_question,
+        include_rag,
+        include_instructions,
         provider_arc,
         model,
         provider_name,

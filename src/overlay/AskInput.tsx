@@ -27,7 +27,7 @@ export function AskInput({ visible, onClose }: AskInputProps) {
     if (!text || isStreaming) return;
 
     // Send question via generateAssist in AskQuestion mode
-    generateAssist("AskQuestion").catch((err) => {
+    generateAssist("AskQuestion", text).catch((err) => {
       const msg = err instanceof Error ? err.message : "Failed to send question";
       showToast(msg, "error");
     });
@@ -63,12 +63,12 @@ export function AskInput({ visible, onClose }: AskInputProps) {
         onKeyDown={handleKeyDown}
         placeholder="Ask a question..."
         disabled={isStreaming}
-        className="flex-1 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/40 outline-none"
+        className="flex-1 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
       />
       <button
         onClick={handleSubmit}
         disabled={!inputText.trim() || isStreaming}
-        className="rounded-lg p-1.5 text-primary/60 transition-colors duration-150 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+        className="rounded-lg p-1.5 text-primary transition-colors duration-150 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
         title="Send (Enter)"
         aria-label="Send question"
       >
@@ -76,7 +76,7 @@ export function AskInput({ visible, onClose }: AskInputProps) {
       </button>
       <button
         onClick={onClose}
-        className="rounded-lg p-1.5 text-muted-foreground/40 transition-colors duration-150 hover:bg-accent hover:text-muted-foreground"
+        className="rounded-lg p-1.5 text-muted-foreground/60 transition-colors duration-150 hover:bg-accent hover:text-muted-foreground"
         title="Close (Esc)"
         aria-label="Close ask input"
       >

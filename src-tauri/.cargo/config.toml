@@ -1,0 +1,4 @@
+# Build configuration for whisper-rs (requires LLVM + CMake)
+[env]
+LIBCLANG_PATH = "C:\\Program Files\\LLVM\\bin"
+CMAKE_GENERATOR = "Ninja"

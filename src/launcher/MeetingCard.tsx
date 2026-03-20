@@ -1,0 +1,248 @@
+import { useState, useCallback, useRef, useEffect } from "react";
+import type { MeetingSummary } from "../lib/types";
+import { formatRelativeTime, formatDurationLong } from "../lib/utils";
+import {
+  Trash2,
+  Pencil,
+  Check,
+  X,
+  ChevronRight,
+  Star,
+  MessageSquare,
+  Clock,
+  FileText,
+} from "lucide-react";
+
+interface MeetingCardProps {
+  meeting: MeetingSummary;
+  onSelect: (meetingId: string) => void;
+  onDelete: (meetingId: string) => void;
+  onRename: (meetingId: string, newTitle: string) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (meetingId: string) => void;
+  /** True only for the singleton active meeting, not stale meetings missing duration */
+  isLive?: boolean;
+}
+
+export function MeetingCard({
+  meeting,
+  onSelect,
+  onDelete,
+  onRename,
+  isFavorite = false,
+  onToggleFavorite,
+  isLive = false,
+}: MeetingCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(meeting.title);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleStartEdit = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setEditTitle(meeting.title);
+      setIsEditing(true);
+    },
+    [meeting.title]
+  );
+
+  const handleSaveEdit = useCallback(() => {
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== meeting.title) {
+      onRename(meeting.id, trimmed);
+    }
+    setIsEditing(false);
+  }, [editTitle, meeting.id, meeting.title, onRename]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditTitle(meeting.title);
+    setIsEditing(false);
+  }, [meeting.title]);
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") handleSaveEdit();
+      else if (e.key === "Escape") handleCancelEdit();
+    },
+    [handleSaveEdit, handleCancelEdit]
+  );
+
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onDelete(meeting.id);
+      setShowDeleteConfirm(false);
+    },
+    [meeting.id, onDelete]
+  );
+
+  const handleCancelDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(false);
+  }, []);
+
+  const handleFavoriteClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onToggleFavorite?.(meeting.id);
+    },
+    [meeting.id, onToggleFavorite]
+  );
+
+  const durationDisplay = meeting.duration_seconds
+    ? formatDurationLong(meeting.duration_seconds * 1000)
+    : isLive
+      ? "In progress"
+      : "—";
+
+  return (
+    <div
+      onClick={() => !isEditing && onSelect(meeting.id)}
+      className="group relative cursor-pointer rounded-xl border border-border/15 bg-card/40 px-4 py-3 transition-all duration-150 hover:bg-card/70 hover:border-border/30"
+    >
+      <div className="flex items-center gap-3">
+        {/* Favorite star */}
+        <button
+          onClick={handleFavoriteClick}
+          className={`shrink-0 rounded-md p-0.5 transition-colors ${
+            isFavorite
+              ? "text-amber-400"
+              : "text-muted-foreground/20 opacity-0 group-hover:opacity-100 hover:text-amber-400/60"
+          }`}
+          title={isFavorite ? "Unstar" : "Star"}
+        >
+          <Star
+            className="h-3.5 w-3.5"
+            fill={isFavorite ? "currentColor" : "none"}
+          />
+        </button>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          {isEditing ? (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <input
+                ref={inputRef}
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                onBlur={handleSaveEdit}
+                className="w-full rounded-lg border border-primary/30 bg-background px-2.5 py-1 text-xs text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveEdit();
+                }}
+                className="rounded-md p-1 text-green-400 hover:bg-green-400/10"
+              >
+                <Check className="h-3 w-3" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancelEdit();
+                }}
+                className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <h3 className="truncate text-xs font-medium text-foreground">
+              {meeting.title}
+            </h3>
+          )}
+
+          {/* Badges row */}
+          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] text-muted-foreground/50">
+              {formatRelativeTime(meeting.start_time)}
+            </span>
+
+            {isLive ? (
+              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[9px] font-semibold text-green-400">
+                LIVE
+              </span>
+            ) : (
+              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/40">
+                <Clock className="h-2.5 w-2.5" />
+                {durationDisplay}
+              </span>
+            )}
+
+            {meeting.segment_count > 0 && (
+              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/40">
+                <MessageSquare className="h-2.5 w-2.5" />
+                {meeting.segment_count}
+              </span>
+            )}
+
+            {meeting.has_summary && (
+              <span className="flex items-center gap-0.5 rounded-full bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-medium text-indigo-400">
+                <FileText className="h-2 w-2" />
+                Summary
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+          {showDeleteConfirm ? (
+            <div className="flex items-center gap-1 rounded-lg bg-destructive/10 px-2 py-1">
+              <span className="text-[9px] text-red-400">Delete?</span>
+              <button
+                onClick={handleConfirmDelete}
+                className="rounded p-0.5 text-red-400 hover:bg-red-400/20"
+              >
+                <Check className="h-3 w-3" />
+              </button>
+              <button
+                onClick={handleCancelDelete}
+                className="rounded p-0.5 text-muted-foreground hover:bg-secondary"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={handleStartEdit}
+                className="rounded-md p-1 text-muted-foreground/40 hover:bg-secondary hover:text-foreground"
+                title="Rename"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <button
+                onClick={handleDeleteClick}
+                className="rounded-md p-1 text-muted-foreground/40 hover:bg-destructive/10 hover:text-red-400"
+                title="Delete"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </>
+          )}
+          <ChevronRight className="ml-0.5 h-3.5 w-3.5 text-muted-foreground/20" />
+        </div>
+      </div>
+    </div>
+  );
+}

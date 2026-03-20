@@ -1,0 +1,523 @@
+// ============================================================================
+// NexQ TypeScript Types — Single source of truth
+// All types mirror Rust structs. Other sub-PRDs IMPORT from here only.
+// ============================================================================
+
+// == AUDIO TYPES ==
+
+export type AudioSource = "Mic" | "System";
+
+export interface AudioDevice {
+  id: string;
+  name: string;
+  is_input: boolean;
+  is_default: boolean;
+}
+
+export interface AudioDeviceList {
+  inputs: AudioDevice[];
+  outputs: AudioDevice[];
+}
+
+export interface AudioLevel {
+  source: AudioSource;
+  level: number;
+  peak: number;
+}
+
+// == TRANSCRIPT TYPES ==
+
+export interface TranscriptSegment {
+  id: string;
+  text: string;
+  speaker: Speaker;
+  timestamp_ms: number;
+  is_final: boolean;
+  confidence: number;
+}
+
+export type Speaker = "User" | "Interviewer" | "Them" | "Unknown";
+
+// == MEETING TYPES ==
+
+export interface Meeting {
+  id: string;
+  title: string;
+  start_time: string; // ISO 8601
+  end_time: string | null;
+  duration_seconds: number | null;
+  transcript: TranscriptSegment[];
+  ai_interactions: AIInteraction[];
+  summary: string | null;
+  config_snapshot: MeetingConfig | null;
+}
+
+export interface MeetingConfig {
+  stt_provider: string;
+  llm_provider: string;
+  llm_model: string;
+  recording_enabled: boolean;
+}
+
+export interface MeetingSummary {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string | null;
+  duration_seconds: number | null;
+  segment_count: number;
+  has_summary: boolean;
+}
+
+// == AI/LLM TYPES ==
+
+export interface AIInteraction {
+  id: string;
+  meeting_id: string;
+  mode: IntelligenceMode;
+  question_context: string;
+  response: string;
+  model: string;
+  provider: string;
+  latency_ms: number;
+  timestamp: string;
+}
+
+export type IntelligenceMode =
+  | "Assist"
+  | "WhatToSay"
+  | "Shorten"
+  | "FollowUp"
+  | "Recap"
+  | "AskQuestion";
+
+export interface AIResponse {
+  id: string;
+  content: string;
+  mode: IntelligenceMode;
+  timestamp: number;
+  pinned: boolean;
+  model: string;
+  provider: string;
+  latency_ms: number;
+}
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  context_window: number | null;
+}
+
+export interface CompletionStats {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  latency_ms: number;
+}
+
+// == LLM PROVIDER TYPES ==
+
+export type LLMProviderType =
+  | "ollama"
+  | "lm_studio"
+  | "openai"
+  | "anthropic"
+  | "groq"
+  | "gemini"
+  | "openrouter"
+  | "custom";
+
+export interface LLMProviderConfig {
+  type: LLMProviderType;
+  name: string;
+  base_url: string;
+  requires_api_key: boolean;
+  is_local: boolean;
+}
+
+// == DEEPGRAM CONFIG ==
+
+export interface DeepgramConfig {
+  /** Model: "nova-3" | "nova-2" | "nova" | "enhanced" | "base" | "whisper-large" | etc. */
+  model: string;
+  smart_format: boolean;
+  interim_results: boolean;
+  /** Endpointing silence threshold in ms (10–5000). null = disabled. */
+  endpointing: number | null;
+  punctuate: boolean;
+  diarize: boolean;
+  profanity_filter: boolean;
+  numerals: boolean;
+  dictation: boolean;
+  vad_events: boolean;
+  keyterms: string[];
+}
+
+// == GROQ CONFIG ==
+
+export interface GroqConfig {
+  /** Model ID: "whisper-large-v3" | "whisper-large-v3-turbo" */
+  model: string;
+  /** ISO 639-1 language code. Empty = auto-detect. */
+  language: string;
+  /** Sampling temperature (0.0–1.0). 0 = deterministic. */
+  temperature: number;
+  /** Response format: "json" | "verbose_json" | "text" */
+  response_format: string;
+  /** Timestamp granularities: ["segment"] | ["word"] | ["segment","word"] */
+  timestamp_granularities: string[];
+  /** Optional prompt to guide style/spelling (up to 224 tokens). */
+  prompt: string;
+  /** Batch segment duration in seconds (how much audio to accumulate). */
+  segment_duration_secs: number;
+}
+
+// == STT PROVIDER TYPES ==
+
+export type STTProviderType =
+  | "whisper_cpp"
+  | "deepgram"
+  | "whisper_api"
+  | "azure_speech"
+  | "groq_whisper"
+  | "web_speech"
+  | "sherpa_onnx"
+  | "ort_streaming"
+  | "windows_native";
+
+// == LOCAL STT ENGINE TYPES ==
+
+export type LocalSTTEngine = "whisper_cpp" | "sherpa_onnx" | "ort_streaming" | "moonshine";
+
+export interface LocalSTTModelInfo {
+  id: string;
+  engine: string;
+  name: string;
+  size_bytes: number;
+  accuracy_rating: number;
+  speed_rating: number;
+  is_streaming: boolean;
+  is_downloaded: boolean;
+}
+
+export interface LocalSTTEngineInfo {
+  engine: string;
+  name: string;
+  description: string;
+  models: LocalSTTModelInfo[];
+}
+
+export interface WhisperDualPassConfig {
+  shortChunkSecs: number;
+  longChunkSecs: number;
+  pauseSecs: number;
+}
+
+export interface ModelDownloadProgress {
+  engine: string;
+  model_id: string;
+  downloaded_bytes: number;
+  total_bytes: number;
+  percent: number;
+  status: "downloading" | "verifying" | "extracting" | "complete" | "error" | "cancelled";
+}
+
+export interface STTProviderConfig {
+  type: STTProviderType;
+  name: string;
+  requires_api_key: boolean;
+  is_local: boolean;
+}
+
+// == TWO-PARTY AUDIO MODEL ==
+
+export type PartyRole = "You" | "Them";
+
+export interface PartyAudioConfig {
+  role: PartyRole;
+  device_id: string;
+  is_input_device: boolean;
+  stt_provider: STTProviderType;
+  local_model_id?: string;
+}
+
+export interface MeetingAudioConfig {
+  you: PartyAudioConfig;
+  them: PartyAudioConfig;
+  recording_enabled: boolean;
+  preset_name: string | null;
+}
+
+export interface AudioSessionInfo {
+  pid: number;
+  process_name: string;
+  display_name: string;
+  device_name: string;
+  is_active: boolean;
+}
+
+// == CONTEXT TYPES ==
+
+export interface ContextResource {
+  id: string;
+  name: string;
+  file_type: ContextFileType;
+  file_path: string;
+  size_bytes: number;
+  token_count: number;
+  preview: string;
+  loaded_at: string;
+  chunk_count?: number;
+  index_status?: string;
+  last_indexed_at?: string;
+}
+
+export type ContextFileType = "pdf" | "txt" | "md" | "docx";
+
+export interface TokenBudget {
+  total: number;
+  limit: number;
+  segments: TokenBudgetSegment[];
+}
+
+export interface TokenBudgetSegment {
+  label: string;
+  tokens: number;
+  color: string;
+  category: "resume" | "jd" | "notes" | "transcript" | "system" | "headroom";
+}
+
+// == QUESTION DETECTION ==
+
+export interface DetectedQuestion {
+  text: string;
+  confidence: number;
+  timestamp_ms: number;
+  source: Speaker;
+}
+
+// == CONFIG TYPES ==
+
+export type ThemeMode = "dark" | "light" | "system";
+
+export interface AppConfig {
+  theme: ThemeMode;
+  stt_provider: STTProviderType;
+  llm_provider: LLMProviderType;
+  llm_model: string;
+  mic_device_id: string | null;
+  system_device_id: string | null;
+  recording_enabled: boolean;
+  auto_trigger: boolean;
+  auto_summary: boolean;
+  context_window_seconds: number;
+  start_on_login: boolean;
+  data_directory: string;
+  first_run_completed: boolean;
+  hotkeys: HotkeyConfig;
+}
+
+export interface HotkeyConfig {
+  toggle_assist: string;
+  start_end_meeting: string;
+  show_hide: string;
+  open_settings: string;
+  escape: string;
+  mode_assist: string;
+  mode_say: string;
+  mode_shorten: string;
+  mode_followup: string;
+  mode_recap: string;
+  mode_ask: string;
+}
+
+// == APP STATE TYPES ==
+
+export type AppView = "launcher" | "overlay" | "wizard" | "settings";
+
+export interface StreamState {
+  isStreaming: boolean;
+  currentContent: string;
+  currentMode: IntelligenceMode | null;
+  error: string | null;
+  latency_ms: number | null;
+}
+
+// == IPC EVENT PAYLOAD TYPES ==
+
+export interface TranscriptUpdateEvent {
+  segment: TranscriptSegment;
+}
+
+export interface StreamTokenEvent {
+  token: string;
+}
+
+export interface StreamStartEvent {
+  mode: IntelligenceMode;
+  model: string;
+  provider: string;
+}
+
+export interface StreamEndEvent {
+  total_tokens: number;
+  latency_ms: number;
+}
+
+export type QuestionDetectedEvent = DetectedQuestion;
+
+export interface AudioLevelEvent {
+  source: AudioSource;
+  level: number;
+  peak: number;
+}
+
+// == AI CALL LOG TYPES ==
+
+export type LogEntryStatus =
+  | "sending"
+  | "streaming"
+  | "complete"
+  | "error"
+  | "cancelled";
+
+export type LogFilterKind = IntelligenceMode | "all" | "errors";
+
+export interface LogEntry {
+  id: string;
+  timestamp: number;
+  mode: IntelligenceMode;
+  provider: string;
+  model: string;
+  status: LogEntryStatus;
+  // Lifecycle timestamps
+  startedAt: number;
+  firstTokenAt: number | null;
+  completedAt: number | null;
+  // Token accounting
+  totalTokens: number | null;
+  latencyMs: number | null;
+  // Content
+  responseContent: string;
+  responseContentClean: string;
+  // Prompt snapshot (captured from frontend state at call time)
+  snapshotTranscript: string;
+  snapshotContext: string;
+  reconstructedSystemPrompt: string;
+  // Error
+  errorMessage: string | null;
+}
+
+// == RAG / CONTEXT INTELLIGENCE TYPES ==
+
+export type ContextStrategy = "stuffing" | "local_rag" | "gemini_cache";
+
+export interface RagConfig {
+  enabled: boolean;
+  embedding_model: string;
+  ollama_url: string;
+  batch_size: number;
+  chunk_size: number;
+  chunk_overlap: number;
+  splitting_strategy: string;
+  top_k: number;
+  search_mode: string;
+  similarity_threshold: number;
+  semantic_weight: number;
+  include_transcript: boolean;
+  embedding_dimensions: number;
+}
+
+export interface RagIndexStatus {
+  total_files: number;
+  indexed_files: number;
+  total_chunks: number;
+  total_tokens: number;
+  last_indexed_at: string | null;
+}
+
+export interface RagSearchResult {
+  chunk_id: string;
+  text: string;
+  score: number;
+  source_file: string;
+  chunk_index: number;
+  source_type: string;
+}
+
+export interface OllamaEmbeddingStatus {
+  connected: boolean;
+  models: string[];
+}
+
+export interface RagIndexProgressEvent {
+  file_id?: string;
+  file_name?: string;
+  chunks_done?: number;
+  chunks_total?: number;
+  files_done?: number;
+  files_total?: number;
+  status: string;
+}
+
+export interface OllamaPullProgressEvent {
+  status: string;
+  total: number;
+  completed: number;
+}
+
+export interface TranscriptIndexedEvent {
+  chunks_added: number;
+}
+
+// == AI ACTION CONFIG TYPES ==
+
+export interface ActionConfig {
+  id: string;
+  name: string;
+  mode: string;
+  visible: boolean;
+  systemPrompt: string;
+  isDefaultPrompt: boolean;
+
+  includeTranscript: boolean;
+  includeRagChunks: boolean;
+  includeCustomInstructions: boolean;
+  includeDetectedQuestion: boolean;
+
+  transcriptWindowSeconds: number | null; // null = use global default
+  ragTopK: number | null;
+  temperature: number | null;
+
+  isBuiltIn: boolean;
+}
+
+export interface GlobalDefaults {
+  transcriptWindowSeconds: number;
+  ragTopK: number;
+  temperature: number;
+  autoTrigger: boolean;
+}
+
+export interface InstructionPresets {
+  tone: string | null;
+  format: string | null;
+  length: string | null;
+}
+
+export interface AllActionConfigs {
+  globalDefaults: GlobalDefaults;
+  customInstructions: string;
+  instructionPresets: InstructionPresets;
+  actions: Record<string, ActionConfig>;
+}
+
+// == STT CONNECTION STATUS ==
+
+export interface STTConnectionStatusEvent {
+  provider: string;
+  party: string;
+  status: "connecting" | "connected" | "error" | "disconnected" | "reconnecting";
+  message?: string;
+}

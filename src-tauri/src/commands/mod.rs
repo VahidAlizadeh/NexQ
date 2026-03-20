@@ -1,0 +1,11 @@
+pub mod audio_commands;
+pub mod context_commands;
+pub mod credential_commands;
+pub mod intelligence_commands;
+pub mod llm_commands;
+pub mod meeting_commands;
+pub mod model_commands;
+pub mod settings_commands;
+pub mod stealth_commands;
+pub mod stt_commands;
+pub mod rag_commands;

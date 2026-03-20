@@ -1,0 +1,80 @@
+[package]
+name = "nexq"
+version = "1.0.0"
+description = "AI Meeting Assistant & Real-Time Interview Copilot"
+authors = ["NexQ"]
+edition = "2021"
+
+[lib]
+name = "nexq_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-os = "2"
+tauri-plugin-process = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-store = "2"
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+reqwest = { version = "0.12", features = ["json", "stream", "multipart"] }
+async-trait = "0.1"
+futures = "0.3"
+anyhow = "1"
+thiserror = "1"
+log = "0.4"
+env_logger = "0.11"
+cpal = "0.15"
+hound = "3.5"
+pdf-extract = "0.7"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+url = "2"
+base64 = "0.22"
+whisper-rs = "0.16"
+sha2 = "0.10"
+zip = "2"
+ort = { version = "2.0.0-rc.12", features = ["download-binaries", "ndarray"] }
+ndarray = "0.17"  # Must match ort's ndarray version
+rustfft = "6"
+tar = "0.4"
+bzip2 = "0.5"
+
+# Windows-specific
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Security_Credentials",
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Media_SpeechRecognition",
+    "Media_Core",
+    "Foundation",
+    "Foundation_Collections",
+    "Storage_Streams",
+    "Globalization",
+    # SAPI 5.x for Windows Native STT (supports custom audio streams)
+    "Win32_Media_Speech",
+    # COM initialization for SAPI thread
+    "Win32_System_Com",
+    # Audio session enumeration + peak meters (IAudioMeterInformation)
+    "Win32_Media_Audio",
+    "Win32_Media_Audio_Endpoints",
+    # Process info for session monitor
+    "Win32_System_Threading",
+    # Device property store (friendly names)
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+] }
+wasapi = "0.22"

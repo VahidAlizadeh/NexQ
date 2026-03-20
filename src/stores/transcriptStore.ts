@@ -1,0 +1,43 @@
+import { create } from "zustand";
+import type { TranscriptSegment } from "../lib/types";
+
+interface TranscriptState {
+  segments: TranscriptSegment[];
+  searchQuery: string;
+  autoScroll: boolean;
+
+  // Actions
+  appendSegment: (segment: TranscriptSegment) => void;
+  updateInterimSegment: (segment: TranscriptSegment) => void;
+  clearSegments: () => void;
+  setSearchQuery: (query: string) => void;
+  setAutoScroll: (auto: boolean) => void;
+}
+
+export const useTranscriptStore = create<TranscriptState>((set) => ({
+  segments: [],
+  searchQuery: "",
+  autoScroll: true,
+
+  appendSegment: (segment) =>
+    set((state) => ({
+      segments: [...state.segments, segment],
+    })),
+
+  updateInterimSegment: (segment) =>
+    set((state) => {
+      const existing = state.segments.findIndex(
+        (s) => s.id === segment.id
+      );
+      if (existing >= 0) {
+        const updated = [...state.segments];
+        updated[existing] = segment;
+        return { segments: updated };
+      }
+      return { segments: [...state.segments, segment] };
+    }),
+
+  clearSegments: () => set({ segments: [] }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  setAutoScroll: (auto) => set({ autoScroll: auto }),
+}));

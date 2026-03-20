@@ -1177,13 +1177,14 @@ async fn create_stt_provider_for_party(
             Ok(Some(Box::new(p)))
         }
         STTProviderType::SherpaOnnx => {
+            // Sherpa-ONNX now uses in-process ORT engine (same as ORT Streaming).
+            // No separate sidecar binary needed — just the model files.
             let model_id = config.local_model_id.as_deref().unwrap_or("streaming-zipformer-en-20M");
             let model_result = get_local_model_path(state, "sherpa_onnx", model_id);
             match model_result {
                 Ok(model_dir) => {
-                    let binary_path = get_sherpa_binary_path(state)?;
                     let lang = get_stt_language(state);
-                    let mut p = crate::stt::sherpa_sidecar::SherpaSidecarSTT::new(binary_path, model_dir);
+                    let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
                     p.set_language(&lang);
                     p.set_app_handle(app.clone());
                     Ok(Some(Box::new(p)))
@@ -1220,87 +1221,6 @@ async fn create_stt_provider_for_party(
             }
         }
     }
-}
-
-/// Get the path to the sherpa-onnx streaming recognition binary.
-///
-/// The sherpa-onnx release archive is extracted to a directory containing
-/// bin/ (executables) and lib/ (DLLs). This function walks the extracted
-/// directory to find the streaming recognition executable.
-fn get_sherpa_binary_path(state: &AppState) -> Result<std::path::PathBuf, String> {
-    let model_mgr = state
-        .model_manager
-        .as_ref()
-        .ok_or("Model manager not initialized")?;
-    let mgr = model_mgr
-        .lock()
-        .map_err(|_| "Model manager lock poisoned".to_string())?;
-
-    let engines = mgr.list_engines_with_status();
-    for eng in &engines {
-        if eng.engine == "sherpa_onnx" {
-            for m in &eng.models {
-                if m.definition.model_id.starts_with("binary-") && m.is_downloaded {
-                    if let Some(extracted_dir) =
-                        mgr.get_model_path("sherpa_onnx", m.definition.model_id)
-                    {
-                        // Walk the extracted directory to find the streaming executable
-                        return find_sherpa_binary_in_dir(&extracted_dir);
-                    }
-                }
-            }
-        }
-    }
-    Err("Sherpa-ONNX binary not downloaded. Download it in Settings → Local Models.".to_string())
-}
-
-/// Find the sherpa-onnx streaming recognition binary inside an extracted release directory.
-/// Searches for sherpa-onnx.exe, sherpa-onnx-online.exe, or similar in bin/ or top level.
-fn find_sherpa_binary_in_dir(dir: &std::path::Path) -> Result<std::path::PathBuf, String> {
-    let exe_names = [
-        "sherpa-onnx.exe",
-        "sherpa-onnx-online.exe",
-        "sherpa-onnx",
-        "sherpa-onnx-online",
-    ];
-
-    // Check bin/ subdirectory first
-    let bin_dir = dir.join("bin");
-    if bin_dir.is_dir() {
-        for name in &exe_names {
-            let path = bin_dir.join(name);
-            if path.exists() {
-                log::info!("Found sherpa-onnx binary: {}", path.display());
-                return Ok(path);
-            }
-        }
-    }
-
-    // Check top level
-    for name in &exe_names {
-        let path = dir.join(name);
-        if path.exists() {
-            log::info!("Found sherpa-onnx binary: {}", path.display());
-            return Ok(path);
-        }
-    }
-
-    // Walk entire directory tree as fallback
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.is_dir() {
-                if let Ok(found) = find_sherpa_binary_in_dir(&path) {
-                    return Ok(found);
-                }
-            }
-        }
-    }
-
-    Err(format!(
-        "No sherpa-onnx executable found in {}",
-        dir.display()
-    ))
 }
 
 /// Find any downloaded model for an engine (fallback when requested model isn't available).

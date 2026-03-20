@@ -88,26 +88,11 @@ static WHISPER_CPP_MODELS: &[ModelDefinition] = &[
     },
 ];
 
-/// Sherpa-ONNX: binary + streaming transducer models.
-/// Binary must be downloaded first, then at least one model.
+/// Sherpa-ONNX streaming transducer models.
+/// Uses in-process ONNX Runtime (same engine as ORT Streaming) — no separate binary needed.
 /// Note: "20M" in model names = 20 million parameters, NOT 20 megabytes.
 /// size_bytes values are the actual download sizes (tar.bz2 archive).
 static SHERPA_ONNX_MODELS: &[ModelDefinition] = &[
-    // Platform-specific binary (archive containing bin/ + lib/)
-    ModelDefinition {
-        engine: "sherpa_onnx",
-        model_id: "binary-win-x64",
-        display_name: "Sherpa-ONNX Engine (Windows x64)",
-        size_bytes: 20_664_013, // actual: 19.7 MB
-        download_url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.10.30/sherpa-onnx-v1.10.30-win-x64-shared.tar.bz2",
-        sha256: "",
-        accuracy_rating: 0, // Not a model
-        speed_rating: 0,
-        is_streaming: false,
-        filename: "sherpa-onnx-v1.10.30-win-x64-shared",
-        is_archive: true,
-    },
-    // Streaming models
     ModelDefinition {
         engine: "sherpa_onnx",
         model_id: "streaming-zipformer-en-20M",
@@ -216,7 +201,7 @@ pub fn get_engines() -> Vec<EngineInfo> {
         EngineInfo {
             engine: "sherpa_onnx",
             name: "Sherpa-ONNX",
-            description: "True streaming transducer (Zipformer) with built-in VAD. Fully offline, free. Requires binary + model download.",
+            description: "Streaming transducer (Zipformer) via in-process ONNX Runtime. Includes multilingual model. Fully offline, free.",
         },
         EngineInfo {
             engine: "ort_streaming",

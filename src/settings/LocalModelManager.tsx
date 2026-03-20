@@ -194,15 +194,12 @@ export function useLocalEngineReady(engineId: string): {
   const engine = engines.find((e) => e.engine === engineId);
   if (!engine) return { ready: false, hasModels: false, hasBinary: false };
 
-  const hasBinary = engine.models.some(
-    (m) => m.id.startsWith("binary-") && m.is_downloaded
-  );
+  const hasBinary = true; // No separate binary needed for any engine
   const hasModels = engine.models.some(
     (m) => !m.id.startsWith("binary-") && m.is_downloaded
   );
 
-  // For sherpa_onnx, both binary and model needed. For others, just models.
-  const ready = engineId === "sherpa_onnx" ? hasBinary && hasModels : hasModels;
+  const ready = hasModels;
 
   return { ready, hasModels, hasBinary };
 }

@@ -11,8 +11,8 @@ import { useConfigStore } from "../stores/configStore";
 import { useStreamStore } from "../stores/streamStore";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useAudioLevel } from "../hooks/useAudioLevel";
-import { hasApiKey, listLocalSTTEngines } from "../lib/ipc";
-import type { STTProviderType, LocalSTTEngineInfo } from "../lib/types";
+import { hasApiKey, listLocalSTTEngines, setLLMProvider, setActiveModel, getApiKey } from "../lib/ipc";
+import type { STTProviderType, LLMProviderType, LocalSTTEngineInfo } from "../lib/types";
 
 // ── Human-friendly provider labels ──
 const LLM_LABELS: Record<string, string> = {
@@ -57,6 +57,24 @@ const STT_PROVIDER_OPTIONS: {
   { value: "whisper_api", label: "Whisper API", IconComponent: Cloud, requiresKey: true, isCloud: true },
   { value: "azure_speech", label: "Azure Speech", IconComponent: Cloud, requiresKey: true, isCloud: true },
   { value: "groq_whisper", label: "Groq Whisper", IconComponent: Zap, requiresKey: true, isCloud: true },
+];
+
+// ── LLM provider options for quick-swap ──
+const LLM_PROVIDER_OPTIONS: {
+  value: LLMProviderType;
+  label: string;
+  IconComponent: React.ComponentType<{ className?: string }>;
+  requiresKey: boolean;
+  isLocal: boolean;
+}[] = [
+  { value: "ollama", label: "Ollama", IconComponent: Monitor, requiresKey: false, isLocal: true },
+  { value: "lm_studio", label: "LM Studio", IconComponent: Monitor, requiresKey: false, isLocal: true },
+  { value: "openai", label: "OpenAI", IconComponent: Cloud, requiresKey: true, isLocal: false },
+  { value: "anthropic", label: "Anthropic", IconComponent: Cloud, requiresKey: true, isLocal: false },
+  { value: "groq", label: "Groq", IconComponent: Zap, requiresKey: true, isLocal: false },
+  { value: "gemini", label: "Gemini", IconComponent: Cloud, requiresKey: true, isLocal: false },
+  { value: "openrouter", label: "OpenRouter", IconComponent: Globe, requiresKey: true, isLocal: false },
+  { value: "custom", label: "Custom", IconComponent: HardDrive, requiresKey: false, isLocal: false },
 ];
 
 function formatModel(model: string): string {
@@ -106,8 +124,10 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
   const toggleMuteYou = useConfigStore((s) => s.toggleMuteYou);
   const toggleMuteThem = useConfigStore((s) => s.toggleMuteThem);
 
-  // STT picker state
-  const [pickerOpen, setPickerOpen] = useState<"you" | "them" | null>(null);
+  // Picker state (LLM or STT)
+  const [pickerOpen, setPickerOpen] = useState<"llm" | "you" | "them" | null>(null);
+  const setConfigProvider = useConfigStore((s) => s.setLLMProvider);
+  const setConfigModel = useConfigStore((s) => s.setLLMModel);
 
   // ── Derive display values ──
   const llmProviderLabel = LLM_LABELS[streamProvider || llmProvider] || (streamProvider || llmProvider);
@@ -144,15 +164,56 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={`flex items-center gap-2.5 ${compact ? "px-3 py-2" : "px-5 py-2.5"}`}>
-      {/* LLM */}
-      <ServiceChip
-        icon={<Brain className="h-3.5 w-3.5" />}
-        provider={llmProviderLabel}
-        model={llmModelLabel}
-        active={isStreaming}
-        color="blue"
-        tooltip={`LLM: ${llmProviderLabel} / ${llmModelLabel}`}
-      />
+      {/* LLM — always interactive */}
+      <div className="relative">
+        <STTChip
+          icon={<Brain className="h-3.5 w-3.5" />}
+          provider={llmProviderLabel}
+          model={llmModelLabel}
+          active={isStreaming}
+          color="blue"
+          label=""
+          muted={false}
+          interactive={true}
+          pickerOpen={pickerOpen === "llm"}
+          onClick={() => setPickerOpen(pickerOpen === "llm" ? null : "llm")}
+          tooltip={`LLM: ${llmProviderLabel} / ${llmModelLabel}`}
+        />
+        {pickerOpen === "llm" && (
+          <LLMPickerDropdown
+            currentProvider={llmProvider}
+            currentModel={llmModel}
+            onSelect={async (provider) => {
+              try {
+                const key = await getApiKey(provider).catch(() => null);
+                const config = JSON.stringify({
+                  provider_type: provider,
+                  ...(key && { api_key: key }),
+                });
+                await setLLMProvider(config);
+                setConfigProvider(provider as LLMProviderType);
+                // Keep the current model — backend will use it if compatible
+                if (llmModel) {
+                  await setActiveModel(provider, llmModel).catch(() => {});
+                }
+              } catch (e) {
+                console.warn("[ServiceStatusBar] Failed to switch LLM provider:", e);
+              }
+              setPickerOpen(null);
+            }}
+            onSelectModel={async (model) => {
+              try {
+                await setActiveModel(llmProvider, model);
+                setConfigModel(model);
+              } catch (e) {
+                console.warn("[ServiceStatusBar] Failed to switch LLM model:", e);
+              }
+              setPickerOpen(null);
+            }}
+            onClose={() => setPickerOpen(null)}
+          />
+        )}
+      </div>
 
       <Divider />
 
@@ -386,11 +447,13 @@ function STTChip({
 
       {/* Text */}
       <div className="flex items-center gap-1 min-w-0">
-        <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide transition-colors duration-200 ${
-          muted ? "text-red-400/40" : active ? c.active : "text-muted-foreground/35"
-        }`}>
-          {label}
-        </span>
+        {label && (
+          <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide transition-colors duration-200 ${
+            muted ? "text-red-400/40" : active ? c.active : "text-muted-foreground/35"
+          }`}>
+            {label}
+          </span>
+        )}
         <span className={`text-[11px] font-medium truncate max-w-[100px] transition-colors duration-200 ${
           muted ? "text-red-400/30 line-through" : active ? "text-foreground/80" : "text-muted-foreground/55"
         }`}>
@@ -593,6 +656,210 @@ function STTPickerDropdown({
               No providers available — configure in Settings
             </p>
           )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── LLM Provider Picker Dropdown (opens upward) ─────────────────────
+
+function LLMPickerDropdown({
+  currentProvider,
+  currentModel,
+  onSelect,
+  onSelectModel,
+  onClose,
+}: {
+  currentProvider: string;
+  currentModel: string;
+  onSelect: (provider: string) => void;
+  onSelectModel: (model: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [keyStatus, setKeyStatus] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [models, setModels] = useState<{ id: string; name: string }[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+
+  // Embedding-only model patterns to filter out
+  const EMBEDDING_PATTERNS = [
+    "embed", "all-minilm", "nomic-embed", "bge-",
+    "text-embedding", "snowflake-arctic", "jina-embedding",
+  ];
+
+  // Load API key status for all cloud providers
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const cloudProviders = ["openai", "anthropic", "groq", "gemini", "openrouter"];
+        const results = await Promise.all(
+          cloudProviders.map(async (p) => {
+            try { return { p, ok: await hasApiKey(p) }; }
+            catch { return { p, ok: false }; }
+          })
+        );
+        if (cancelled) return;
+        const status: Record<string, boolean> = { ollama: true, lm_studio: true };
+        for (const r of results) status[r.p] = r.ok;
+        setKeyStatus(status);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Load models for the current provider
+  useEffect(() => {
+    let cancelled = false;
+    setModelsLoading(true);
+    (async () => {
+      try {
+        const { listModels } = await import("../lib/ipc");
+        const key = await getApiKey(currentProvider).catch(() => null);
+        const config = JSON.stringify({
+          provider_type: currentProvider,
+          ...(key && { api_key: key }),
+        });
+        const modelList = await listModels(config);
+        if (cancelled) return;
+        // Filter out embedding-only models
+        const chatModels = modelList.filter(
+          (m: { id: string }) => !EMBEDDING_PATTERNS.some((p) => m.id.toLowerCase().includes(p))
+        );
+        setModels(chatModels.map((m: { id: string; name?: string }) => ({ id: m.id, name: m.name || m.id })));
+      } catch {
+        if (!cancelled) setModels([]);
+      } finally {
+        if (!cancelled) setModelsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentProvider]);
+
+  // Click outside / Escape to close
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const available = LLM_PROVIDER_OPTIONS.filter((o) => {
+    if (o.value === "custom") return false; // Custom needs special setup
+    if (o.requiresKey) return keyStatus[o.value] ?? false;
+    return true;
+  });
+  const localOpts = available.filter((o) => o.isLocal);
+  const cloudOpts = available.filter((o) => !o.isLocal);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute bottom-full left-0 mb-2 min-w-[220px] max-h-[320px] overflow-y-auto rounded-xl border border-border/30 bg-popover/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
+    >
+      {loading ? (
+        <div className="px-4 py-3 text-[11px] text-muted-foreground/50">Loading providers...</div>
+      ) : (
+        <>
+          {/* Provider selection */}
+          {localOpts.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+                <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Local</span>
+              </div>
+              {localOpts.map((opt) => {
+                const Icon = opt.IconComponent;
+                const selected = currentProvider === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => onSelect(opt.value)}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                      selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                    }`}
+                  >
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : "text-emerald-400"}`} />
+                    <span className="flex-1 text-left font-medium">{opt.label}</span>
+                    {selected && <CheckCircle className="h-3 w-3 shrink-0 text-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {cloudOpts.length > 0 && (
+            <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
+              <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+                <Cloud className="h-2.5 w-2.5 text-blue-400" />
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Cloud</span>
+              </div>
+              {cloudOpts.map((opt) => {
+                const Icon = opt.IconComponent;
+                const selected = currentProvider === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => onSelect(opt.value)}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                      selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                    }`}
+                  >
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : "text-blue-400"}`} />
+                    <span className="flex-1 text-left font-medium">{opt.label}</span>
+                    {selected && <CheckCircle className="h-3 w-3 shrink-0 text-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Model selection for current provider */}
+          <div className="border-t border-border/10">
+            <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+              <Brain className="h-2.5 w-2.5 text-violet-400" />
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                Model
+              </span>
+              {modelsLoading && (
+                <span className="text-[9px] text-muted-foreground/30 animate-pulse">loading...</span>
+              )}
+            </div>
+            {models.length > 0 ? (
+              <div className="max-h-[140px] overflow-y-auto">
+                {models.map((m) => {
+                  const selected = currentModel === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => onSelectModel(m.id)}
+                      className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-[11px] transition-colors cursor-pointer ${
+                        selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                      }`}
+                    >
+                      <span className="flex-1 text-left font-medium truncate">{formatModel(m.id)}</span>
+                      {selected && <CheckCircle className="h-3 w-3 shrink-0 text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : !modelsLoading ? (
+              <div className="px-3 py-2 text-[10px] text-muted-foreground/40">
+                {currentModel ? formatModel(currentModel) : "No models loaded"}
+              </div>
+            ) : null}
+          </div>
         </>
       )}
     </div>

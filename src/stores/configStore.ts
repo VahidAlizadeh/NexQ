@@ -561,6 +561,29 @@ export const useConfigStore = create<ConfigState>((set) => ({
           .catch((e) => console.warn("[configStore] Failed to sync pause threshold on load:", e))
       );
 
+      // Sync persisted LLM provider + model to Rust backend on startup.
+      // The Rust side starts with Ollama as default; this pushes the user's saved provider.
+      const loadedLLMProvider = llmProvider ?? "ollama";
+      const loadedLLMModel = llmModel ?? "";
+      if (loadedLLMProvider) {
+        import("../lib/ipc").then(async ({ setLLMProvider: ipcSetLLM, setActiveModel: ipcSetModel, getApiKey: ipcGetKey }) => {
+          try {
+            const apiKey = await ipcGetKey(loadedLLMProvider).catch(() => null);
+            const config = JSON.stringify({
+              provider_type: loadedLLMProvider,
+              ...(apiKey && { api_key: apiKey }),
+            });
+            await ipcSetLLM(config);
+            if (loadedLLMModel) {
+              await ipcSetModel(loadedLLMProvider, loadedLLMModel);
+            }
+            console.log(`[configStore] LLM synced to backend: ${loadedLLMProvider} / ${loadedLLMModel}`);
+          } catch (e) {
+            console.warn("[configStore] Failed to sync LLM to backend:", e);
+          }
+        });
+      }
+
       console.log("[configStore] Config loaded from store (with cross-window sync)");
     } catch (err) {
       console.error("[configStore] Failed to load config:", err);

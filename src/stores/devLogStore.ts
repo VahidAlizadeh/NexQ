@@ -9,6 +9,8 @@ export interface DevLogEntry {
   source: string;
   message: string;
   timestamp: Date;
+  /** Optional key for update-in-place entries (e.g. audio stats). */
+  replaceKey?: string;
 }
 
 const MAX_ENTRIES = 500;
@@ -16,17 +18,29 @@ let nextId = 0;
 
 interface DevLogState {
   entries: DevLogEntry[];
-  addEntry: (level: string, source: string, message: string) => void;
+  addEntry: (level: string, source: string, message: string, replaceKey?: string) => void;
   clear: () => void;
 }
 
 export const useDevLogStore = create<DevLogState>((set) => ({
   entries: [],
-  addEntry: (level, source, message) =>
+  addEntry: (level, source, message, replaceKey) =>
     set((state) => {
+      // If replaceKey is set, update existing entry with that key in-place
+      if (replaceKey) {
+        let idx = -1;
+        for (let i = state.entries.length - 1; i >= 0; i--) {
+          if (state.entries[i].replaceKey === replaceKey) { idx = i; break; }
+        }
+        if (idx >= 0) {
+          const updated = [...state.entries];
+          updated[idx] = { ...updated[idx], level, message, timestamp: new Date() };
+          return { entries: updated };
+        }
+      }
       const next = [
         ...state.entries,
-        { id: nextId++, level, source, message, timestamp: new Date() },
+        { id: nextId++, level, source, message, timestamp: new Date(), replaceKey },
       ];
       return {
         entries:

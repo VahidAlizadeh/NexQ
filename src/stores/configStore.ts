@@ -313,6 +313,13 @@ export const useConfigStore = create<ConfigState>((set) => ({
     }
     set({ activeModelPerEngine: updated });
     persistValue("activeModelPerEngine", updated);
+    // Dev log: model activation
+    import("../stores/devLogStore").then(({ useDevLogStore }) => {
+      useDevLogStore.getState().addEntry(
+        "info", "config",
+        `Model activated: ${engineId} → ${modelId ?? "none"}`
+      );
+    });
     // Also update local_model_id on any party using this engine
     if (state.meetingAudioConfig && modelId) {
       const cfg = { ...state.meetingAudioConfig };
@@ -328,6 +335,14 @@ export const useConfigStore = create<ConfigState>((set) => ({
       if (changed) {
         set({ meetingAudioConfig: cfg });
         persistValue("meetingAudioConfig", cfg);
+        import("../stores/devLogStore").then(({ useDevLogStore }) => {
+          useDevLogStore.getState().addEntry(
+            "info", "config",
+            `Model change propagated to audio config` +
+            (cfg.you.stt_provider === engineId ? ` (You → ${modelId})` : "") +
+            (cfg.them.stt_provider === engineId ? ` (Them → ${modelId})` : "")
+          );
+        });
       }
     }
   },

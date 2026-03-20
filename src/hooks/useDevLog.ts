@@ -21,7 +21,7 @@ export function useDevLog() {
 
     const setup = async () => {
       const u1 = await onSTTDebug((e: STTDebugEvent) => {
-        if (mounted) addEntry(e.level, e.source, e.message);
+        if (mounted) addEntry(e.level, e.source, e.message, e.replace_key);
       });
       const u2 = await onSTTConnectionStatus((e: STTConnectionStatusEvent) => {
         if (!mounted) return;

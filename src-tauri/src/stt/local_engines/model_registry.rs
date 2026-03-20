@@ -122,7 +122,7 @@ static SHERPA_ONNX_MODELS: &[ModelDefinition] = &[
     ModelDefinition {
         engine: "sherpa_onnx",
         model_id: "streaming-zipformer-multi",
-        display_name: "Multilingual (50+ languages)",
+        display_name: "Chinese/Multilingual (zh-hans, NOT English)",
         size_bytes: 310_380_628, // actual: 296 MB
         download_url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-multi-zh-hans-2023-12-12.tar.bz2",
         sha256: "",

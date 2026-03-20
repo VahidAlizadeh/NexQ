@@ -739,6 +739,8 @@ pub async fn start_capture_per_party(
         if let Some(ref mut mgr) = *guard {
             if mgr.is_capturing() {
                 log::info!("start_capture_per_party: stopping existing capture for hot-swap");
+                crate::stt::emit_stt_debug(&app, "info", "stt",
+                    "Hot-swap: stopping existing audio capture + STT providers");
                 mgr.stop_capture();
             }
         }
@@ -984,8 +986,9 @@ pub async fn start_capture_per_party(
                     }
                     if last_mic_stats.elapsed() >= stats_interval {
                         let rms = calculate_rms(&chunk.pcm_data);
-                        crate::stt::emit_stt_debug(&app_handle, "info", "audio",
-                            &format!("Mic: {} chunks, speech={}, rms={:.0}", mic_chunk_count, chunk.is_speech, rms));
+                        crate::stt::emit_stt_debug_ex(&app_handle, "info", "audio",
+                            &format!("Mic: {} chunks, speech={}, rms={:.0}", mic_chunk_count, chunk.is_speech, rms),
+                            Some("audio_mic_stats"));
                         last_mic_stats = std::time::Instant::now();
                     }
                 }
@@ -998,8 +1001,9 @@ pub async fn start_capture_per_party(
                     }
                     if last_sys_stats.elapsed() >= stats_interval {
                         let rms = calculate_rms(&chunk.pcm_data);
-                        crate::stt::emit_stt_debug(&app_handle, "info", "audio",
-                            &format!("System: {} chunks, speech={}, rms={:.0}", system_chunk_count, chunk.is_speech, rms));
+                        crate::stt::emit_stt_debug_ex(&app_handle, "info", "audio",
+                            &format!("System: {} chunks, speech={}, rms={:.0}", system_chunk_count, chunk.is_speech, rms),
+                            Some("audio_sys_stats"));
                         last_sys_stats = std::time::Instant::now();
                     }
                 }
@@ -1095,6 +1099,11 @@ async fn create_stt_provider_for_party(
 
     let stt_type = STTProviderType::from_str(&config.stt_provider)
         .ok_or_else(|| format!("Unknown STT provider: {}", config.stt_provider))?;
+
+    crate::stt::emit_stt_debug(app, "info", "stt",
+        &format!("[{}] Creating provider: {} (model: {})",
+            party_role, config.stt_provider,
+            config.local_model_id.as_deref().unwrap_or("n/a")));
 
     match stt_type {
         STTProviderType::WebSpeech => Ok(None), // Frontend handles this
@@ -1195,17 +1204,18 @@ async fn create_stt_provider_for_party(
             match model_result {
                 Ok(model_dir) => {
                     let lang = get_stt_language(state);
+                    crate::stt::emit_stt_debug(app, "info", "stt",
+                        &format!("[{}] SherpaOnnx loading model '{}' from {} (lang={})",
+                            party_role, model_id, model_dir.display(), lang));
                     let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
                     p.set_language(&lang);
                     p.set_app_handle(app.clone());
                     Ok(Some(Box::new(p)))
                 }
                 Err(e) => {
-                    log::warn!(
-                        "SherpaOnnx: {} — no transcription for this party. \
-                         Download the model in Settings.",
-                        e
-                    );
+                    crate::stt::emit_stt_debug(app, "error", "stt",
+                        &format!("[{}] SherpaOnnx model '{}' not found: {}. Download in Settings.",
+                            party_role, model_id, e));
                     Ok(None)
                 }
             }
@@ -1216,17 +1226,18 @@ async fn create_stt_provider_for_party(
             match model_result {
                 Ok(model_dir) => {
                     let lang = get_stt_language(state);
+                    crate::stt::emit_stt_debug(app, "info", "stt",
+                        &format!("[{}] ORT loading model '{}' from {} (lang={})",
+                            party_role, model_id, model_dir.display(), lang));
                     let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
                     p.set_language(&lang);
                     p.set_app_handle(app.clone());
                     Ok(Some(Box::new(p)))
                 }
                 Err(e) => {
-                    log::warn!(
-                        "OrtStreaming: {} — no transcription for this party. \
-                         Download the model in Settings.",
-                        e
-                    );
+                    crate::stt::emit_stt_debug(app, "error", "stt",
+                        &format!("[{}] ORT model '{}' not found: {}. Download in Settings.",
+                            party_role, model_id, e));
                     Ok(None)
                 }
             }

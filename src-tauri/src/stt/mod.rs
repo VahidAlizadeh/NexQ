@@ -25,12 +25,25 @@ use crate::audio::{AudioChunk, AudioSource};
 /// Emit an STT debug event to the frontend and log it.
 /// Use this for pipeline diagnostics that should appear in the DevLog panel.
 pub fn emit_stt_debug(app_handle: &tauri::AppHandle, level: &str, source: &str, message: &str) {
+    emit_stt_debug_ex(app_handle, level, source, message, None);
+}
+
+/// Emit an STT debug event with optional replace_key for update-in-place entries.
+/// When `replace_key` is Some, the frontend will update the last entry with that key
+/// instead of appending a new log line. Use this for periodic stats that would spam the log.
+pub fn emit_stt_debug_ex(
+    app_handle: &tauri::AppHandle,
+    level: &str,
+    source: &str,
+    message: &str,
+    replace_key: Option<&str>,
+) {
     match level {
         "error" => log::error!("[{}] {}", source, message),
         "warn" => log::warn!("[{}] {}", source, message),
         _ => log::info!("[{}] {}", source, message),
     }
-    let payload = serde_json::json!({
+    let mut payload = serde_json::json!({
         "level": level,
         "source": source,
         "message": message,
@@ -39,6 +52,9 @@ pub fn emit_stt_debug(app_handle: &tauri::AppHandle, level: &str, source: &str, 
             .map(|d| d.as_millis() as u64)
             .unwrap_or(0),
     });
+    if let Some(key) = replace_key {
+        payload["replace_key"] = serde_json::json!(key);
+    }
     let _ = tauri::Emitter::emit(app_handle, "stt_debug", &payload);
 }
 

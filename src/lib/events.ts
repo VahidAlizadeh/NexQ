@@ -152,6 +152,8 @@ export interface STTDebugEvent {
   source: string;
   message: string;
   timestamp_ms: number;
+  /** When set, the frontend updates the last entry with this key in-place. */
+  replace_key?: string;
 }
 
 export function onSTTConnectionStatus(

@@ -2,21 +2,24 @@
 // and restarts the Rust audio capture pipeline with the new config.
 // This enables "hot-swap" of STT provider and audio source mid-meeting.
 //
-// Key design: uses a debounce + sequential restart to avoid race conditions
-// when multiple rapid config changes happen (e.g., switching STT provider
-// while models are loading). Waits for stop to fully complete before starting.
+// Key design: debounce (300ms) + sequential restart. Two separate refs:
+// - appliedConfigRef: what Rust currently has running (only set after successful restart)
+// - pendingConfigRef: set immediately to prevent duplicate debounce scheduling
 
 import { useEffect, useRef } from "react";
 import { useConfigStore } from "../stores/configStore";
 import { useMeetingStore } from "../stores/meetingStore";
+import { useDevLogStore } from "../stores/devLogStore";
 import { stopCapture, startCapturePerParty } from "../lib/ipc";
 
 export function useAudioConfigSync() {
   const isRecording = useMeetingStore((s) => s.isRecording);
   const meetingAudioConfig = useConfigStore((s) => s.meetingAudioConfig);
 
-  // Track the config that is currently applied to the Rust audio pipeline
+  // What Rust currently has running — only updated after successful restart
   const appliedConfigRef = useRef<string | null>(null);
+  // What we've already scheduled a restart for — prevents duplicate debounces
+  const pendingConfigRef = useRef<string | null>(null);
   // Guard against concurrent restart attempts
   const restartingRef = useRef(false);
   // Debounce timer to batch rapid config changes
@@ -25,19 +28,32 @@ export function useAudioConfigSync() {
   useEffect(() => {
     if (!isRecording || !meetingAudioConfig) return;
 
-    // Serialize to compare — avoids deep equality checks
     const configKey = JSON.stringify(meetingAudioConfig);
 
-    // On first run (meeting just started), just record the applied config
+    // On first run (meeting just started), record the applied config
     if (appliedConfigRef.current === null) {
       appliedConfigRef.current = configKey;
+      pendingConfigRef.current = configKey;
       return;
     }
 
-    // No change
+    // Already applied — nothing to do
     if (appliedConfigRef.current === configKey) return;
 
-    // Debounce: wait 300ms for rapid changes to settle before restarting
+    // Already scheduled a restart for this exact config
+    if (pendingConfigRef.current === configKey) return;
+
+    // Mark this config as pending (prevents duplicate debounce scheduling)
+    pendingConfigRef.current = configKey;
+
+    const log = useDevLogStore.getState().addEntry;
+    const desc = `you=${meetingAudioConfig.you.stt_provider}` +
+      (meetingAudioConfig.you.local_model_id ? `(${meetingAudioConfig.you.local_model_id})` : "") +
+      `, them=${meetingAudioConfig.them.stt_provider}` +
+      (meetingAudioConfig.them.local_model_id ? `(${meetingAudioConfig.them.local_model_id})` : "");
+    log("info", "config", `STT config changed → ${desc}`);
+
+    // Cancel any existing debounce — the new config supersedes it
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -45,56 +61,71 @@ export function useAudioConfigSync() {
     debounceRef.current = setTimeout(async () => {
       debounceRef.current = null;
 
-      // Skip if already restarting from a previous change
+      // If already restarting, clear pending so next effect re-schedules
       if (restartingRef.current) {
-        console.log("[AudioConfigSync] Restart already in progress, queuing...");
+        log("warn", "config", "Hot-swap already in progress — queued for retry");
+        pendingConfigRef.current = null;
         return;
       }
 
-      // Get the latest config (may have changed during debounce)
+      restartingRef.current = true;
+
+      // Read the latest config (may have changed during debounce wait)
       const latestConfig = useConfigStore.getState().meetingAudioConfig;
-      if (!latestConfig) return;
+      if (!latestConfig) {
+        restartingRef.current = false;
+        return;
+      }
 
       const latestKey = JSON.stringify(latestConfig);
-      if (appliedConfigRef.current === latestKey) return;
 
-      restartingRef.current = true;
-      console.log("[AudioConfigSync] Config changed, restarting capture...");
+      // If the latest config matches what's already running, skip
+      if (appliedConfigRef.current === latestKey) {
+        pendingConfigRef.current = latestKey;
+        restartingRef.current = false;
+        return;
+      }
+
+      log("info", "config", "Hot-swap: stopping current capture...");
 
       try {
         // Stop current capture and wait for full cleanup
         await stopCapture();
+        log("info", "config", "Hot-swap: capture stopped, waiting for resource release...");
 
-        // Brief delay to let Rust fully release audio resources
-        await new Promise((r) => setTimeout(r, 150));
+        // Let Rust fully release WASAPI/audio resources
+        await new Promise((r) => setTimeout(r, 200));
 
-        // Start with the latest config
+        // Re-read config in case it changed during the stop
         const freshConfig = useConfigStore.getState().meetingAudioConfig;
         if (!freshConfig) {
-          console.warn("[AudioConfigSync] No config available after stop");
+          log("warn", "config", "Hot-swap: no config available after stop");
           return;
         }
 
+        log("info", "config", "Hot-swap: starting new capture pipeline...");
         await startCapturePerParty(freshConfig.you, freshConfig.them);
-        appliedConfigRef.current = JSON.stringify(freshConfig);
-        console.log("[AudioConfigSync] Capture restarted with new config");
+        const freshKey = JSON.stringify(freshConfig);
+        appliedConfigRef.current = freshKey;
+        pendingConfigRef.current = freshKey;
+        log("info", "config", "Hot-swap complete — new STT pipeline active");
       } catch (err) {
-        console.error("[AudioConfigSync] Failed to restart capture:", err);
-        // Reset applied config so next change attempt retries
+        const msg = err instanceof Error ? err.message : String(err);
+        log("error", "config", `Hot-swap FAILED: ${msg}`);
+        // Reset both refs so next config change retries
         appliedConfigRef.current = null;
+        pendingConfigRef.current = null;
       } finally {
         restartingRef.current = false;
       }
     }, 300);
-
-    // Update applied config immediately to prevent re-triggering
-    appliedConfigRef.current = configKey;
   }, [isRecording, meetingAudioConfig]);
 
   // Reset when meeting ends
   useEffect(() => {
     if (!isRecording) {
       appliedConfigRef.current = null;
+      pendingConfigRef.current = null;
       restartingRef.current = false;
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);

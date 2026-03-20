@@ -552,6 +552,14 @@ function PartyPanel({
       const engineModel = activeModelPerEngine[newProvider] ?? activeWhisperModel;
       if (engineModel) updates.local_model_id = engineModel;
     }
+    // Dev log: provider change
+    import("../stores/devLogStore").then(({ useDevLogStore }) => {
+      useDevLogStore.getState().addEntry(
+        "info", "config",
+        `[${party.role === "You" ? "You" : "Them"}] Provider → ${newProvider}` +
+        (updates.local_model_id ? ` (model: ${updates.local_model_id})` : "")
+      );
+    });
     onChange(updates);
   }
 

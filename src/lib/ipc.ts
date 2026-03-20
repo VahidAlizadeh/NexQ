@@ -163,7 +163,19 @@ export async function getLLMProviders(): Promise<string[]> {
 // == IPC: Intelligence (Sub-PRD 6) ==
 
 export async function generateAssist(mode: string, customQuestion?: string): Promise<void> {
-  return invoke("generate_assist", { mode, customQuestion });
+  // Universal transcript: gather all final segments from the frontend store
+  // (the single source of truth — every STT engine feeds into it).
+  // The backend applies the per-action transcript window setting.
+  const { useTranscriptStore } = await import("../stores/transcriptStore");
+  const segments = useTranscriptStore.getState().segments
+    .filter(s => s.is_final)
+    .map(s => ({ text: s.text, speaker: s.speaker, timestamp_ms: s.timestamp_ms }));
+
+  return invoke("generate_assist", {
+    mode,
+    customQuestion,
+    transcriptSegments: JSON.stringify(segments),
+  });
 }
 
 export async function cancelGeneration(): Promise<void> {

@@ -42,15 +42,61 @@ fn compose_instructions(presets: &InstructionPresets, custom: &str) -> String {
     }
 }
 
+/// Build transcript text from frontend-provided segments, applying the per-action window.
+/// The frontend transcript store is the single source of truth for ALL STT engines.
+fn build_transcript_from_segments(segments_json: &str, window_seconds: u64) -> String {
+    #[derive(serde::Deserialize)]
+    struct Seg {
+        text: String,
+        speaker: String,
+        timestamp_ms: u64,
+    }
+    let segments: Vec<Seg> = match serde_json::from_str(segments_json) {
+        Ok(s) => s,
+        Err(e) => {
+            log::warn!("Failed to parse frontend transcript segments: {}", e);
+            return String::new();
+        }
+    };
+
+    if segments.is_empty() {
+        return String::new();
+    }
+
+    // Find the latest timestamp for windowing
+    let latest_ts = segments.iter().map(|s| s.timestamp_ms).max().unwrap_or(0);
+
+    // Apply window: 0 = all segments, otherwise filter by time window
+    let cutoff_ms = if window_seconds == 0 {
+        0
+    } else {
+        latest_ts.saturating_sub(window_seconds * 1000)
+    };
+
+    segments.iter()
+        .filter(|s| s.timestamp_ms >= cutoff_ms)
+        .map(|s| {
+            let label = match s.speaker.as_str() {
+                "User" => "You",
+                "Them" => "Them",
+                other => other,
+            };
+            format!("[{}]: {}", label, s.text)
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 #[command]
 pub async fn generate_assist(
     mode: String,
     custom_question: Option<String>,
+    transcript_segments: Option<String>,
     app_handle: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     // Extract what we need from the intelligence engine under its lock
-    let (transcript_text, last_question, cancel_flag, action_config_snapshot, composed_instructions) = {
+    let (last_question, cancel_flag, action_config_snapshot, composed_instructions) = {
         let intel = state
             .intelligence
             .as_ref()
@@ -76,26 +122,36 @@ pub async fn generate_assist(
             &all_configs.custom_instructions,
         );
 
-        // Determine transcript window: per-action override or global default
-        let window_seconds = action_cfg
-            .as_ref()
-            .and_then(|c| c.transcript_window_seconds)
-            .unwrap_or(global_defaults.transcript_window_seconds);
-
-        // Window 0 = get all transcript (for Recap mode)
-        let transcript = if window_seconds == 0 {
-            engine.get_all_transcript()
-        } else {
-            engine.transcript_buffer.get_recent_text(window_seconds)
-        };
-
         let question = engine.last_detected_question().cloned();
         let cancel = engine.cancel_flag();
 
-        (transcript, question, cancel, (action_cfg, global_defaults), composed)
+        (question, cancel, (action_cfg, global_defaults), composed)
     };
 
     let (action_cfg, global_defaults) = action_config_snapshot;
+
+    // Determine transcript window: per-action override or global default
+    let window_seconds = action_cfg
+        .as_ref()
+        .and_then(|c| c.transcript_window_seconds)
+        .unwrap_or(global_defaults.transcript_window_seconds);
+
+    // Build transcript from frontend segments (universal — works with any STT engine).
+    // The frontend transcript store is the single source of truth.
+    // Falls back to engine buffer only if frontend didn't send segments.
+    let transcript_text = if let Some(ref segs) = transcript_segments {
+        build_transcript_from_segments(segs, window_seconds)
+    } else {
+        // Legacy fallback: read from backend buffer
+        let intel = state.intelligence.as_ref()
+            .ok_or_else(|| "Intelligence engine not initialized".to_string())?;
+        let engine = intel.lock().map_err(|e| e.to_string())?;
+        if window_seconds == 0 {
+            engine.get_all_transcript()
+        } else {
+            engine.transcript_buffer.get_recent_text(window_seconds)
+        }
+    };
 
     // Resolve per-action settings
     let include_rag = action_cfg.as_ref().map(|c| c.include_rag_chunks).unwrap_or(true);

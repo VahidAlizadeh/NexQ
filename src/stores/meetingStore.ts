@@ -4,6 +4,7 @@ import {
   startMeeting as ipcStartMeeting,
   endMeeting as ipcEndMeeting,
   listMeetings as ipcListMeetings,
+  saveMeetingAiInteractions,
   startCapture,
   startCapturePerParty,
   stopCapture,
@@ -111,8 +112,23 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         // Continue anyway — meeting is created, user can still use AI features
       }
 
-      // 3. Clear previous transcript segments
+      // 3. Clear previous transcript segments and leftover AI state
       useTranscriptStore.getState().clearSegments();
+
+      // Clear AI response history, dev log, and call log from any prior meeting
+      try {
+        const { useStreamStore } = await import("./streamStore");
+        useStreamStore.getState().clearCurrent();
+        useStreamStore.setState({ responseHistory: [], pinnedResponses: [] });
+      } catch { /* non-critical */ }
+      try {
+        const { useDevLogStore } = await import("./devLogStore");
+        useDevLogStore.getState().clear();
+      } catch { /* non-critical */ }
+      try {
+        const { useCallLogStore } = await import("./callLogStore");
+        useCallLogStore.getState().clearAll();
+      } catch { /* non-critical */ }
 
       // 4. Set meeting state
       const now = Date.now();
@@ -172,7 +188,38 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       }
     }
 
-    // 4. End meeting record in DB
+    // 4. Persist AI call log entries as AI interactions before ending
+    if (meeting) {
+      try {
+        const { useCallLogStore } = await import("./callLogStore");
+        const entries = useCallLogStore.getState().entries;
+        if (entries.length > 0) {
+          const interactions = entries
+            .filter((e) => e.status === "complete")
+            .map((e) => ({
+              id: e.id,
+              meeting_id: meeting.id,
+              mode: e.mode,
+              question_context: e.actualUserPrompt || "",
+              response: e.responseContentClean || e.responseContent,
+              model: e.model,
+              provider: e.provider,
+              latency_ms: e.latencyMs ?? 0,
+              timestamp: new Date(e.timestamp).toISOString(),
+            }));
+          if (interactions.length > 0) {
+            await saveMeetingAiInteractions(
+              meeting.id,
+              JSON.stringify(interactions)
+            );
+          }
+        }
+      } catch (err) {
+        console.error("[meetingStore] Failed to persist AI interactions:", err);
+      }
+    }
+
+    // 5. End meeting record in DB
     if (meeting) {
       try {
         await ipcEndMeeting(meeting.id);
@@ -181,7 +228,7 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       }
     }
 
-    // 5. Clear call log and close sidebar
+    // 6. Clear call log and close sidebar
     try {
       const { useCallLogStore } = await import("./callLogStore");
       useCallLogStore.getState().clearAll();
@@ -190,7 +237,22 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       // Non-critical
     }
 
-    // 6. Clear active state
+    // 7. Clear AI response history and dev log for fresh next meeting
+    try {
+      const { useStreamStore } = await import("./streamStore");
+      useStreamStore.getState().clearCurrent();
+      useStreamStore.setState({ responseHistory: [], pinnedResponses: [] });
+    } catch {
+      // Non-critical
+    }
+    try {
+      const { useDevLogStore } = await import("./devLogStore");
+      useDevLogStore.getState().clear();
+    } catch {
+      // Non-critical
+    }
+
+    // 8. Clear active state
     set({
       activeMeeting: null,
       isRecording: false,
@@ -199,10 +261,10 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       lastPersistedIndex: 0,
     });
 
-    // 7. Reload recent meetings
+    // 9. Reload recent meetings
     await get().loadRecentMeetings();
 
-    // 8. Switch to launcher
+    // 10. Switch to launcher
     set({ currentView: "launcher", previousView: null });
   },
 

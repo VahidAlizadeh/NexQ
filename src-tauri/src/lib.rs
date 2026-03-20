@@ -420,6 +420,7 @@ pub fn run() {
             meeting_commands::delete_meeting,
             meeting_commands::search_meetings,
             meeting_commands::append_transcript_segment,
+            meeting_commands::save_meeting_ai_interactions,
             // == COMMANDS: settings ==
             settings_commands::get_config,
             settings_commands::set_config,

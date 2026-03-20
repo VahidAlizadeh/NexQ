@@ -306,6 +306,13 @@ export async function appendTranscriptSegment(
   return invoke("append_transcript_segment", { meetingId, segment });
 }
 
+export async function saveMeetingAiInteractions(
+  meetingId: string,
+  aiInteractionsJson: string
+): Promise<void> {
+  return invoke("save_meeting_ai_interactions", { meetingId, aiInteractionsJson });
+}
+
 // == IPC: Whisper Dual-Pass Config ==
 
 export async function updateWhisperDualPassConfig(

@@ -88,7 +88,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
 
   setError: (error) => set({ error, isStreaming: false }),
   clearCurrent: () =>
-    set({ currentContent: "", currentMode: null, error: null }),
+    set({ currentContent: "", _rawContent: "", currentMode: null, currentModel: "", currentProvider: "", error: null, latencyMs: null }),
 
   pinResponse: (id) => {
     const state = get();

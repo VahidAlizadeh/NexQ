@@ -4,6 +4,38 @@ use crate::db::meetings::{self, MeetingUpdate, TranscriptSegment};
 use crate::state::AppState;
 
 #[command]
+pub async fn save_meeting_ai_interactions(
+    meeting_id: String,
+    ai_interactions_json: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let ai_interactions: serde_json::Value = serde_json::from_str(&ai_interactions_json)
+        .map_err(|e| format!("Failed to parse AI interactions: {}", e))?;
+
+    let update = MeetingUpdate {
+        title: None,
+        end_time: None,
+        duration_seconds: None,
+        transcript: None,
+        ai_interactions: Some(ai_interactions),
+        summary: None,
+        config_snapshot: None,
+    };
+
+    meetings::update_meeting(db.connection(), &meeting_id, &update)
+        .map_err(|e| format!("Failed to save AI interactions: {}", e))
+}
+
+#[command]
 pub async fn start_meeting(
     title: Option<String>,
     state: State<'_, AppState>,

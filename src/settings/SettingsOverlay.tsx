@@ -30,7 +30,7 @@ const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: "llm", label: "LLM", icon: <Brain className="h-4 w-4" /> },
   { id: "ai_actions", label: "AI Actions", icon: <Sparkles className="h-4 w-4" /> },
   { id: "context_strategy", label: "Context Strategy", icon: <Database className="h-4 w-4" /> },
-  { id: "stt", label: "STT Keys", icon: <Mic className="h-4 w-4" /> },
+  { id: "stt", label: "STT Providers", icon: <Mic className="h-4 w-4" /> },
   { id: "hotkeys", label: "Hotkeys", icon: <Keyboard className="h-4 w-4" /> },
   {
     id: "general",

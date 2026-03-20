@@ -183,7 +183,7 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
           <LLMPickerDropdown
             currentProvider={llmProvider}
             currentModel={llmModel}
-            onSelect={async (provider) => {
+            onApply={async (provider, model) => {
               try {
                 const key = await getApiKey(provider).catch(() => null);
                 const config = JSON.stringify({
@@ -192,21 +192,10 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
                 });
                 await setLLMProvider(config);
                 setConfigProvider(provider as LLMProviderType);
-                // Keep the current model — backend will use it if compatible
-                if (llmModel) {
-                  await setActiveModel(provider, llmModel).catch(() => {});
-                }
-              } catch (e) {
-                console.warn("[ServiceStatusBar] Failed to switch LLM provider:", e);
-              }
-              setPickerOpen(null);
-            }}
-            onSelectModel={async (model) => {
-              try {
-                await setActiveModel(llmProvider, model);
+                await setActiveModel(provider, model);
                 setConfigModel(model);
               } catch (e) {
-                console.warn("[ServiceStatusBar] Failed to switch LLM model:", e);
+                console.warn("[ServiceStatusBar] Failed to switch LLM:", e);
               }
               setPickerOpen(null);
             }}
@@ -662,71 +651,49 @@ function STTPickerDropdown({
   );
 }
 
-// ── LLM Provider Picker Dropdown (opens upward) ─────────────────────
+// ── LLM Provider + Model Picker (single interaction, opens upward) ───
+// Shows verified providers, loads models inline when provider is picked.
+// User selects provider → models load → user picks model → dropdown closes.
+
+const EMBEDDING_PATTERNS = [
+  "embed", "all-minilm", "nomic-embed", "bge-",
+  "text-embedding", "snowflake-arctic", "jina-embedding",
+];
 
 function LLMPickerDropdown({
   currentProvider,
   currentModel,
-  onSelect,
-  onSelectModel,
+  onApply,
   onClose,
 }: {
   currentProvider: string;
   currentModel: string;
-  onSelect: (provider: string) => void;
-  onSelectModel: (model: string) => void;
+  onApply: (provider: string, model: string) => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [keyStatus, setKeyStatus] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(true);
+  const verifiedProviders = useConfigStore((s) => s.verifiedCloudProviders);
+
+  // Internal state: pending provider (may differ from active while browsing)
+  const [pendingProvider, setPendingProvider] = useState(currentProvider);
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
 
-  // Embedding-only model patterns to filter out
-  const EMBEDDING_PATTERNS = [
-    "embed", "all-minilm", "nomic-embed", "bge-",
-    "text-embedding", "snowflake-arctic", "jina-embedding",
-  ];
-
-  // Load API key status for all cloud providers
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const cloudProviders = ["openai", "anthropic", "groq", "gemini", "openrouter"];
-        const results = await Promise.all(
-          cloudProviders.map(async (p) => {
-            try { return { p, ok: await hasApiKey(p) }; }
-            catch { return { p, ok: false }; }
-          })
-        );
-        if (cancelled) return;
-        const status: Record<string, boolean> = { ollama: true, lm_studio: true };
-        for (const r of results) status[r.p] = r.ok;
-        setKeyStatus(status);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Load models for the current provider
+  // Load models when pending provider changes
   useEffect(() => {
     let cancelled = false;
     setModelsLoading(true);
+    setModels([]);
     (async () => {
       try {
         const { listModels } = await import("../lib/ipc");
-        const key = await getApiKey(currentProvider).catch(() => null);
+        const key = await getApiKey(pendingProvider).catch(() => null);
         const config = JSON.stringify({
-          provider_type: currentProvider,
+          provider_type: pendingProvider,
           ...(key && { api_key: key }),
         });
         const modelList = await listModels(config);
         if (cancelled) return;
-        // Filter out embedding-only models
         const chatModels = modelList.filter(
           (m: { id: string }) => !EMBEDDING_PATTERNS.some((p) => m.id.toLowerCase().includes(p))
         );
@@ -738,7 +705,7 @@ function LLMPickerDropdown({
       }
     })();
     return () => { cancelled = true; };
-  }, [currentProvider]);
+  }, [pendingProvider]);
 
   // Click outside / Escape to close
   useEffect(() => {
@@ -755,113 +722,122 @@ function LLMPickerDropdown({
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  // Only show verified/ready providers
   const available = LLM_PROVIDER_OPTIONS.filter((o) => {
-    if (o.value === "custom") return false; // Custom needs special setup
-    if (o.requiresKey) return keyStatus[o.value] ?? false;
-    return true;
+    if (o.value === "custom") return false;
+    if (o.requiresKey) return verifiedProviders.includes(o.value);
+    return verifiedProviders.includes(o.value); // Local also needs verification
   });
+  // Fallback: always include the current active provider
+  if (!available.some((o) => o.value === currentProvider)) {
+    const opt = LLM_PROVIDER_OPTIONS.find((o) => o.value === currentProvider);
+    if (opt) available.unshift(opt);
+  }
+
   const localOpts = available.filter((o) => o.isLocal);
   const cloudOpts = available.filter((o) => !o.isLocal);
 
   return (
     <div
       ref={ref}
-      className="absolute bottom-full left-0 mb-2 min-w-[220px] max-h-[320px] overflow-y-auto rounded-xl border border-border/30 bg-popover/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
+      className="absolute bottom-full left-0 mb-2 min-w-[240px] rounded-xl border border-border/30 bg-popover/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
     >
-      {loading ? (
-        <div className="px-4 py-3 text-[11px] text-muted-foreground/50">Loading providers...</div>
-      ) : (
-        <>
-          {/* Provider selection */}
-          {localOpts.length > 0 && (
-            <div>
-              <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
-                <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Local</span>
-              </div>
-              {localOpts.map((opt) => {
-                const Icon = opt.IconComponent;
-                const selected = currentProvider === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => onSelect(opt.value)}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
-                      selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
-                    }`}
-                  >
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : "text-emerald-400"}`} />
-                    <span className="flex-1 text-left font-medium">{opt.label}</span>
-                    {selected && <CheckCircle className="h-3 w-3 shrink-0 text-primary" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {cloudOpts.length > 0 && (
-            <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
-              <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
-                <Cloud className="h-2.5 w-2.5 text-blue-400" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Cloud</span>
-              </div>
-              {cloudOpts.map((opt) => {
-                const Icon = opt.IconComponent;
-                const selected = currentProvider === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => onSelect(opt.value)}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
-                      selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
-                    }`}
-                  >
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : "text-blue-400"}`} />
-                    <span className="flex-1 text-left font-medium">{opt.label}</span>
-                    {selected && <CheckCircle className="h-3 w-3 shrink-0 text-primary" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Model selection for current provider */}
-          <div className="border-t border-border/10">
-            <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
-              <Brain className="h-2.5 w-2.5 text-violet-400" />
-              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-                Model
-              </span>
-              {modelsLoading && (
-                <span className="text-[9px] text-muted-foreground/30 animate-pulse">loading...</span>
-              )}
-            </div>
-            {models.length > 0 ? (
-              <div className="max-h-[140px] overflow-y-auto">
-                {models.map((m) => {
-                  const selected = currentModel === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => onSelectModel(m.id)}
-                      className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-[11px] transition-colors cursor-pointer ${
-                        selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
-                      }`}
-                    >
-                      <span className="flex-1 text-left font-medium truncate">{formatModel(m.id)}</span>
-                      {selected && <CheckCircle className="h-3 w-3 shrink-0 text-primary" />}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : !modelsLoading ? (
-              <div className="px-3 py-2 text-[10px] text-muted-foreground/40">
-                {currentModel ? formatModel(currentModel) : "No models loaded"}
-              </div>
-            ) : null}
+      {/* ── Provider section ── */}
+      {localOpts.length > 0 && (
+        <div>
+          <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+            <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Local</span>
           </div>
-        </>
+          {localOpts.map((opt) => {
+            const Icon = opt.IconComponent;
+            const isPending = pendingProvider === opt.value;
+            const isActive = currentProvider === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setPendingProvider(opt.value)}
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                  isPending ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-emerald-400"}`} />
+                <span className="flex-1 text-left font-medium">{opt.label}</span>
+                {isActive && <span className="text-[9px] text-primary/60">active</span>}
+              </button>
+            );
+          })}
+        </div>
       )}
+
+      {cloudOpts.length > 0 && (
+        <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
+          <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+            <Cloud className="h-2.5 w-2.5 text-blue-400" />
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">Cloud</span>
+          </div>
+          {cloudOpts.map((opt) => {
+            const Icon = opt.IconComponent;
+            const isPending = pendingProvider === opt.value;
+            const isActive = currentProvider === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setPendingProvider(opt.value)}
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                  isPending ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-blue-400"}`} />
+                <span className="flex-1 text-left font-medium">{opt.label}</span>
+                {isActive && <span className="text-[9px] text-primary/60">active</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {available.length === 0 && (
+        <div className="px-4 py-3 text-[10px] text-muted-foreground/40">
+          No verified providers — test connection in Settings first
+        </div>
+      )}
+
+      {/* ── Model section (for pending provider) ── */}
+      <div className="border-t border-border/10">
+        <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+          <Brain className="h-2.5 w-2.5 text-violet-400" />
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+            Model — {LLM_LABELS[pendingProvider] || pendingProvider}
+          </span>
+          {modelsLoading && (
+            <span className="text-[9px] text-muted-foreground/30 animate-pulse ml-auto">loading...</span>
+          )}
+        </div>
+        {models.length > 0 ? (
+          <div className="max-h-[160px] overflow-y-auto">
+            {models.map((m) => {
+              const isCurrentModel = currentProvider === pendingProvider && currentModel === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onApply(pendingProvider, m.id)}
+                  className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-[11px] transition-colors cursor-pointer ${
+                    isCurrentModel ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                  }`}
+                >
+                  <span className="flex-1 text-left font-medium truncate">{formatModel(m.id)}</span>
+                  {isCurrentModel && <CheckCircle className="h-3 w-3 shrink-0 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+        ) : !modelsLoading ? (
+          <div className="px-3 py-2 text-[10px] text-muted-foreground/40">
+            No models available
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

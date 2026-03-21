@@ -635,6 +635,18 @@ fn inference_thread_main(
         }
     };
 
+    // Initialize decoder state manager (handles LSTM states for TDT, no-op for stateless decoders)
+    let mut decoder_state_mgr = match DecoderStateManager::discover(&decoder) {
+        Ok(s) => s,
+        Err(e) => {
+            debug(
+                "error",
+                &format!("Decoder state discovery failed: {}", e),
+            );
+            return;
+        }
+    };
+
     debug(
         "info",
         &format!(
@@ -718,8 +730,8 @@ fn inference_thread_main(
 
             // Process each encoder output frame through the transducer
             for enc_frame in &encoder_frames {
-                // Run decoder on current context
-                let decoder_out = match run_decoder(&mut decoder, &emitted_tokens) {
+                // Run decoder on current context (with LSTM state management)
+                let decoder_out = match decoder_state_mgr.run_decoder(&mut decoder, &emitted_tokens) {
                     Ok(out) => out,
                     Err(e) => {
                         let now = std::time::Instant::now();
@@ -795,6 +807,7 @@ fn inference_thread_main(
                         emitted_tokens.clear();
                         consecutive_blanks = 0;
                         segment_counter += 1;
+                        decoder_state_mgr.reset_states(&decoder);
                     }
                 }
             }
@@ -841,57 +854,276 @@ fn load_ort_session(path: &std::path::Path) -> Result<ort::session::Session, Str
     Ok(session)
 }
 
-/// Run decoder on current token context.
-fn run_decoder(
-    session: &mut ort::session::Session,
-    token_context: &[i64],
-) -> Result<Vec<f32>, String> {
-    use ort::value::Tensor;
+/// Decoder state manager for transducer models with LSTM prediction networks.
+///
+/// Simple decoders (e.g., zipformer) take only token context and have no state.
+/// LSTM decoders (e.g., Parakeet TDT) carry hidden/cell states between calls.
+/// This struct handles both cases transparently.
+struct DecoderStateManager {
+    /// Whether the token input expects i32 (Parakeet TDT) vs i64 (zipformer).
+    expects_i32: bool,
+    /// Name of the token context input.
+    token_input_name: String,
+    /// Required token context length (from model shape, e.g. 2).
+    context_len: usize,
+    /// State tensors keyed by input name (empty for stateless decoders).
+    states: HashMap<String, StateTensor>,
+    /// (input_name, output_name) pairs for state tensors.
+    state_pairs: Vec<(String, String)>,
+    /// All input names in session order.
+    input_order: Vec<String>,
+    /// All output names in session order.
+    output_order: Vec<String>,
+    /// Index of the decoder embedding output (non-state output).
+    decoder_out_index: usize,
+}
 
-    // Check if decoder expects i32 inputs (e.g., Parakeet TDT) vs default i64
-    let expects_i32 = session.inputs().first()
-        .and_then(|i| match i.dtype() {
-            ort::value::ValueType::Tensor { ty, .. } =>
-                Some(*ty == ort::value::TensorElementType::Int32),
-            _ => None,
-        })
-        .unwrap_or(false);
+impl DecoderStateManager {
+    /// Discover decoder model structure and initialize states.
+    fn discover(session: &ort::session::Session) -> Result<Self, String> {
+        let mut token_input_name = String::new();
+        let mut expects_i32 = false;
+        let mut context_len: usize = 2;
+        let mut state_input_names: Vec<String> = Vec::new();
+        let mut input_order: Vec<String> = Vec::new();
 
-    // Use last 2 tokens (or pad with blanks)
-    let context: Vec<i64> = if token_context.len() >= 2 {
-        token_context[token_context.len() - 2..].to_vec()
-    } else {
-        let mut ctx = vec![BLANK_ID; 2];
-        for (i, &t) in token_context.iter().rev().enumerate() {
-            if i < 2 {
-                ctx[1 - i] = t;
+        // Classify inputs: integer tensors are token context, float tensors are states
+        for input in session.inputs() {
+            let name = input.name().to_string();
+            input_order.push(name.clone());
+
+            if let ort::value::ValueType::Tensor { ty, shape, .. } = input.dtype() {
+                match ty {
+                    ort::value::TensorElementType::Int32 | ort::value::TensorElementType::Int64 => {
+                        if token_input_name.is_empty() {
+                            token_input_name = name.clone();
+                            expects_i32 = *ty == ort::value::TensorElementType::Int32;
+                            // Extract context length from shape (last dim)
+                            if let Some(&last) = shape.last() {
+                                if last > 0 {
+                                    context_len = last as usize;
+                                }
+                            }
+                        } else {
+                            // Additional integer inputs treated as state
+                            state_input_names.push(name);
+                        }
+                    }
+                    _ => {
+                        // Float/other tensors are state inputs
+                        state_input_names.push(name);
+                    }
+                }
             }
         }
-        ctx
-    };
 
-    let outputs = if expects_i32 {
-        let context_i32: Vec<i32> = context.iter().map(|&t| t as i32).collect();
-        let arr = ndarray::Array2::from_shape_vec((1, context_i32.len()), context_i32)
-            .map_err(|e| format!("decoder input shape error: {}", e))?;
-        let input = Tensor::from_array(arr)
-            .map_err(|e| format!("decoder tensor creation failed: {}", e))?;
-        session.run(ort::inputs![input])
-            .map_err(|e| format!("decoder inference failed: {}", e))?
-    } else {
-        let arr = ndarray::Array2::from_shape_vec((1, context.len()), context)
-            .map_err(|e| format!("decoder input shape error: {}", e))?;
-        let input = Tensor::from_array(arr)
-            .map_err(|e| format!("decoder tensor creation failed: {}", e))?;
-        session.run(ort::inputs![input])
-            .map_err(|e| format!("decoder inference failed: {}", e))?
-    };
+        if token_input_name.is_empty() {
+            // Fallback: use first input
+            if let Some(first) = input_order.first() {
+                token_input_name = first.clone();
+            } else {
+                return Err("Decoder has no inputs".to_string());
+            }
+        }
 
-    let (_shape, data) = outputs[0]
-        .try_extract_tensor::<f32>()
-        .map_err(|e| format!("decoder output extraction failed: {}", e))?;
+        // Classify outputs: match state outputs by "new_" prefix
+        let mut output_order: Vec<String> = Vec::new();
+        let mut state_output_names: Vec<String> = Vec::new();
+        let mut decoder_out_index: usize = 0;
 
-    Ok(data.to_vec())
+        for (idx, output) in session.outputs().iter().enumerate() {
+            let name = output.name().to_string();
+            output_order.push(name.clone());
+
+            let is_state = state_input_names.iter().any(|inp| {
+                name == format!("new_{}", inp)
+                    || name.strip_prefix("new_").map_or(false, |s| s == inp)
+            });
+
+            if is_state {
+                state_output_names.push(name);
+            } else if idx == 0 || decoder_out_index == 0 {
+                decoder_out_index = idx;
+            }
+        }
+
+        // Build state pairs
+        let mut state_pairs: Vec<(String, String)> = Vec::new();
+        for inp_name in &state_input_names {
+            let out_name = format!("new_{}", inp_name);
+            if state_output_names.contains(&out_name) {
+                state_pairs.push((inp_name.clone(), out_name));
+            }
+        }
+
+        // Initialize state tensors to zeros
+        let mut states: HashMap<String, StateTensor> = HashMap::new();
+        for input in session.inputs() {
+            let inp_name = input.name().to_string();
+            if state_input_names.contains(&inp_name) {
+                if let ort::value::ValueType::Tensor { ty, shape, .. } = input.dtype() {
+                    let dims: Vec<usize> = shape
+                        .iter()
+                        .map(|&d| if d <= 0 { 1 } else { d as usize })
+                        .collect();
+                    let state = if *ty == ort::value::TensorElementType::Int64 {
+                        StateTensor::I64(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                    } else if *ty == ort::value::TensorElementType::Int32 {
+                        // i32 state: store as f32 zeros (will be cast on use)
+                        StateTensor::F32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                    } else {
+                        StateTensor::F32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                    };
+                    states.insert(inp_name, state);
+                }
+            }
+        }
+
+        log::info!(
+            "DecoderState: token_input='{}' ({}), context_len={}, {} state pairs, decoder_out_idx={}",
+            token_input_name,
+            if expects_i32 { "i32" } else { "i64" },
+            context_len,
+            state_pairs.len(),
+            decoder_out_index,
+        );
+
+        Ok(Self {
+            expects_i32,
+            token_input_name,
+            context_len,
+            states,
+            state_pairs,
+            input_order,
+            output_order,
+            decoder_out_index,
+        })
+    }
+
+    /// Run decoder with token context and manage LSTM states.
+    fn run_decoder(
+        &mut self,
+        session: &mut ort::session::Session,
+        token_context: &[i64],
+    ) -> Result<Vec<f32>, String> {
+        use ort::value::Tensor;
+
+        // Build token context (pad with blanks if needed)
+        let context: Vec<i64> = if token_context.len() >= self.context_len {
+            token_context[token_context.len() - self.context_len..].to_vec()
+        } else {
+            let mut ctx = vec![BLANK_ID; self.context_len];
+            for (i, &t) in token_context.iter().rev().enumerate() {
+                if i < self.context_len {
+                    ctx[self.context_len - 1 - i] = t;
+                }
+            }
+            ctx
+        };
+
+        // Build named input values in session order
+        let mut input_values: Vec<(
+            std::borrow::Cow<'_, str>,
+            ort::session::SessionInputValue<'_>,
+        )> = Vec::new();
+
+        for name in &self.input_order {
+            if *name == self.token_input_name {
+                // Token context input
+                if self.expects_i32 {
+                    let context_i32: Vec<i32> = context.iter().map(|&t| t as i32).collect();
+                    let arr = ndarray::Array2::from_shape_vec((1, self.context_len), context_i32)
+                        .map_err(|e| format!("decoder token shape: {}", e))?;
+                    let tensor = Tensor::from_array(arr)
+                        .map_err(|e| format!("decoder token tensor: {}", e))?;
+                    input_values.push((name.clone().into(), tensor.into()));
+                } else {
+                    let arr = ndarray::Array2::from_shape_vec((1, self.context_len), context.clone())
+                        .map_err(|e| format!("decoder token shape: {}", e))?;
+                    let tensor = Tensor::from_array(arr)
+                        .map_err(|e| format!("decoder token tensor: {}", e))?;
+                    input_values.push((name.clone().into(), tensor.into()));
+                }
+            } else if let Some(state_tensor) = self.states.get(name) {
+                // State input (LSTM hidden/cell)
+                match state_tensor {
+                    StateTensor::F32(arr) => {
+                        let tensor = Tensor::from_array(arr.clone())
+                            .map_err(|e| format!("decoder state '{}' (f32): {}", name, e))?;
+                        input_values.push((name.clone().into(), tensor.into()));
+                    }
+                    StateTensor::I64(arr) => {
+                        let tensor = Tensor::from_array(arr.clone())
+                            .map_err(|e| format!("decoder state '{}' (i64): {}", name, e))?;
+                        input_values.push((name.clone().into(), tensor.into()));
+                    }
+                }
+            }
+        }
+
+        let outputs = session
+            .run(input_values)
+            .map_err(|e| format!("decoder inference failed: {}", e))?;
+
+        // Extract decoder embedding output
+        let out_idx = self.decoder_out_index.min(outputs.len().saturating_sub(1));
+        let (_shape, data) = outputs[out_idx]
+            .try_extract_tensor::<f32>()
+            .map_err(|e| format!("decoder output extraction failed: {}", e))?;
+        let result = data.to_vec();
+
+        // Update states from outputs
+        for (input_name, output_name) in &self.state_pairs {
+            if let Some(out_idx) = self.output_order.iter().position(|n| n == output_name) {
+                if out_idx < outputs.len() {
+                    let is_i64 = matches!(self.states.get(input_name), Some(StateTensor::I64(_)));
+                    let new_state = if is_i64 {
+                        let (shape, data) = outputs[out_idx]
+                            .try_extract_tensor::<i64>()
+                            .map_err(|e| format!("decoder state out '{}' (i64): {}", output_name, e))?;
+                        let dims: Vec<usize> = shape.iter().map(|&d| d as usize).collect();
+                        StateTensor::I64(
+                            ndarray::ArrayD::from_shape_vec(ndarray::IxDyn(&dims), data.to_vec())
+                                .map_err(|e| format!("decoder state reshape '{}': {}", input_name, e))?,
+                        )
+                    } else {
+                        let (shape, data) = outputs[out_idx]
+                            .try_extract_tensor::<f32>()
+                            .map_err(|e| format!("decoder state out '{}' (f32): {}", output_name, e))?;
+                        let dims: Vec<usize> = shape.iter().map(|&d| d as usize).collect();
+                        StateTensor::F32(
+                            ndarray::ArrayD::from_shape_vec(ndarray::IxDyn(&dims), data.to_vec())
+                                .map_err(|e| format!("decoder state reshape '{}': {}", input_name, e))?,
+                        )
+                    };
+                    self.states.insert(input_name.clone(), new_state);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+    /// Reset all LSTM states to zeros (call on segment boundary).
+    fn reset_states(&mut self, session: &ort::session::Session) {
+        for input in session.inputs() {
+            let inp_name = input.name().to_string();
+            if self.states.contains_key(&inp_name) {
+                if let ort::value::ValueType::Tensor { ty, shape, .. } = input.dtype() {
+                    let dims: Vec<usize> = shape
+                        .iter()
+                        .map(|&d| if d <= 0 { 1 } else { d as usize })
+                        .collect();
+                    let state = if *ty == ort::value::TensorElementType::Int64 {
+                        StateTensor::I64(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                    } else {
+                        StateTensor::F32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                    };
+                    self.states.insert(inp_name, state);
+                }
+            }
+        }
+    }
 }
 
 /// Run joiner on encoder frame + decoder output to get logits.

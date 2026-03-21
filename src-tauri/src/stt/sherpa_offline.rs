@@ -286,6 +286,23 @@ impl STTProvider for SherpaOfflineSTT {
 
                                 segment_id += 1;
                                 segment_counter.store(segment_id, AtomicOrdering::Relaxed);
+                            } else if output.status.success() {
+                                // Sidecar succeeded but no "text:" line found — log raw output for debugging
+                                let raw_stderr: String = stderr.chars().take(300).collect();
+                                let raw_stdout: String = stdout.chars().take(300).collect();
+                                log::warn!(
+                                    "SherpaOfflineSTT: No text found in output. stderr=[{}] stdout=[{}]",
+                                    raw_stderr, raw_stdout
+                                );
+                                if let Some(ref handle) = app_handle {
+                                    let snippet = if !raw_stderr.is_empty() { &raw_stderr } else { &raw_stdout };
+                                    crate::stt::emit_stt_debug(
+                                        handle,
+                                        "warn",
+                                        "sherpa_offline",
+                                        &format!("No text in output: {}", snippet.chars().take(120).collect::<String>()),
+                                    );
+                                }
                             }
 
                             if !output.status.success() {
@@ -295,6 +312,16 @@ impl STTProvider for SherpaOfflineSTT {
                                     output.status,
                                     err.chars().take(200).collect::<String>()
                                 );
+                                if let Some(ref handle) = app_handle {
+                                    crate::stt::emit_stt_debug(
+                                        handle,
+                                        "error",
+                                        "sherpa_offline",
+                                        &format!("Sidecar failed ({}): {}",
+                                            output.status,
+                                            err.chars().take(150).collect::<String>()),
+                                    );
+                                }
                             }
                         }
                         Err(e) => {

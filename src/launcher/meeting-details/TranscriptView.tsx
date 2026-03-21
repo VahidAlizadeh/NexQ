@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import type { TranscriptSegment } from "../../lib/types";
 import type { TranscriptSearchState } from "../../hooks/useTranscriptSearch";
 import { TranscriptSearch } from "./TranscriptSearch";
@@ -155,7 +155,15 @@ function highlightText(
   return <>{parts}</>;
 }
 
-// Timeline scrubber bar
+// Speaker gradient colors for scrubber segments
+const SCRUBBER_GRADIENTS: Record<string, string> = {
+  User: "from-blue-500 to-blue-400",
+  Interviewer: "from-purple-500 to-purple-400",
+  Them: "from-emerald-500 to-emerald-400",
+  Unknown: "from-gray-500 to-gray-400",
+};
+
+// Timeline scrubber bar with hover tooltip
 function TimelineScrubber({
   segments,
   onJump,
@@ -163,6 +171,15 @@ function TimelineScrubber({
   segments: TranscriptSegment[];
   onJump: (index: number) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<{
+    visible: boolean;
+    x: number;
+    timestamp: string;
+    speaker: string;
+    segmentIndex: number;
+  }>({ visible: false, x: 0, timestamp: "", speaker: "", segmentIndex: 0 });
+
   if (segments.length < 2) return null;
 
   const firstTs = segments[0].timestamp_ms;
@@ -170,24 +187,113 @@ function TimelineScrubber({
   const totalDuration = lastTs - firstTs;
   if (totalDuration <= 0) return null;
 
-  return (
-    <div className="flex h-1.5 mx-5 mt-3 mb-1 gap-px rounded-full overflow-hidden bg-secondary/20">
-      {segments.map((seg, i) => {
-        const nextTs = segments[i + 1]?.timestamp_ms ?? lastTs;
-        const duration = nextTs - seg.timestamp_ms;
-        const widthPercent = (duration / totalDuration) * 100;
-        if (widthPercent < 0.2) return null;
+  // Find which segment corresponds to a given x position
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, x / rect.width));
+    const hoverTs = firstTs + ratio * totalDuration;
 
-        return (
+    // Find the closest segment
+    let closestIdx = 0;
+    let closestDist = Infinity;
+    for (let i = 0; i < segments.length; i++) {
+      const dist = Math.abs(segments[i].timestamp_ms - hoverTs);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestIdx = i;
+      }
+    }
+
+    setTooltip({
+      visible: true,
+      x: Math.max(30, Math.min(x, rect.width - 30)),
+      timestamp: formatTimestamp(segments[closestIdx].timestamp_ms),
+      speaker: getSpeakerLabel(segments[closestIdx].speaker),
+      segmentIndex: closestIdx,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip((prev) => ({ ...prev, visible: false }));
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (tooltip.visible) {
+      onJump(tooltip.segmentIndex);
+    }
+  };
+
+  // Pre-compute segment blocks (merge consecutive same-speaker segments for cleaner look)
+  const blocks: { speaker: string; startRatio: number; widthRatio: number }[] = [];
+  let blockStart = 0;
+  let blockSpeaker = segments[0].speaker;
+  for (let i = 1; i <= segments.length; i++) {
+    const seg = segments[i];
+    if (i === segments.length || seg.speaker !== blockSpeaker) {
+      const endTs = i < segments.length ? segments[i].timestamp_ms : lastTs;
+      const startRatio = (segments[blockStart].timestamp_ms - firstTs) / totalDuration;
+      const widthRatio = (endTs - segments[blockStart].timestamp_ms) / totalDuration;
+      if (widthRatio > 0.002) {
+        blocks.push({ speaker: blockSpeaker, startRatio, widthRatio });
+      }
+      if (i < segments.length) {
+        blockStart = i;
+        blockSpeaker = seg.speaker;
+      }
+    }
+  }
+
+  return (
+    <div className="relative mx-5 mt-3 mb-1">
+      {/* Tooltip */}
+      {tooltip.visible && (
+        <div
+          className="pointer-events-none absolute -top-8 z-20 -translate-x-1/2"
+          style={{ left: tooltip.x }}
+        >
+          <div className="rounded-lg border border-border/30 bg-card/95 px-2 py-1 shadow-lg backdrop-blur-sm">
+            <span className="text-[10px] font-medium tabular-nums text-foreground/90">
+              {tooltip.timestamp}
+            </span>
+            <span className="ml-1.5 text-[10px] text-muted-foreground/60">
+              {tooltip.speaker}
+            </span>
+          </div>
+          <div className="mx-auto h-1.5 w-px bg-primary/40" />
+        </div>
+      )}
+
+      {/* Scrubber track */}
+      <div
+        ref={containerRef}
+        className="relative h-2 cursor-pointer rounded-full bg-secondary/30"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+      >
+        {blocks.map((block, i) => (
           <div
-            key={seg.id || i}
-            className={`${SCRUBBER_COLORS[seg.speaker] || SCRUBBER_COLORS.Unknown} cursor-pointer transition-opacity hover:opacity-80`}
-            style={{ flexGrow: widthPercent }}
-            onClick={() => onJump(i)}
-            title={`${getSpeakerLabel(seg.speaker)} - ${formatTimestamp(seg.timestamp_ms)}`}
+            key={i}
+            className={`absolute top-0 h-full rounded-full bg-gradient-to-r ${
+              SCRUBBER_GRADIENTS[block.speaker] || SCRUBBER_GRADIENTS.Unknown
+            } opacity-75 transition-opacity hover:opacity-100`}
+            style={{
+              left: `${block.startRatio * 100}%`,
+              width: `${block.widthRatio * 100}%`,
+            }}
           />
-        );
-      })}
+        ))}
+        {/* Hover indicator line */}
+        {tooltip.visible && (
+          <div
+            className="pointer-events-none absolute top-0 h-full w-px bg-primary/60"
+            style={{ left: tooltip.x }}
+          />
+        )}
+      </div>
     </div>
   );
 }

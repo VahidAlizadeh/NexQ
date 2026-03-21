@@ -7,6 +7,7 @@ import {
   onStreamError,
 } from "../lib/events";
 import { updateMeetingSummary } from "../lib/ipc";
+import { useMeetingStore } from "../stores/meetingStore";
 import type { Meeting } from "../lib/types";
 
 export interface SummaryGenerationState {
@@ -67,11 +68,13 @@ export function useSummaryGeneration(
         if (!isOurGeneration.current) return;
         isOurGeneration.current = false;
 
-        // Persist summary to DB
+        // Persist summary to DB and refresh sidebar
         if (meeting && contentRef.current) {
           try {
             await updateMeetingSummary(meeting.id, contentRef.current);
             onSummaryGenerated?.(contentRef.current);
+            // Refresh sidebar so has_summary badge updates
+            useMeetingStore.getState().loadRecentMeetings();
           } catch (err) {
             console.error("[summaryGeneration] Failed to persist summary:", err);
           }

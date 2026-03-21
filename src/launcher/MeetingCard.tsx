@@ -172,7 +172,7 @@ export function MeetingCard({
           )}
 
           {/* Badges row */}
-          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+          <div className="mt-1.5 flex items-center gap-1.5">
             <span className="text-[10px] text-muted-foreground/70">
               {formatRelativeTime(meeting.start_time)}
             </span>
@@ -196,9 +196,8 @@ export function MeetingCard({
             )}
 
             {meeting.has_summary && (
-              <span className="flex items-center gap-0.5 rounded-full bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-medium text-indigo-400">
-                <FileText className="h-2 w-2" />
-                Summary
+              <span className="flex items-center gap-0.5 text-[10px] text-indigo-400">
+                <FileText className="h-2.5 w-2.5" />
               </span>
             )}
           </div>

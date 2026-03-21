@@ -544,9 +544,9 @@ function PartyPanel({
   const inputDevices = allDevices.filter((d) => d.group === "Microphones");
   const outputDevices = allDevices.filter((d) => d.group === "Speakers / Output");
 
-  // Sqrt scaling for perceptual sensitivity: raw 0.3 → displayed 55%, raw 0.1 → 32%
-  const clampedLv = Math.min(level, 1);
-  const scaledLv = Math.sqrt(clampedLv);
+  // Amplify then sqrt for perceptual sensitivity — 2.5× gain makes typical peaks fill the bar
+  const amplified = Math.min(level * 2.5, 1);
+  const scaledLv = Math.sqrt(amplified);
   const isActive = level > 0.005;
   const barWidth = isActive ? Math.min(100, Math.round(scaledLv * 100)) : 0;
 
@@ -663,7 +663,7 @@ function PartyPanel({
           {peak > 0.005 && (
             <div
               className="absolute inset-y-0 w-0.5 bg-foreground/60"
-              style={{ left: `${Math.sqrt(Math.min(peak, 1)) * 100}%` }}
+              style={{ left: `${Math.sqrt(Math.min(peak * 2.5, 1)) * 100}%` }}
             />
           )}
         </div>
@@ -874,8 +874,8 @@ function DeviceLevelRow({
   peak: number;
   isSelected?: boolean;
 }) {
-  const clampedLevel = Math.min(Math.max(level, 0), 1);
-  const scaled = Math.sqrt(clampedLevel);
+  const amplified = Math.min(Math.max(level, 0) * 2.5, 1);
+  const scaled = Math.sqrt(amplified);
 
   return (
     <div className="flex items-center gap-2">
@@ -890,7 +890,7 @@ function DeviceLevelRow({
               ? "bg-red-500"
               : scaled > 0.7
                 ? "bg-yellow-500"
-                : clampedLevel > 0
+                : level > 0
                   ? "bg-green-500"
                   : "bg-transparent"
           }`}
@@ -899,12 +899,12 @@ function DeviceLevelRow({
         {peak > 0.005 && (
           <div
             className="absolute inset-y-0 w-0.5 bg-foreground/40"
-            style={{ left: `${Math.sqrt(Math.min(peak, 1)) * 100}%` }}
+            style={{ left: `${Math.sqrt(Math.min(peak * 2.5, 1)) * 100}%` }}
           />
         )}
       </div>
       <span className="w-7 text-right text-[10px] tabular-nums text-muted-foreground/70">
-        {clampedLevel > 0.005 ? `${Math.round(scaled * 100)}%` : "\u2014"}
+        {level > 0.005 ? `${Math.round(scaled * 100)}%` : "\u2014"}
       </span>
     </div>
   );

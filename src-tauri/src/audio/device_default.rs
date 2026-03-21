@@ -220,7 +220,10 @@ pub fn override_default_capture_device(cpal_device_name: &str) -> Result<Option<
     unsafe {
         let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
         let we_initialized = hr.0 == 0; // S_OK only — don't CoUninitialize if S_FALSE
-        if hr.is_err() {
+        // RPC_E_CHANGED_MODE (0x80010106): COM already initialized with a different
+        // threading model (e.g. APARTMENTTHREADED). COM is still usable — just don't
+        // uninitialize it. S_FALSE (0x01): already initialized same mode — also usable.
+        if hr.is_err() && hr.0 as u32 != 0x80010106 {
             return Err(format!("CoInitializeEx failed: 0x{:08X}", hr.0));
         }
 
@@ -268,7 +271,8 @@ pub fn restore_default_capture_device(original_endpoint_id: &str) -> Result<(), 
     unsafe {
         let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
         let we_initialized = hr.0 == 0; // S_OK only
-        if hr.is_err() {
+        // RPC_E_CHANGED_MODE: COM already initialized with different threading model — still usable
+        if hr.is_err() && hr.0 as u32 != 0x80010106 {
             return Err(format!("CoInitializeEx failed: 0x{:08X}", hr.0));
         }
 

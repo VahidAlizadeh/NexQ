@@ -32,6 +32,11 @@ impl ModelManager {
         }
     }
 
+    /// Get the base models directory path.
+    pub fn models_dir(&self) -> &std::path::Path {
+        &self.models_dir
+    }
+
     /// Get the path where a model file/directory would be stored.
     fn model_file_path(&self, engine: &str, filename: &str) -> PathBuf {
         self.models_dir.join(engine).join(filename)

@@ -1260,20 +1260,56 @@ async fn create_stt_provider_for_party(
             Ok(Some(Box::new(p)))
         }
         STTProviderType::SherpaOnnx => {
-            // Sherpa-ONNX now uses in-process ORT engine (same as ORT Streaming).
-            // No separate sidecar binary needed — just the model files.
             let model_id = config.local_model_id.as_deref().unwrap_or("streaming-zipformer-en-20M");
             let model_result = get_local_model_path(state, "sherpa_onnx", model_id);
             match model_result {
                 Ok(model_dir) => {
                     let lang = get_stt_language(state);
-                    crate::stt::emit_stt_debug(app, "info", "stt",
-                        &format!("[{}] SherpaOnnx loading model '{}' from {} (lang={})",
-                            party_role, model_id, model_dir.display(), lang));
-                    let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
-                    p.set_language(&lang);
-                    p.set_app_handle(app.clone());
-                    Ok(Some(Box::new(p)))
+                    // Check if this is a non-transducer model (SenseVoice, etc.)
+                    // by trying offline discovery first.
+                    let offline_files = crate::stt::local_engines::model_discovery::discover_offline_model_files(&model_dir);
+                    if let Ok(offline) = offline_files {
+                        // Non-transducer model → use offline sidecar (sherpa-onnx-offline.exe)
+                        let binary = find_offline_binary_for_state(state);
+                        match binary {
+                            Some(binary_path) => {
+                                crate::stt::emit_stt_debug(app, "info", "stt",
+                                    &format!("[{}] SherpaOnnx offline model '{}' from {} (lang={})",
+                                        party_role, model_id, model_dir.display(), lang));
+                                // Detect model type from model_id
+                                let model_type = if model_id.contains("sense-voice") {
+                                    crate::stt::sherpa_offline::OfflineModelType::SenseVoice
+                                } else {
+                                    crate::stt::sherpa_offline::OfflineModelType::NemoCtc
+                                };
+                                let mut p = crate::stt::sherpa_offline::SherpaOfflineSTT::new(
+                                    binary_path,
+                                    offline.model,
+                                    offline.tokens,
+                                    model_type,
+                                    STTProviderType::SherpaOnnx,
+                                );
+                                p.set_language(&lang);
+                                p.set_app_handle(app.clone());
+                                Ok(Some(Box::new(p)))
+                            }
+                            None => {
+                                crate::stt::emit_stt_debug(app, "error", "stt",
+                                    &format!("[{}] sherpa-onnx-offline.exe not found. Download Sherpa-ONNX binary in Settings.",
+                                        party_role));
+                                Ok(None)
+                            }
+                        }
+                    } else {
+                        // Transducer model → use in-process ORT engine
+                        crate::stt::emit_stt_debug(app, "info", "stt",
+                            &format!("[{}] SherpaOnnx loading model '{}' from {} (lang={})",
+                                party_role, model_id, model_dir.display(), lang));
+                        let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
+                        p.set_language(&lang);
+                        p.set_app_handle(app.clone());
+                        Ok(Some(Box::new(p)))
+                    }
                 }
                 Err(e) => {
                     crate::stt::emit_stt_debug(app, "error", "stt",
@@ -1311,14 +1347,42 @@ async fn create_stt_provider_for_party(
             match model_result {
                 Ok(model_dir) => {
                     let lang = get_stt_language(state);
-                    crate::stt::emit_stt_debug(app, "info", "stt",
-                        &format!("[{}] Parakeet TDT loading model '{}' from {} (lang={})",
-                            party_role, model_id, model_dir.display(), lang));
-                    // Parakeet TDT uses the same ORT infrastructure as ort_streaming
-                    let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
-                    p.set_language(&lang);
-                    p.set_app_handle(app.clone());
-                    Ok(Some(Box::new(p)))
+                    // Parakeet TDT is a NeMo CTC model → use offline sidecar
+                    let offline_files = crate::stt::local_engines::model_discovery::discover_offline_model_files(&model_dir);
+                    match offline_files {
+                        Ok(offline) => {
+                            let binary = find_offline_binary_for_state(state);
+                            match binary {
+                                Some(binary_path) => {
+                                    crate::stt::emit_stt_debug(app, "info", "stt",
+                                        &format!("[{}] Parakeet TDT offline model '{}' from {} (lang={})",
+                                            party_role, model_id, model_dir.display(), lang));
+                                    let mut p = crate::stt::sherpa_offline::SherpaOfflineSTT::new(
+                                        binary_path,
+                                        offline.model,
+                                        offline.tokens,
+                                        crate::stt::sherpa_offline::OfflineModelType::NemoCtc,
+                                        STTProviderType::ParakeetTdt,
+                                    );
+                                    p.set_language(&lang);
+                                    p.set_app_handle(app.clone());
+                                    Ok(Some(Box::new(p)))
+                                }
+                                None => {
+                                    crate::stt::emit_stt_debug(app, "error", "stt",
+                                        &format!("[{}] sherpa-onnx-offline.exe not found. Download Sherpa-ONNX binary in Settings.",
+                                            party_role));
+                                    Ok(None)
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            crate::stt::emit_stt_debug(app, "error", "stt",
+                                &format!("[{}] Parakeet model discovery failed: {}",
+                                    party_role, e));
+                            Ok(None)
+                        }
+                    }
                 }
                 Err(e) => {
                     crate::stt::emit_stt_debug(app, "error", "stt",
@@ -1329,6 +1393,13 @@ async fn create_stt_provider_for_party(
             }
         }
     }
+}
+
+/// Find the sherpa-onnx-offline.exe binary from the ModelManager's models directory.
+fn find_offline_binary_for_state(state: &AppState) -> Option<std::path::PathBuf> {
+    let model_mgr = state.model_manager.as_ref()?;
+    let mgr = model_mgr.lock().ok()?;
+    crate::stt::sherpa_offline::find_offline_binary(mgr.models_dir())
 }
 
 /// Find any downloaded model for an engine (fallback when requested model isn't available).

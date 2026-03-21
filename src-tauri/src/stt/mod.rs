@@ -11,6 +11,7 @@ pub mod groq_whisper;
 pub mod whisper_api;
 // STT Engine Overhaul: New streaming providers
 pub mod sherpa_sidecar;
+pub mod sherpa_offline;
 pub mod ort_streaming;
 // Pause-based segment merging for all STT providers
 pub mod segment_accumulator;

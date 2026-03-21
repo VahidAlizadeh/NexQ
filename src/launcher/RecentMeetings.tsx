@@ -55,7 +55,7 @@ export function RecentMeetings({
   if (meetings.length === 0) {
     return (
       <div className="dash-main flex flex-col items-center justify-center rounded-2xl border border-border/20 bg-secondary/10 py-14">
-        <div className="empty-state-float mb-3 rounded-full bg-primary/10 p-3.5">
+        <div className="mb-3 rounded-full bg-primary/10 p-3.5">
           <Mic className="h-4.5 w-4.5 text-primary/30" />
         </div>
         <p className="text-xs font-medium text-muted-foreground/50">

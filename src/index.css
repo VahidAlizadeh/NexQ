@@ -486,16 +486,6 @@
   animation: live-ring-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* ── Empty state: gentle float ── */
-@keyframes gentle-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-.empty-state-float {
-  animation: gentle-float 3.5s ease-in-out infinite;
-}
-
 /* ── Section label entrance ── */
 .dash-section-enter {
   animation: dash-enter-up 350ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both;

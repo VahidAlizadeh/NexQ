@@ -135,7 +135,7 @@ export function ModeButtons() {
                     : isCustom
                       ? "text-warning/60 hover:bg-warning/10 hover:text-warning border border-warning/10"
                       : "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
-              } ${isStreaming && !isActive ? "opacity-20 cursor-not-allowed" : ""}`}
+              } ${isStreaming && !isActive ? "opacity-40 cursor-not-allowed" : ""}`}
             >
               {isActive ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : <Icon className="h-3 w-3" aria-hidden="true" />}
               <span>{label}</span>

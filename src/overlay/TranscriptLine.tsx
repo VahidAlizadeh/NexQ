@@ -87,7 +87,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   return (
     <div
       className={`group flex items-start gap-2 rounded-lg px-1.5 py-1 transition-colors duration-100 hover:bg-accent/30 border-l-2 transcript-line-enter ${
-        segment.speaker === "User" ? "border-l-speaker-user/20" : "border-l-speaker-interviewer/20"
+        segment.speaker === "User" ? "border-l-speaker-user/50" : "border-l-speaker-interviewer/50"
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

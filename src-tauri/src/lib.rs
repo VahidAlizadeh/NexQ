@@ -421,6 +421,8 @@ pub fn run() {
             meeting_commands::search_meetings,
             meeting_commands::append_transcript_segment,
             meeting_commands::save_meeting_ai_interactions,
+            meeting_commands::rename_meeting,
+            meeting_commands::update_meeting_summary,
             // == COMMANDS: settings ==
             settings_commands::get_config,
             settings_commands::set_config,

@@ -36,6 +36,14 @@ const DEFAULT_PROMPTS: Record<IntelligenceMode, string> = {
     "You are an AI assistant in a meeting. Answer the user's specific question based on " +
     "the meeting context and any provided documents. Be direct and helpful. " +
     "If you don't have enough context to answer confidently, say so clearly.",
+  MeetingSummary:
+    "Generate a comprehensive meeting summary from the full transcript. Include:\n" +
+    "- Overview (1-2 sentences)\n" +
+    "- Key Discussion Points\n" +
+    "- Decisions Made\n" +
+    "- Action Items\n" +
+    "- Open Questions\n" +
+    "Be factual, concise, and base everything strictly on the transcript.",
 };
 
 export function getSystemPromptForMode(mode: IntelligenceMode): string {

@@ -12,6 +12,8 @@ import {
   onStreamError,
 } from "../lib/events";
 import { useCallLogStore } from "../stores/callLogStore";
+import { useMeetingStore } from "../stores/meetingStore";
+import { saveMeetingAiInteractions } from "../lib/ipc";
 import type { IntelligenceMode, LogEntry } from "../lib/types";
 
 /** Timeout (ms) for stale "sending" entries — auto-transition to error */
@@ -106,6 +108,34 @@ export function useCallLogCapture() {
               event.total_tokens,
               event.latency_ms
             );
+
+          // Immediately persist all completed AI interactions to DB (crash protection)
+          const meetingId = useMeetingStore.getState().activeMeeting?.id;
+          if (meetingId) {
+            const entries = useCallLogStore.getState().entries;
+            const interactions = entries
+              .filter((e) => e.status === "complete")
+              .map((e) => ({
+                id: e.id,
+                meeting_id: meetingId,
+                mode: e.mode,
+                question_context: e.actualUserPrompt || "",
+                response: e.responseContentClean || e.responseContent,
+                model: e.model,
+                provider: e.provider,
+                latency_ms: e.latencyMs ?? 0,
+                timestamp: new Date(e.timestamp).toISOString(),
+              }));
+            if (interactions.length > 0) {
+              saveMeetingAiInteractions(
+                meetingId,
+                JSON.stringify(interactions)
+              ).catch((err) =>
+                console.error("[callLogCapture] Failed to persist AI interactions:", err)
+              );
+            }
+          }
+
           activeCallId.current = null;
         }
       })

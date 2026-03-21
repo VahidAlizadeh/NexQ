@@ -1,0 +1,1 @@
+export { MeetingDetails } from "./MeetingDetailsContainer";

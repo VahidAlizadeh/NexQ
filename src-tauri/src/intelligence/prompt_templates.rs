@@ -10,6 +10,7 @@ pub fn get_system_prompt(mode: &str) -> &'static str {
         "FollowUp" => FOLLOW_UP_PROMPT,
         "Recap" => RECAP_PROMPT,
         "AskQuestion" => ASK_QUESTION_PROMPT,
+        "MeetingSummary" => MEETING_SUMMARY_PROMPT,
         _ => ASSIST_PROMPT,
     }
 }
@@ -44,6 +45,26 @@ Provide a structured summary of the meeting so far. Include:\n\
 - Action items and owners (if mentioned)\n\
 - Outstanding questions or unresolved points\n\
 Use bullet points for scannability. Be factual and concise — do not add interpretation.";
+
+pub const MEETING_SUMMARY_PROMPT: &str = "\
+Generate a comprehensive meeting summary from the full transcript provided. Structure as:\n\
+\n\
+## Overview\n\
+A 1-2 sentence high-level description of what the meeting covered.\n\
+\n\
+## Key Discussion Points\n\
+- Bullet points of the main topics discussed\n\
+\n\
+## Decisions Made\n\
+- Any concrete decisions or agreements reached\n\
+\n\
+## Action Items\n\
+- Tasks, owners, and deadlines mentioned\n\
+\n\
+## Open Questions\n\
+- Unresolved points that need follow-up\n\
+\n\
+Be factual, concise, and base everything strictly on the transcript. Do not add speculation or interpretation.";
 
 pub const ASK_QUESTION_PROMPT: &str = "\
 The user has a specific question about the meeting or uploaded documents. Answer directly \

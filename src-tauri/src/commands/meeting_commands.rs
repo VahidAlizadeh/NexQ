@@ -188,6 +188,64 @@ pub async fn search_meetings(
 }
 
 #[command]
+pub async fn rename_meeting(
+    meeting_id: String,
+    new_title: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let update = MeetingUpdate {
+        title: Some(new_title),
+        end_time: None,
+        duration_seconds: None,
+        transcript: None,
+        ai_interactions: None,
+        summary: None,
+        config_snapshot: None,
+    };
+
+    meetings::update_meeting(db.connection(), &meeting_id, &update)
+        .map_err(|e| format!("Failed to rename meeting: {}", e))
+}
+
+#[command]
+pub async fn update_meeting_summary(
+    meeting_id: String,
+    summary: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let update = MeetingUpdate {
+        title: None,
+        end_time: None,
+        duration_seconds: None,
+        transcript: None,
+        ai_interactions: None,
+        summary: Some(summary),
+        config_snapshot: None,
+    };
+
+    meetings::update_meeting(db.connection(), &meeting_id, &update)
+        .map_err(|e| format!("Failed to update meeting summary: {}", e))
+}
+
+#[command]
 pub async fn append_transcript_segment(
     meeting_id: String,
     segment: String,

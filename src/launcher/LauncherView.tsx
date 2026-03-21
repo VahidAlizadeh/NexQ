@@ -6,7 +6,7 @@ import { useRagStore } from "../stores/ragStore";
 import { searchMeetings, deleteMeeting } from "../lib/ipc";
 import { showToast } from "../stores/toastStore";
 import { RecentMeetings } from "./RecentMeetings";
-import { MeetingDetails } from "./MeetingDetails";
+import { MeetingDetails } from "./meeting-details";
 import { FileUpload } from "../context/FileUpload";
 import { ResourceCard } from "../context/ResourceCard";
 import { TokenBudget } from "../context/TokenBudget";

@@ -106,6 +106,8 @@ export function getModeLabel(mode: IntelligenceMode): string {
       return "Recap";
     case "AskQuestion":
       return "Ask";
+    case "MeetingSummary":
+      return "Summary";
   }
 }
 
@@ -124,6 +126,8 @@ export function getModeShortcut(mode: IntelligenceMode): string {
       return "Ctrl+4";
     case "AskQuestion":
       return "Ctrl+5";
+    case "MeetingSummary":
+      return "";
   }
 }
 

@@ -89,7 +89,8 @@ export type IntelligenceMode =
   | "Shorten"
   | "FollowUp"
   | "Recap"
-  | "AskQuestion";
+  | "AskQuestion"
+  | "MeetingSummary";
 
 export interface AIResponse {
   id: string;

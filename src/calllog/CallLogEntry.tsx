@@ -27,6 +27,7 @@ const MODE_COLORS: Record<
     dot: "bg-emerald-500",
   },
   AskQuestion: { badge: "bg-rose-500/15 text-rose-400", dot: "bg-rose-500" },
+  MeetingSummary: { badge: "bg-indigo-500/15 text-indigo-400", dot: "bg-indigo-500" },
 };
 
 // -- Context source badges ---------------------------------------------------

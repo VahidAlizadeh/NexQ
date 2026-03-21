@@ -78,6 +78,9 @@ pub enum STTProviderType {
     SherpaOnnx,
     /// ONNX Runtime in-process — streaming transducer loaded via ort crate.
     OrtStreaming,
+    /// NVIDIA Parakeet TDT — CTC/TDT architecture via ONNX Runtime.
+    /// #1 on Open ASR Leaderboard (~6% WER), native streaming.
+    ParakeetTdt,
 }
 
 impl STTProviderType {
@@ -92,6 +95,7 @@ impl STTProviderType {
             STTProviderType::WhisperCpp => "whisper_cpp",
             STTProviderType::SherpaOnnx => "sherpa_onnx",
             STTProviderType::OrtStreaming => "ort_streaming",
+            STTProviderType::ParakeetTdt => "parakeet_tdt",
         }
     }
 
@@ -106,6 +110,7 @@ impl STTProviderType {
             "web_speech" => Some(STTProviderType::WebSpeech),
             "sherpa_onnx" => Some(STTProviderType::SherpaOnnx),
             "ort_streaming" => Some(STTProviderType::OrtStreaming),
+            "parakeet_tdt" => Some(STTProviderType::ParakeetTdt),
             _ => None,
         }
     }
@@ -325,6 +330,15 @@ pub fn list_available_providers() -> Vec<STTProviderInfo> {
                 "ja".to_string(),
                 "ko".to_string(),
                 "ru".to_string(),
+            ],
+        },
+        STTProviderInfo {
+            provider_type: "parakeet_tdt".to_string(),
+            name: "Parakeet TDT (Best Local)".to_string(),
+            requires_api_key: false,
+            is_local: true,
+            supported_languages: vec![
+                "en".to_string(),
             ],
         },
     ]

@@ -75,8 +75,21 @@ static WHISPER_CPP_MODELS: &[ModelDefinition] = &[
     },
     ModelDefinition {
         engine: "whisper_cpp",
+        model_id: "distil-large-v3",
+        display_name: "Distil Whisper Large v3 (809 MB, fast+accurate)",
+        size_bytes: 809_000_000,
+        download_url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-distil-large-v3.bin",
+        sha256: "",
+        accuracy_rating: 5,
+        speed_rating: 3,
+        is_streaming: false,
+        filename: "ggml-distil-large-v3.bin",
+        is_archive: false,
+    },
+    ModelDefinition {
+        engine: "whisper_cpp",
         model_id: "large-v3-turbo",
-        display_name: "Whisper Large v3 Turbo (1.6 GB)",
+        display_name: "Whisper Large v3 Turbo (1.6 GB, best accuracy)",
         size_bytes: 1_600_000_000,
         download_url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
         sha256: "",
@@ -132,6 +145,19 @@ static SHERPA_ONNX_MODELS: &[ModelDefinition] = &[
         filename: "sherpa-onnx-streaming-zipformer-multi-zh-hans-2023-12-12",
         is_archive: true,
     },
+    ModelDefinition {
+        engine: "sherpa_onnx",
+        model_id: "sense-voice-small",
+        display_name: "SenseVoice Small (Multilingual, ~200 MB, <80ms)",
+        size_bytes: 227_000_000, // actual: ~217 MB compressed
+        download_url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2",
+        sha256: "",
+        accuracy_rating: 4,
+        speed_rating: 5,
+        is_streaming: false,
+        filename: "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+        is_archive: true,
+    },
 ];
 
 /// ORT Streaming: same ONNX model files, loaded in-process via ort crate.
@@ -165,12 +191,31 @@ static ORT_STREAMING_MODELS: &[ModelDefinition] = &[
     },
 ];
 
+/// NVIDIA Parakeet TDT models — CTC/TDT architecture, ONNX format.
+/// #1 on Open ASR Leaderboard (~6% WER), 0.6B parameters.
+static PARAKEET_TDT_MODELS: &[ModelDefinition] = &[
+    ModelDefinition {
+        engine: "parakeet_tdt",
+        model_id: "parakeet-tdt-0.6b-int8",
+        display_name: "Parakeet TDT 0.6B (int8, ~300 MB, best accuracy)",
+        size_bytes: 320_000_000,
+        download_url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-int8.tar.bz2",
+        sha256: "",
+        accuracy_rating: 5,
+        speed_rating: 4,
+        is_streaming: false,
+        filename: "sherpa-onnx-nemo-parakeet-tdt-0.6b-int8",
+        is_archive: true,
+    },
+];
+
 /// Get all model definitions for a given engine.
 pub fn get_models_for_engine(engine: &str) -> &'static [ModelDefinition] {
     match engine {
         "whisper_cpp" => WHISPER_CPP_MODELS,
         "sherpa_onnx" => SHERPA_ONNX_MODELS,
         "ort_streaming" => ORT_STREAMING_MODELS,
+        "parakeet_tdt" => PARAKEET_TDT_MODELS,
         _ => &[],
     }
 }
@@ -201,12 +246,17 @@ pub fn get_engines() -> Vec<EngineInfo> {
         EngineInfo {
             engine: "sherpa_onnx",
             name: "Sherpa-ONNX",
-            description: "Streaming transducer (Zipformer) via in-process ONNX Runtime. Includes multilingual model. Fully offline, free.",
+            description: "Streaming transducer (Zipformer) + SenseVoice via in-process ONNX Runtime. Multilingual. Fully offline, free.",
         },
         EngineInfo {
             engine: "ort_streaming",
             name: "ORT Streaming",
             description: "ONNX Runtime in-process streaming. Zero IPC overhead, GPU-accelerated. For advanced users.",
+        },
+        EngineInfo {
+            engine: "parakeet_tdt",
+            name: "Parakeet TDT",
+            description: "NVIDIA Parakeet TDT 0.6B — #1 on Open ASR Leaderboard (~6% WER). CTC/TDT architecture via ONNX Runtime.",
         },
     ]
 }

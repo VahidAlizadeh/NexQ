@@ -1,3 +1,4 @@
+pub mod device_default;
 pub mod device_manager;
 pub mod mic_capture;
 pub mod recorder;

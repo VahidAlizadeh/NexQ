@@ -273,6 +273,10 @@ pub async fn start_capture(
 #[command]
 pub async fn stop_capture(app: AppHandle) -> Result<(), String> {
     let state = app.state::<AppState>();
+
+    // Restore original default capture device if IPolicyConfig override was active
+    restore_default_device_if_overridden(&state, &app);
+
     let mut guard = state
         .audio
         .lock()
@@ -732,6 +736,9 @@ pub async fn start_capture_per_party(
 
     // If already capturing, stop first (allows mid-meeting hot-swap)
     {
+        // Restore any previous IPolicyConfig override before hot-swap
+        restore_default_device_if_overridden(&state, &app);
+
         let mut guard = state
             .audio
             .lock()
@@ -783,6 +790,50 @@ pub async fn start_capture_per_party(
             mic_device, system_device
         );
         mgr.start_capture(&mic_device, &system_device, tx)?;
+    }
+
+    // ── IPolicyConfig: override system default mic if needed ──
+    // Web Speech and Windows Speech always use the OS default recording device.
+    // If the user selected a non-default device, temporarily change the system default.
+    {
+        let needs_override = |config: &crate::audio::PartyAudioConfig| -> bool {
+            let provider = config.stt_provider.as_str();
+            (provider == "web_speech" || provider == "windows_native")
+                && config.is_input_device
+                && config.device_id != "default"
+        };
+
+        if needs_override(&you) || needs_override(&them) {
+            // Pick the device that needs the override (prefer "You" if both need it)
+            let target_device = if needs_override(&you) {
+                &you.device_id
+            } else {
+                &them.device_id
+            };
+
+            crate::stt::emit_stt_debug(&app, "info", "audio",
+                &format!("IPolicyConfig: overriding default capture → '{}'", target_device));
+
+            match crate::audio::device_default::override_default_capture_device(target_device) {
+                Ok(Some(original)) => {
+                    // Store original so we can restore it on stop
+                    if let Ok(mut guard) = state.original_default_device.lock() {
+                        *guard = Some(original.clone());
+                    }
+                    crate::stt::emit_stt_debug(&app, "info", "audio",
+                        &format!("IPolicyConfig: saved original default '{}', override active", original));
+                }
+                Ok(None) => {
+                    // Target was already the default — no override applied
+                    crate::stt::emit_stt_debug(&app, "info", "audio",
+                        "IPolicyConfig: selected device is already the default — no override needed");
+                }
+                Err(e) => {
+                    crate::stt::emit_stt_debug(&app, "warn", "audio",
+                        &format!("IPolicyConfig: override failed ({}). STT will use OS default mic.", e));
+                }
+            }
+        }
     }
 
     // ── Create STT provider for "You" party (if not web_speech) ──
@@ -1076,6 +1127,18 @@ pub async fn start_capture_per_party(
         if let Some(ref mut provider) = them_stt_provider {
             let _ = provider.stop_stream().await;
         }
+
+        // Restore IPolicyConfig override if active (crash recovery for async task exit)
+        {
+            let original = app_handle
+                .try_state::<AppState>()
+                .and_then(|s| s.original_default_device.lock().ok()?.take());
+            if let Some(ref original_id) = original {
+                let _ = crate::audio::device_default::restore_default_capture_device(original_id);
+                log::info!("IPolicyConfig: restored default device on audio task exit");
+            }
+        }
+
         log::info!("Per-party audio processing task exiting");
     });
 
@@ -1242,6 +1305,29 @@ async fn create_stt_provider_for_party(
                 }
             }
         }
+        STTProviderType::ParakeetTdt => {
+            let model_id = config.local_model_id.as_deref().unwrap_or("parakeet-tdt-0.6b-int8");
+            let model_result = get_local_model_path(state, "parakeet_tdt", model_id);
+            match model_result {
+                Ok(model_dir) => {
+                    let lang = get_stt_language(state);
+                    crate::stt::emit_stt_debug(app, "info", "stt",
+                        &format!("[{}] Parakeet TDT loading model '{}' from {} (lang={})",
+                            party_role, model_id, model_dir.display(), lang));
+                    // Parakeet TDT uses the same ORT infrastructure as ort_streaming
+                    let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
+                    p.set_language(&lang);
+                    p.set_app_handle(app.clone());
+                    Ok(Some(Box::new(p)))
+                }
+                Err(e) => {
+                    crate::stt::emit_stt_debug(app, "error", "stt",
+                        &format!("[{}] Parakeet model '{}' not found: {}. Download in Settings.",
+                            party_role, model_id, e));
+                    Ok(None)
+                }
+            }
+        }
     }
 }
 
@@ -1318,6 +1404,36 @@ fn get_deepgram_config(state: &AppState) -> crate::stt::deepgram::DeepgramConfig
         .as_ref()
         .and_then(|stt| stt.lock().ok().map(|r| r.deepgram_config.clone()))
         .unwrap_or_default()
+}
+
+// ── IPolicyConfig restore helper ────────────────────────────────────
+
+/// Restore the original default capture device if an IPolicyConfig override is active.
+/// Safe to call even if no override was applied (no-op in that case).
+/// Uses `take()` to atomically remove the stored value, preventing TOCTOU races
+/// where a concurrent hot-swap could lose a newly-stored override.
+fn restore_default_device_if_overridden(state: &AppState, app: &tauri::AppHandle) {
+    // Atomically take the value — if another thread races, only one gets Some
+    let original = match state.original_default_device.lock() {
+        Ok(mut guard) => guard.take(),
+        Err(_) => return,
+    };
+
+    if let Some(ref original_id) = original {
+        crate::stt::emit_stt_debug(app, "info", "audio",
+            &format!("IPolicyConfig: restoring default capture → '{}'", original_id));
+
+        match crate::audio::device_default::restore_default_capture_device(original_id) {
+            Ok(()) => {
+                crate::stt::emit_stt_debug(app, "info", "audio",
+                    "IPolicyConfig: default capture device restored");
+            }
+            Err(e) => {
+                crate::stt::emit_stt_debug(app, "error", "audio",
+                    &format!("IPolicyConfig: restore failed: {}", e));
+            }
+        }
+    }
 }
 
 // ── Per-party mute control ──────────────────────────────────────────

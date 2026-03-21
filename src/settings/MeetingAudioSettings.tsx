@@ -35,6 +35,8 @@ import {
   Zap,
   ChevronDown,
   CheckCircle,
+  AlertTriangle,
+  Cpu,
 } from "lucide-react";
 import { BUILT_IN_PRESETS, type MeetingPreset, applyPreset } from "./presets";
 
@@ -84,6 +86,15 @@ const STT_OPTIONS: {
     requiresKey: false,
     isCloud: false,
     requiresDownload: "ort_streaming",
+  },
+  {
+    value: "parakeet_tdt",
+    label: "Parakeet TDT (Best Local)",
+    shortLabel: "Parakeet",
+    icon: <Cpu className="h-3.5 w-3.5" />,
+    requiresKey: false,
+    isCloud: false,
+    requiresDownload: "parakeet_tdt",
   },
   {
     value: "deepgram",
@@ -546,7 +557,7 @@ function PartyPanel({
 
   function handleProviderChange(newProvider: STTProviderType) {
     const updates: Partial<PartyAudioConfig> = { stt_provider: newProvider };
-    if (newProvider === "sherpa_onnx" || newProvider === "ort_streaming") {
+    if (newProvider === "sherpa_onnx" || newProvider === "ort_streaming" || newProvider === "parakeet_tdt") {
       // Use per-engine active model, falling back to legacy activeWhisperModel
       const activeModelPerEngine = useConfigStore.getState().activeModelPerEngine;
       const engineModel = activeModelPerEngine[newProvider] ?? activeWhisperModel;
@@ -660,6 +671,21 @@ function PartyPanel({
             onChange={handleProviderChange}
           />
         </div>
+
+        {/* Device + Provider mismatch warning */}
+        {(party.stt_provider === "web_speech" || party.stt_provider === "windows_native") &&
+          party.is_input_device &&
+          party.device_id !== "default" && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+            <p className="text-[10px] leading-relaxed text-amber-200/80">
+              <span className="font-semibold text-amber-400">Device override active.</span>{" "}
+              {party.stt_provider === "web_speech" ? "Web Speech" : "Windows Speech"} always
+              uses the system default mic. During meetings, your system default will be
+              temporarily switched to the selected device and restored when the meeting ends.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

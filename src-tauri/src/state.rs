@@ -44,6 +44,9 @@ pub struct AppState {
     /// Audio levels + recording continue unaffected.
     pub you_muted: Arc<AtomicBool>,
     pub them_muted: Arc<AtomicBool>,
+    /// Original default capture endpoint ID saved before IPolicyConfig override.
+    /// Set when Web Speech / Windows Speech uses a non-default device; restored on stop.
+    pub original_default_device: Arc<Mutex<Option<String>>>,
 }
 
 impl AppState {
@@ -64,6 +67,7 @@ impl AppState {
             device_monitor_running: Arc::new(AtomicBool::new(false)),
             you_muted: Arc::new(AtomicBool::new(false)),
             them_muted: Arc::new(AtomicBool::new(false)),
+            original_default_device: Arc::new(Mutex::new(None)),
         }
     }
 }

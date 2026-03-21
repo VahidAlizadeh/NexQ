@@ -219,10 +219,10 @@ impl STTRouter {
                 p.set_config(self.groq_config.clone());
                 Box::new(p)
             }
-            STTProviderType::SherpaOnnx | STTProviderType::OrtStreaming => {
-                // Not yet implemented — record the type and return early
+            STTProviderType::SherpaOnnx | STTProviderType::OrtStreaming | STTProviderType::ParakeetTdt => {
+                // These are created per-party in start_capture_per_party, not via STTRouter.
                 self.active_provider = None;
-                log::warn!("STTRouter: {:?} selected but not yet implemented", provider_type);
+                log::info!("STTRouter: {:?} selected (provider created per-party)", provider_type);
                 self.active_type = Some(provider_type);
                 return Ok(());
             }
@@ -518,9 +518,10 @@ impl STTRouter {
                     .await
                     .map_err(|e| format!("Connection test failed: {}", e))
             }
-            STTProviderType::SherpaOnnx | STTProviderType::OrtStreaming => {
-                log::warn!("test_provider_connection: {:?} not yet implemented", provider_type);
-                Err(format!("{:?} provider is not yet implemented", provider_type))
+            STTProviderType::SherpaOnnx | STTProviderType::OrtStreaming | STTProviderType::ParakeetTdt => {
+                // Local engines — always "available" if a model is downloaded.
+                // Model availability is checked at capture time in create_stt_provider_for_party.
+                Ok(true)
             }
         }
     }

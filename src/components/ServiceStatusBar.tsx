@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Brain, Mic, MicOff, Volume2, VolumeX, Zap,
+  Brain, Mic, MicOff, Volume2, VolumeX, Zap, Cpu,
   ChevronUp, CheckCircle, Globe, Monitor, HardDrive, Cloud,
 } from "lucide-react";
 import { useConfigStore } from "../stores/configStore";
@@ -53,6 +53,7 @@ const STT_PROVIDER_OPTIONS: {
   { value: "windows_native", label: "Windows Speech", IconComponent: Monitor, requiresKey: false, isCloud: false, inputOnly: true },
   { value: "sherpa_onnx", label: "Sherpa-ONNX", IconComponent: HardDrive, requiresKey: false, isCloud: false, requiresDownload: "sherpa_onnx" },
   { value: "ort_streaming", label: "ORT Streaming", IconComponent: Zap, requiresKey: false, isCloud: false, requiresDownload: "ort_streaming" },
+  { value: "parakeet_tdt", label: "Parakeet TDT", IconComponent: Cpu, requiresKey: false, isCloud: false, requiresDownload: "parakeet_tdt" },
   { value: "deepgram", label: "Deepgram", IconComponent: Cloud, requiresKey: true, isCloud: true },
   { value: "whisper_api", label: "Whisper API", IconComponent: Cloud, requiresKey: true, isCloud: true },
   { value: "azure_speech", label: "Azure Speech", IconComponent: Cloud, requiresKey: true, isCloud: true },
@@ -85,7 +86,7 @@ function formatModel(model: string): string {
 
 function formatSttLabel(provider: string, localModelId?: string): { provider: string; model: string } {
   const providerLabel = STT_LABELS[provider] || provider;
-  const localProviders = ["whisper_cpp", "sherpa_onnx", "ort_streaming"];
+  const localProviders = ["whisper_cpp", "sherpa_onnx", "ort_streaming", "parakeet_tdt"];
   if (localProviders.includes(provider) && localModelId) {
     return { provider: providerLabel, model: localModelId };
   }

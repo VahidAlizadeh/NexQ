@@ -1346,48 +1346,58 @@ async fn create_stt_provider_for_party(
             }
         }
         STTProviderType::ParakeetTdt => {
-            let model_id = config.local_model_id.as_deref().unwrap_or("parakeet-tdt-ctc-110m-int8");
+            let model_id = config.local_model_id.as_deref().unwrap_or("parakeet-tdt-0.6b-v3-int8");
             crate::stt::emit_stt_debug(app, "info", "stt",
                 &format!("[{}] Parakeet TDT: looking for model '{}' (local_model_id={:?})",
                     party_role, model_id, config.local_model_id));
-            let model_result = get_local_model_path(state, "parakeet_tdt", model_id);
+            let model_result = get_local_model_path(state, "parakeet_tdt", model_id)
+                .or_else(|_| find_any_downloaded_model(state, "parakeet_tdt"));
             match model_result {
                 Ok(model_dir) => {
                     let lang = get_stt_language(state);
-                    // Parakeet TDT is a NeMo CTC model → use offline sidecar
-                    let offline_files = crate::stt::local_engines::model_discovery::discover_offline_model_files(&model_dir);
-                    match offline_files {
-                        Ok(offline) => {
-                            let binary = find_offline_binary_for_state(state);
-                            match binary {
-                                Some(binary_path) => {
-                                    crate::stt::emit_stt_debug(app, "info", "stt",
-                                        &format!("[{}] Parakeet TDT offline model '{}' from {} (lang={})",
-                                            party_role, model_id, model_dir.display(), lang));
-                                    let mut p = crate::stt::sherpa_offline::SherpaOfflineSTT::new(
-                                        binary_path,
-                                        offline.model,
-                                        offline.tokens,
-                                        crate::stt::sherpa_offline::OfflineModelType::NemoCtc,
-                                        STTProviderType::ParakeetTdt,
-                                    );
-                                    p.set_language(&lang);
-                                    p.set_app_handle(app.clone());
-                                    Ok(Some(Box::new(p)))
-                                }
-                                None => {
-                                    crate::stt::emit_stt_debug(app, "error", "stt",
-                                        &format!("[{}] sherpa-onnx-offline.exe not found. Download Sherpa-ONNX binary in Settings.",
-                                            party_role));
-                                    Ok(None)
+                    // Auto-detect model type: transducer (encoder/decoder/joiner) vs CTC (model.onnx)
+                    let transducer = crate::stt::local_engines::model_discovery::discover_model_files(&model_dir);
+                    if transducer.is_ok() {
+                        // Transducer model (e.g., 0.6B v3) → use in-process ORT streaming
+                        crate::stt::emit_stt_debug(app, "info", "stt",
+                            &format!("[{}] Parakeet transducer model from {} (lang={})",
+                                party_role, model_dir.display(), lang));
+                        let mut p = crate::stt::ort_streaming::OrtStreamingSTT::new(model_dir);
+                        p.set_language(&lang);
+                        p.set_app_handle(app.clone());
+                        Ok(Some(Box::new(p)))
+                    } else {
+                        // CTC model (e.g., 110M) → use offline sidecar
+                        let offline_files = crate::stt::local_engines::model_discovery::discover_offline_model_files(&model_dir);
+                        match offline_files {
+                            Ok(offline) => {
+                                let binary = find_offline_binary_for_state(state);
+                                match binary {
+                                    Some(binary_path) => {
+                                        crate::stt::emit_stt_debug(app, "info", "stt",
+                                            &format!("[{}] Parakeet CTC offline model from {} (lang={})",
+                                                party_role, model_dir.display(), lang));
+                                        let mut p = crate::stt::sherpa_offline::SherpaOfflineSTT::new(
+                                            binary_path, offline.model, offline.tokens,
+                                            crate::stt::sherpa_offline::OfflineModelType::NemoCtc,
+                                            STTProviderType::ParakeetTdt,
+                                        );
+                                        p.set_language(&lang);
+                                        p.set_app_handle(app.clone());
+                                        Ok(Some(Box::new(p)))
+                                    }
+                                    None => {
+                                        crate::stt::emit_stt_debug(app, "error", "stt",
+                                            &format!("[{}] sherpa-onnx-offline.exe not found.", party_role));
+                                        Ok(None)
+                                    }
                                 }
                             }
-                        }
-                        Err(e) => {
-                            crate::stt::emit_stt_debug(app, "error", "stt",
-                                &format!("[{}] Parakeet model discovery failed: {}",
-                                    party_role, e));
-                            Ok(None)
+                            Err(e) => {
+                                crate::stt::emit_stt_debug(app, "error", "stt",
+                                    &format!("[{}] Parakeet model discovery failed: {}", party_role, e));
+                                Ok(None)
+                            }
                         }
                     }
                 }

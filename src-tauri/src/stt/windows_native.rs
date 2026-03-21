@@ -631,7 +631,10 @@ fn run_windows_speech_recognizer(
                     | SpeechRecognitionResultStatus::PauseLimitExceeded
                 );
 
-                if is_recoverable {
+                if status == SpeechRecognitionResultStatus::Success {
+                    // Normal termination (e.g., stop during hot-swap) — not an error
+                    log::info!("WindowsNativeSTT: Session completed successfully");
+                } else if is_recoverable {
                     log::info!("WindowsNativeSTT: Session ended with {} — will auto-restart", status_name);
                     session_ended_for_handler.store(true, Ordering::SeqCst);
                 } else {
@@ -684,17 +687,30 @@ fn run_windows_speech_recognizer(
         if session_ended.load(Ordering::SeqCst) {
             session_ended.store(false, Ordering::SeqCst);
             restart_count += 1;
-            log::info!("WindowsNativeSTT: Auto-restarting session (attempt #{})", restart_count);
 
-            // Brief pause before restart to avoid tight loops on persistent failures
-            std::thread::sleep(std::time::Duration::from_millis(200));
+            // Cap restarts to avoid infinite loop when device is fundamentally incompatible
+            const MAX_RESTARTS: u32 = 10;
+            if restart_count > MAX_RESTARTS {
+                log::warn!("WindowsNativeSTT: Max restarts ({}) reached — stopping", MAX_RESTARTS);
+                emit_thread_status(app_handle, party, "error",
+                    Some("Recognition keeps timing out. Try a different STT provider for this device.".to_string()));
+                break;
+            }
+
+            // Exponential backoff: 500ms, 1s, 2s, capped at 5s
+            let backoff_ms = std::cmp::min(500 * (1u64 << (restart_count - 1).min(3)), 5000);
+            log::info!("WindowsNativeSTT: Auto-restarting session (#{}, backoff {}ms)", restart_count, backoff_ms);
+            std::thread::sleep(std::time::Duration::from_millis(backoff_ms));
 
             match session.StartAsync() {
                 Ok(op) => match op.get() {
                     Ok(_) => {
                         log::info!("WindowsNativeSTT: Session restarted successfully");
-                        emit_thread_status(app_handle, party, "connected",
-                            Some("Listening for speech (auto-restarted)".to_string()));
+                        // Don't spam status updates — only show on first restart
+                        if restart_count <= 2 {
+                            emit_thread_status(app_handle, party, "connected",
+                                Some("Listening for speech (auto-restarted)".to_string()));
+                        }
                     }
                     Err(e) => {
                         log::error!("WindowsNativeSTT: Restart failed: {}", e);

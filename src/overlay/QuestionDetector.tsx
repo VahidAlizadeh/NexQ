@@ -97,8 +97,8 @@ export function QuestionDetector() {
               &ldquo;{latest.text}&rdquo;
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground/60 italic">
-              Detected questions from &ldquo;Them&rdquo; will appear here
+            <p className="text-xs text-muted-foreground/50">
+              Listening for questions from the other party
             </p>
           )}
         </div>

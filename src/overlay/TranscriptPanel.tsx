@@ -97,21 +97,24 @@ export function TranscriptPanel() {
   if (segments.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/30">
-            <Mic
-              className={`h-5 w-5 ${
-                isRecording
-                  ? "text-primary/70 animate-pulse"
-                  : "text-muted-foreground/50"
-              }`}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground/70">
-            {isRecording
-              ? "Listening for speech..."
-              : "Transcript will appear here..."}
-          </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2">
+          {isRecording ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-primary opacity-40" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+                </span>
+                <span className="text-xs font-medium text-primary">Capturing audio</span>
+              </div>
+              <p className="text-meta text-muted-foreground/50">Speech will appear as it&apos;s detected</p>
+            </>
+          ) : (
+            <>
+              <Mic className="h-5 w-5 text-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground/50">Start a meeting to see the transcript</p>
+            </>
+          )}
         </div>
         {isRecording && (
           <div className="mx-1 mb-1.5 space-y-1">

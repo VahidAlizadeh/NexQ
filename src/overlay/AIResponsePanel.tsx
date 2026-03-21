@@ -236,15 +236,10 @@ export function AIResponsePanel() {
 
         {/* Empty state */}
         {activeTab === "current" && !isStreaming && !currentContent && (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <Sparkles className="h-5 w-5 text-primary/40" />
-            </div>
-            <p className="text-xs text-muted-foreground/70">
-              Press Space for AI assistance
-            </p>
-            <p className="text-meta text-muted-foreground/60">
-              or use Ctrl+1-5 for specific modes
+          <div className="flex h-full flex-col items-center justify-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary/30" />
+            <p className="text-xs text-muted-foreground/50">
+              Press <kbd className="mx-0.5 rounded border border-border/30 bg-secondary/30 px-1.5 py-0.5 font-mono text-meta text-foreground/70">Space</kbd> for AI assistance
             </p>
           </div>
         )}

@@ -9,6 +9,7 @@ interface TranscriptState {
   // Actions
   appendSegment: (segment: TranscriptSegment) => void;
   updateInterimSegment: (segment: TranscriptSegment) => void;
+  finalizeAllInterim: () => void;
   clearSegments: () => void;
   setSearchQuery: (query: string) => void;
   setAutoScroll: (auto: boolean) => void;
@@ -36,6 +37,13 @@ export const useTranscriptStore = create<TranscriptState>((set) => ({
       }
       return { segments: [...state.segments, segment] };
     }),
+
+  finalizeAllInterim: () =>
+    set((state) => ({
+      segments: state.segments.map((s) =>
+        s.is_final ? s : { ...s, is_final: true }
+      ),
+    })),
 
   clearSegments: () => set({ segments: [] }),
   setSearchQuery: (query) => set({ searchQuery: query }),

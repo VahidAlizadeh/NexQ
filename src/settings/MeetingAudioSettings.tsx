@@ -723,6 +723,7 @@ function ProviderSelect({
   }, [open]);
 
   function isLocalEngineReady(engineId: string): boolean {
+    if (localEngines.length === 0) return true; // Still loading — don't trigger fallback
     const eng = localEngines.find((e) => e.engine === engineId);
     if (!eng) return false;
     return eng.models.some((m) => !m.id.startsWith("binary-") && m.is_downloaded);
@@ -736,11 +737,17 @@ function ProviderSelect({
     return true;
   }
 
-  // Auto-reset to a working provider if the current one is no longer available
+  // Auto-reset to a working provider if the current one is no longer available.
+  // Skip fallback on initial engine load to prevent model changes from resetting providers.
+  const enginesLoadedRef = useRef(false);
+
   useEffect(() => {
+    if (!enginesLoadedRef.current) {
+      if (localEngines.length > 0) enginesLoadedRef.current = true;
+      return; // Skip fallback on initial load
+    }
     const currentOpt = STT_OPTIONS.find((o) => o.value === value);
     if (currentOpt && !isAvailable(currentOpt)) {
-      // Fall back to web_speech (always available) or first available
       const fallback = STT_OPTIONS.find(
         (o) => o.value !== value && isAvailable(o)
       );

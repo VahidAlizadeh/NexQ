@@ -35,6 +35,7 @@ const STT_LABELS: Record<string, string> = {
   groq_whisper: "Groq STT",
   sherpa_onnx: "Sherpa-ONNX",
   ort_streaming: "ORT Streaming",
+  parakeet_tdt: "Parakeet TDT",
   windows_native: "Windows Speech",
 };
 
@@ -84,11 +85,22 @@ function formatModel(model: string): string {
   return afterSlash.split(":")[0] || afterSlash;
 }
 
+function formatSttModel(modelId: string): string {
+  if (!modelId) return "";
+  return modelId
+    .replace(/^sherpa-onnx-nemo-/, "")
+    .replace(/^sherpa-onnx-/, "")
+    .replace(/^parakeet-/, "")
+    .replace(/-\d{4}-\d{2}-\d{2}$/, "")  // Strip date suffix
+    .replace(/-int8$/, "")
+    .split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
 function formatSttLabel(provider: string, localModelId?: string): { provider: string; model: string } {
   const providerLabel = STT_LABELS[provider] || provider;
   const localProviders = ["whisper_cpp", "sherpa_onnx", "ort_streaming", "parakeet_tdt"];
   if (localProviders.includes(provider) && localModelId) {
-    return { provider: providerLabel, model: localModelId };
+    return { provider: providerLabel, model: formatSttModel(localModelId) };
   }
   return { provider: providerLabel, model: "" };
 }
@@ -109,6 +121,7 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
   const llmModel = useConfigStore((s) => s.llmModel);
   const meetingAudioConfig = useConfigStore((s) => s.meetingAudioConfig);
   const activeWhisperModel = useConfigStore((s) => s.activeWhisperModel);
+  const activeModelPerEngine = useConfigStore((s) => s.activeModelPerEngine);
   const setMeetingAudioConfig = useConfigStore((s) => s.setMeetingAudioConfig);
 
   // Active state
@@ -136,12 +149,14 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
 
   const youSttProvider = meetingAudioConfig?.you.stt_provider ?? "web_speech";
   const youLocalModel = meetingAudioConfig?.you.local_model_id
+    || activeModelPerEngine[youSttProvider]
     || (youSttProvider === "whisper_cpp" ? activeWhisperModel : undefined);
   const youStt = formatSttLabel(youSttProvider, youLocalModel || undefined);
   const youActive = isRecording && !mutedYou && micLevel > 0.02;
 
   const themSttProvider = meetingAudioConfig?.them.stt_provider ?? "—";
   const themLocalModel = meetingAudioConfig?.them.local_model_id
+    || activeModelPerEngine[themSttProvider]
     || (themSttProvider === "whisper_cpp" ? activeWhisperModel : undefined);
   const themStt = formatSttLabel(themSttProvider, themLocalModel || undefined);
   const themActive = isRecording && !mutedThem && systemLevel > 0.02;
@@ -151,7 +166,7 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
   const handleProviderChange = useCallback((party: "you" | "them", provider: STTProviderType) => {
     if (!meetingAudioConfig) return;
     const updates: Partial<typeof meetingAudioConfig.you> = { stt_provider: provider };
-    if (provider === "sherpa_onnx" || provider === "ort_streaming") {
+    if (provider === "sherpa_onnx" || provider === "ort_streaming" || provider === "parakeet_tdt") {
       // Use per-engine active model — not the legacy global activeWhisperModel
       const activeModelPerEngine = useConfigStore.getState().activeModelPerEngine;
       const engineModel = activeModelPerEngine[provider]

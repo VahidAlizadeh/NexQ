@@ -65,21 +65,47 @@ export function TranscriptPanel() {
   // Empty state
   if (segments.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/30">
-          <Mic
-            className={`h-5 w-5 ${
-              isRecording
-                ? "text-primary/70 animate-pulse"
-                : "text-muted-foreground/50"
-            }`}
-          />
+      <div className="flex h-full flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/30">
+            <Mic
+              className={`h-5 w-5 ${
+                isRecording
+                  ? "text-primary/70 animate-pulse"
+                  : "text-muted-foreground/50"
+              }`}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground/70">
+            {isRecording
+              ? "Listening for speech..."
+              : "Transcript will appear here..."}
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground/70">
-          {isRecording
-            ? "Listening for speech..."
-            : "Transcript will appear here..."}
-        </p>
+        {isRecording && (
+          <div className="mx-1 mb-1.5 space-y-1">
+            <AudioActivityBar
+              icon={<Mic className="h-3.5 w-3.5" />}
+              mutedIcon={<MicOff className="h-3.5 w-3.5" />}
+              label="You"
+              level={micLevel}
+              colorClass="bg-speaker-user"
+              textClass="text-speaker-user"
+              muted={mutedYou}
+              onToggleMute={toggleMuteYou}
+            />
+            <AudioActivityBar
+              icon={<Volume2 className="h-3.5 w-3.5" />}
+              mutedIcon={<VolumeX className="h-3.5 w-3.5" />}
+              label="Them"
+              level={systemLevel}
+              colorClass="bg-speaker-interviewer"
+              textClass="text-speaker-interviewer"
+              muted={mutedThem}
+              onToggleMute={toggleMuteThem}
+            />
+          </div>
+        )}
       </div>
     );
   }

@@ -10,6 +10,7 @@ import { useEffect, useRef } from "react";
 import { useConfigStore } from "../stores/configStore";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useDevLogStore } from "../stores/devLogStore";
+import { useTranscriptStore } from "../stores/transcriptStore";
 import { stopCapture, startCapturePerParty } from "../lib/ipc";
 
 export function useAudioConfigSync() {
@@ -89,6 +90,10 @@ export function useAudioConfigSync() {
       log("info", "config", "Hot-swap: stopping current capture...");
 
       try {
+        // Finalize any interim (non-final) transcript segments before restarting,
+        // so they don't stay stuck as gray italic after the new provider takes over.
+        useTranscriptStore.getState().finalizeAllInterim();
+
         // Stop current capture and wait for full cleanup
         await stopCapture();
         log("info", "config", "Hot-swap: capture stopped, waiting for resource release...");

@@ -324,9 +324,20 @@ impl EncoderStateManager {
                 // Audio features: [batch, time, feature_dim] — detect any 3D tensor
                 // whose last dim is a plausible mel count (64, 80, 128, etc.)
                 let last = shape.last().copied().unwrap_or(0);
-                if shape.len() == 3 && last > 0 && audio_input_name.is_empty() {
-                    audio_input_name = name;
-                    feature_dim = last as usize;
+                if shape.len() == 3 && last != 0 && audio_input_name.is_empty() {
+                    audio_input_name = name.clone();
+                    if last > 0 {
+                        feature_dim = last as usize;
+                    } else {
+                        // Dynamic dim (-1): infer from input name convention.
+                        // NeMo/Parakeet models use "audio_signal" with 128-dim features.
+                        // Most zipformer/conformer models use 80-dim features.
+                        feature_dim = if name.contains("audio_signal") { 128 } else { 80 };
+                        log::info!(
+                            "OrtStreamingSTT: dynamic feature dim on '{}', inferred feature_dim={}",
+                            name, feature_dim
+                        );
+                    }
                     // Extract the required time dimension (shape[1])
                     let time_dim = shape[1];
                     if time_dim > 0 {

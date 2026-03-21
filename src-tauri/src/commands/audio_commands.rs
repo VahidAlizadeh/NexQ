@@ -1199,9 +1199,11 @@ async fn create_stt_provider_for_party(
         }
         STTProviderType::WindowsNative => {
             use crate::stt::windows_native::WindowsNativeSTT;
-            let mut provider = if config.is_input_device {
+            let mut provider = if config.is_input_device && config.device_id == "default" {
+                // Default mic: Windows Speech reads directly via COM (best quality)
                 WindowsNativeSTT::for_mic()
             } else {
+                // Non-default device or system audio: feed PCM from pipeline
                 WindowsNativeSTT::for_custom_stream()
             };
             provider.set_app_handle(app.clone());

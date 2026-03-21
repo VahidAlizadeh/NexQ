@@ -129,9 +129,9 @@ export function ModeButtons() {
               aria-pressed={isActive || isAskActive}
               className={`flex items-center gap-1 rounded-lg px-2 py-1 text-meta font-medium transition-all duration-150 cursor-pointer ${
                 isActive
-                  ? "bg-primary/15 text-primary ring-1 ring-primary/30 shadow-sm shadow-primary/10"
+                  ? "bg-primary/20 text-primary ring-1 ring-primary/30 shadow-sm shadow-primary/10"
                   : isAskActive
-                    ? "bg-info/12 text-info ring-1 ring-info/25 shadow-sm shadow-info/10"
+                    ? "bg-info/10 text-info ring-1 ring-info/20 shadow-sm shadow-info/10"
                     : isCustom
                       ? "text-warning/60 hover:bg-warning/10 hover:text-warning border border-warning/10"
                       : "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
@@ -146,7 +146,7 @@ export function ModeButtons() {
 
       {/* Inline Ask input */}
       {askInputVisible && !isStreaming && (
-        <div className="flex items-center gap-1.5 rounded-lg border border-info/15 bg-info/[0.04] px-2 py-1 slide-down-enter">
+        <div className="flex items-center gap-1.5 rounded-lg border border-info/20 bg-info/5 px-2 py-1 slide-down-enter">
           <input
             type="text"
             value={askInputText}

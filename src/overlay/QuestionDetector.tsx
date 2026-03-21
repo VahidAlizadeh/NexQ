@@ -70,7 +70,7 @@ export function QuestionDetector() {
       <div
         className={`group flex items-start gap-3 rounded-lg transition-all duration-200 ${
           latest
-            ? "cursor-pointer hover:bg-info/[0.06] question-card-enter"
+            ? "cursor-pointer hover:bg-info/10 question-card-enter"
             : ""
         }`}
         onClick={() => latest && handleAssist(0)}
@@ -109,8 +109,8 @@ export function QuestionDetector() {
             aria-label={latest.assisted ? "Already answered" : "Get AI assistance for this question"}
             className={`shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer ${
               latest.assisted
-                ? "bg-success/10 border border-success/15 text-success"
-                : "bg-info/10 border border-info/15 text-info hover:bg-info/20"
+                ? "bg-success/10 border border-success/20 text-success"
+                : "bg-info/10 border border-info/20 text-info hover:bg-info/20"
             }`}
           >
             {latest.assisted ? (
@@ -139,7 +139,7 @@ export function QuestionDetector() {
                 onClick={() => handleAssist(realIdx)}
                 className={`group/q flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 cursor-pointer question-card-enter ${
                   q.assisted
-                    ? "bg-success/[0.05] border border-success/10"
+                    ? "bg-success/5 border border-success/10"
                     : "bg-card/20 border border-border/10 hover:bg-card/40 hover:border-border/20"
                 }`}
                 title={q.text}
@@ -147,7 +147,7 @@ export function QuestionDetector() {
                 {/* Status indicator */}
                 <div className="shrink-0">
                   {q.assisted ? (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-success/15">
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-success/20">
                       <Check className="h-2.5 w-2.5 text-success" />
                     </div>
                   ) : (

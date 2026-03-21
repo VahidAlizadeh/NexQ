@@ -237,7 +237,7 @@ export function AIResponsePanel() {
         {/* Empty state */}
         {activeTab === "current" && !isStreaming && !currentContent && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/8">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
               <Sparkles className="h-5 w-5 text-primary/40" />
             </div>
             <p className="text-xs text-muted-foreground/70">
@@ -275,7 +275,7 @@ function TabButton({
       aria-selected={active}
       className={`shrink-0 rounded-full px-2.5 py-0.5 text-meta font-medium transition-colors duration-150 ${
         active
-          ? "bg-primary/15 text-primary"
+          ? "bg-primary/20 text-primary"
           : secondary
             ? "text-muted-foreground/70 hover:bg-muted/30 hover:text-muted-foreground"
             : pinned

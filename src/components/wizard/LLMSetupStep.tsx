@@ -202,7 +202,7 @@ export function LLMSetupStep({
       <div className="w-full max-w-lg space-y-6">
         {/* Local LLM Detection Banner */}
         {hasLocalLLM && (
-          <div className="rounded-xl border border-success/25 bg-success/5 px-5 py-4">
+          <div className="rounded-xl border border-success/20 bg-success/5 px-5 py-4">
             <div className="flex items-center gap-2">
               <Server className="h-4 w-4 text-success" />
               <p className="text-sm font-medium text-success">
@@ -372,7 +372,7 @@ export function LLMSetupStep({
         )}
 
         {/* Recommendation */}
-        <div className="rounded-xl border border-border/25 bg-secondary/15 px-5 py-4">
+        <div className="rounded-xl border border-border/20 bg-secondary/20 px-5 py-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
             <span className="font-medium text-foreground">Tip: </span>
             {hasLocalLLM

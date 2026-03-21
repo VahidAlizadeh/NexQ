@@ -11,7 +11,7 @@ interface MeetingTabBarProps {
 
 export function MeetingTabBar({ activeTab, setActiveTab, meeting }: MeetingTabBarProps) {
   return (
-    <div className="flex items-center gap-1 border-b border-border/15 px-5 py-1.5" role="tablist">
+    <div className="flex items-center gap-1 border-b border-border/20 px-5 py-1.5" role="tablist">
       <TabButton
         active={activeTab === "transcript"}
         onClick={() => setActiveTab("transcript")}
@@ -59,7 +59,7 @@ function TabButton({
       aria-selected={active}
       className={`relative flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer ${
         active
-          ? "bg-primary/12 text-primary"
+          ? "bg-primary/10 text-primary"
           : "text-muted-foreground/50 hover:bg-secondary/30 hover:text-muted-foreground"
       }`}
     >

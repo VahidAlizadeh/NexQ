@@ -168,7 +168,7 @@ function HelpPanel({ id }: { id: string }) {
   const content = HELP[id];
   if (!content) return null;
   return (
-    <div className="mt-2 rounded-lg border border-primary/15 bg-primary/5 px-3.5 py-3 space-y-1">
+    <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-3 space-y-1">
       <p className="text-xs font-semibold text-primary/80">{content.title}</p>
       <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
         {content.body}
@@ -384,7 +384,7 @@ export function AIActionsSettings() {
                     onClick={() => handlePresetToggle("tone", opt.value)}
                     className={`rounded-full px-3 py-1 text-xs font-medium cursor-pointer transition-colors duration-150 ${
                       configs.instructionPresets.tone === opt.value
-                        ? "bg-primary/15 text-primary ring-1 ring-primary/20"
+                        ? "bg-primary/20 text-primary ring-1 ring-primary/20"
                         : "text-muted-foreground hover:bg-accent/50"
                     }`}
                   >
@@ -408,7 +408,7 @@ export function AIActionsSettings() {
                     onClick={() => handlePresetToggle("format", opt.value)}
                     className={`rounded-full px-3 py-1 text-xs font-medium cursor-pointer transition-colors duration-150 ${
                       configs.instructionPresets.format === opt.value
-                        ? "bg-primary/15 text-primary ring-1 ring-primary/20"
+                        ? "bg-primary/20 text-primary ring-1 ring-primary/20"
                         : "text-muted-foreground hover:bg-accent/50"
                     }`}
                   >
@@ -432,7 +432,7 @@ export function AIActionsSettings() {
                     onClick={() => handlePresetToggle("length", opt.value)}
                     className={`rounded-full px-3 py-1 text-xs font-medium cursor-pointer transition-colors duration-150 ${
                       configs.instructionPresets.length === opt.value
-                        ? "bg-primary/15 text-primary ring-1 ring-primary/20"
+                        ? "bg-primary/20 text-primary ring-1 ring-primary/20"
                         : "text-muted-foreground hover:bg-accent/50"
                     }`}
                   >
@@ -444,7 +444,7 @@ export function AIActionsSettings() {
 
             {/* Active preset summary */}
             {presetSummary && (
-              <div className="rounded-lg border border-primary/10 bg-primary/[0.04] px-3 py-2 flex items-center gap-2">
+              <div className="rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 flex items-center gap-2">
                 <span className="text-meta font-semibold text-primary/80 uppercase tracking-wider shrink-0">
                   Active
                 </span>
@@ -622,7 +622,7 @@ export function AIActionsSettings() {
           <h4 className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
             Built-in ({builtInActions.length})
           </h4>
-          <div className="rounded-lg border border-border/20 divide-y divide-border/15 overflow-hidden">
+          <div className="rounded-lg border border-border/20 divide-y divide-border/20 overflow-hidden">
             {builtInActions.map((action) => (
               <ActionCard
                 key={action.mode}
@@ -650,7 +650,7 @@ export function AIActionsSettings() {
           </h4>
 
           {customActions.length > 0 && (
-            <div className="rounded-lg border border-border/20 divide-y divide-border/15 overflow-hidden">
+            <div className="rounded-lg border border-border/20 divide-y divide-border/20 overflow-hidden">
               {customActions.map((action) => (
                 <ActionCard
                   key={action.mode}
@@ -822,7 +822,7 @@ function ActionCard({
 
       {/* Expanded configuration */}
       {isExpanded && (
-        <div className="border-t border-border/15 bg-secondary/[0.06] px-3.5 py-3.5 space-y-3.5">
+        <div className="border-t border-border/20 bg-secondary/10 px-3.5 py-3.5 space-y-3.5">
           {/* Purpose */}
           {description && (
             <p className="text-xs text-muted-foreground/80 italic">

@@ -18,9 +18,9 @@ const accentMap = {
 
 /** Icon circle background + icon color */
 const iconBgMap = {
-  success: "bg-success/15 text-success",
-  error: "bg-destructive/15 text-destructive",
-  info: "bg-info/15 text-info",
+  success: "bg-success/20 text-success",
+  error: "bg-destructive/20 text-destructive",
+  info: "bg-info/20 text-info",
 };
 
 /** Entrance animation for the icon */
@@ -64,11 +64,11 @@ function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => vo
       aria-live="polite"
       className={`
         group relative flex items-start gap-3 overflow-hidden
-        rounded-xl border border-border/25 border-l-[3.5px]
+        rounded-xl border border-border/20 border-l-[3.5px]
         ${accentMap[toast.type]}
-        bg-card/95 backdrop-blur-md
+        bg-card/90 backdrop-blur-md
         px-4 py-3
-        shadow-xl shadow-black/8
+        shadow-xl shadow-black/10
         ${exiting ? "toast-exit" : "toast-enter"}
       `}
       style={{ maxWidth: 400, minWidth: 280 }}

@@ -44,7 +44,7 @@ export function ReadyStep({
     <div className="flex flex-col items-center">
       {/* Success header */}
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/8">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/10">
           <CheckCircle className="h-8 w-8 text-success" />
         </div>
         <h2 className="text-2xl font-semibold text-foreground">
@@ -58,7 +58,7 @@ export function ReadyStep({
       <div className="w-full max-w-lg space-y-6">
         {/* Configured Parties Summary */}
         {meetingAudioConfig && (
-          <div className="rounded-xl border border-border/40 bg-secondary/15 p-4 space-y-2.5">
+          <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 space-y-2.5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Audio Configuration
             </p>
@@ -84,8 +84,8 @@ export function ReadyStep({
         )}
 
         {/* Keyboard Shortcuts Reference */}
-        <div className="rounded-xl border border-border/40 bg-secondary/15 overflow-hidden">
-          <div className="flex items-center gap-2.5 border-b border-border/25 px-5 py-3">
+        <div className="rounded-xl border border-border/40 bg-secondary/20 overflow-hidden">
+          <div className="flex items-center gap-2.5 border-b border-border/20 px-5 py-3">
             <Keyboard className="h-4 w-4 text-muted-foreground" />
             <p className="text-sm font-semibold text-foreground">
               Keyboard Shortcuts
@@ -122,7 +122,7 @@ export function ReadyStep({
           {/* Primary: Start Meeting */}
           <button
             onClick={onStartMeeting}
-            className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-primary px-6 py-4 text-base font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-all duration-200 hover:shadow-lg hover:shadow-primary/15"
+            className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-primary px-6 py-4 text-base font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-all duration-200 hover:shadow-lg hover:shadow-primary/20"
           >
             <Mic className="h-5 w-5" />
             Start Meeting

@@ -25,7 +25,7 @@ export function TranscriptSearch({ search }: TranscriptSearchProps) {
   };
 
   return (
-    <div className="absolute right-4 top-2 z-10 flex items-center gap-2 rounded-xl border border-border/25 bg-card/90 px-4 py-2 shadow-2xl backdrop-blur-xl">
+    <div className="absolute right-4 top-2 z-10 flex items-center gap-2 rounded-xl border border-border/20 bg-card/90 px-4 py-2 shadow-2xl backdrop-blur-xl">
       <Search className="h-4 w-4 text-muted-foreground/50" />
       <input
         ref={inputRef}

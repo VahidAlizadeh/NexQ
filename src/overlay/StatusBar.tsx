@@ -144,7 +144,7 @@ export function StatusBar() {
           </button>
           <button
             onClick={handleEndMeeting}
-            className="flex items-center gap-1 rounded-lg bg-destructive/8 px-2.5 py-1 font-medium text-destructive/70 transition-all duration-150 hover:bg-destructive/15 hover:text-destructive active:scale-95"
+            className="flex items-center gap-1 rounded-lg bg-destructive/10 px-2.5 py-1 font-medium text-destructive/70 transition-all duration-150 hover:bg-destructive/20 hover:text-destructive active:scale-95"
             aria-label="End meeting"
           >
             <Square className="h-2.5 w-2.5 fill-current" aria-hidden="true" />

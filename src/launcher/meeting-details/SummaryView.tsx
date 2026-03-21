@@ -28,7 +28,7 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
   if (generation.isGenerating) {
     return (
       <div className="p-5">
-        <div className="rounded-xl border border-primary/15 bg-card/30 p-5">
+        <div className="rounded-xl border border-primary/20 bg-card/30 p-5">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-primary">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -73,13 +73,13 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
     return (
       <div className="flex h-full flex-col">
         <div className="flex-1 overflow-y-auto p-5">
-          <div className="rounded-xl border border-border/15 bg-card/30 p-5">
-            <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/85">
+          <div className="rounded-xl border border-border/20 bg-card/30 p-5">
+            <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/80">
               {meeting.summary}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 border-t border-border/12 px-5 py-2">
+        <div className="flex items-center gap-1.5 border-t border-border/10 px-5 py-2">
           <button
             onClick={handleCopy}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
@@ -112,13 +112,13 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
   // Empty state
   return (
     <div className="flex flex-col items-center justify-center py-16">
-      <Sparkles className="mb-4 h-8 w-8 text-primary/25" />
+      <Sparkles className="mb-4 h-8 w-8 text-primary/20" />
       <p className="mb-1 text-sm font-semibold text-muted-foreground/50">No summary yet</p>
       <p className="mb-5 text-xs text-muted-foreground/40">Generate an AI summary from the transcript</p>
       <button
         onClick={generation.generate}
         disabled={isOtherStreaming || meeting.transcript.length === 0}
-        className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-all duration-200 hover:shadow-lg hover:shadow-primary/15 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
       >
         <Sparkles className="h-4 w-4" />
         Generate Summary

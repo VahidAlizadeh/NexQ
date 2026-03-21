@@ -135,7 +135,7 @@ export function MeetingCard({
       role="button"
       tabIndex={0}
       aria-label={`Meeting: ${meeting.title}, ${formatRelativeTime(meeting.start_time)}`}
-      className={`group meeting-card-enter meeting-card-interactive relative cursor-pointer rounded-xl border border-border/15 bg-card/40 px-4 py-3 border-l-2 ${
+      className={`group meeting-card-enter meeting-card-interactive relative cursor-pointer rounded-xl border border-border/20 bg-card/40 px-4 py-3 border-l-2 ${
         isLive
           ? "border-l-success/50"
           : meeting.has_summary

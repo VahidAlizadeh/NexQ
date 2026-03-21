@@ -12,7 +12,7 @@ export function AIInteractionLog({ interactions, expandedId, onToggle }: AIInter
   if (interactions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <MessageSquare className="mb-3 h-8 w-8 text-primary/25" />
+        <MessageSquare className="mb-3 h-8 w-8 text-primary/20" />
         <p className="text-sm font-medium text-muted-foreground/40">No AI interactions</p>
       </div>
     );
@@ -23,7 +23,7 @@ export function AIInteractionLog({ interactions, expandedId, onToggle }: AIInter
       {interactions.map((interaction) => {
         const isExpanded = expandedId === interaction.id;
         return (
-          <div key={interaction.id} className="rounded-xl border border-border/15 bg-card/30 border-l-2 border-l-primary/15">
+          <div key={interaction.id} className="rounded-xl border border-border/20 bg-card/30 border-l-2 border-l-primary/20">
             <button
               onClick={() => onToggle(interaction.id)}
               className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
@@ -33,7 +33,7 @@ export function AIInteractionLog({ interactions, expandedId, onToggle }: AIInter
                 <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                   {getModeLabel(interaction.mode)}
                 </span>
-                <span className="truncate max-w-[250px] text-sm text-foreground/65">
+                <span className="truncate max-w-[250px] text-sm text-foreground/60">
                   {interaction.question_context}
                 </span>
               </div>

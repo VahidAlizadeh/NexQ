@@ -135,16 +135,16 @@ const PARTY_CONFIG = {
   you: {
     iconColor: "text-sky-400",
     iconBg: "bg-sky-500/10",
-    border: "border-sky-500/25",
-    headerGrad: "from-sky-500/[0.07]",
+    border: "border-sky-500/20",
+    headerGrad: "from-sky-500/10",
     dot: "bg-sky-400",
     ping: "bg-sky-400",
   },
   them: {
     iconColor: "text-amber-400",
     iconBg: "bg-amber-500/10",
-    border: "border-amber-500/25",
-    headerGrad: "from-amber-500/[0.07]",
+    border: "border-amber-500/20",
+    headerGrad: "from-amber-500/10",
     dot: "bg-amber-400",
     ping: "bg-amber-400",
   },
@@ -322,7 +322,7 @@ export function MeetingAudioSettings() {
     <div className="flex flex-col gap-4">
 
       {/* ── Quick Presets ── */}
-      <div className="flex items-center gap-2 rounded-xl border border-border/25 bg-card/40 px-4 py-2.5">
+      <div className="flex items-center gap-2 rounded-xl border border-border/20 bg-card/40 px-4 py-2.5">
         <span className="mr-1 shrink-0 text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
           Presets
         </span>
@@ -374,7 +374,7 @@ export function MeetingAudioSettings() {
       </div>
 
       {/* ── Recording Toggle (full-width row) ── */}
-      <div className="flex items-center justify-between rounded-xl border border-border/25 bg-card/40 px-4 py-3">
+      <div className="flex items-center justify-between rounded-xl border border-border/20 bg-card/40 px-4 py-3">
         <div>
           <p className="text-xs font-medium text-foreground">Record to file</p>
           <p className="mt-0.5 text-meta text-muted-foreground/70">Save meeting audio as WAV</p>
@@ -400,7 +400,7 @@ export function MeetingAudioSettings() {
       <div className="grid grid-cols-2 gap-4">
 
         {/* Live Audio Monitor */}
-        <div className="flex flex-col rounded-xl border border-border/25 bg-card/40 p-4">
+        <div className="flex flex-col rounded-xl border border-border/20 bg-card/40 p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-foreground">Live Monitor</span>
@@ -445,7 +445,7 @@ export function MeetingAudioSettings() {
         <div className="flex flex-col">
 
           {/* Audio Sessions */}
-          <div className="flex flex-col rounded-xl border border-border/25 bg-card/40 p-4">
+          <div className="flex flex-col rounded-xl border border-border/20 bg-card/40 p-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground">Audio Sessions</span>
               <button
@@ -588,7 +588,7 @@ function PartyPanel({
     <div className={`flex flex-col rounded-xl border bg-card/40 ${c.border}`}>
 
       {/* ── Header ── */}
-      <div className={`flex items-center gap-3 rounded-t-xl bg-gradient-to-r ${c.headerGrad} to-transparent border-b border-border/15 px-4 py-3`}>
+      <div className={`flex items-center gap-3 rounded-t-xl bg-gradient-to-r ${c.headerGrad} to-transparent border-b border-border/20 px-4 py-3`}>
         <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${c.iconBg}`}>
           <span className={c.iconColor}>{icon}</span>
         </div>
@@ -649,7 +649,7 @@ function PartyPanel({
         </div>
 
         {/* Level bar — gradient zones */}
-        <div className="relative h-3 overflow-hidden rounded-full bg-muted/15">
+        <div className="relative h-3 overflow-hidden rounded-full bg-muted/20">
           <div
             className="absolute inset-y-0 left-0 rounded-full audio-level-gradient audio-bar-spring"
             style={{ width: `${scaledLv * 100}%` }}
@@ -877,14 +877,14 @@ function DeviceLevelRow({
       <span className={`w-28 truncate text-meta ${isSelected ? "font-medium text-foreground" : "text-muted-foreground/60"}`}>
         {name}
       </span>
-      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted/15">
+      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted/20">
         <div
           className="absolute inset-y-0 left-0 rounded-full audio-level-gradient audio-bar-spring"
           style={{ width: `${scaled * 100}%` }}
         />
         {peak > 0.005 && (
           <div
-            className="absolute inset-y-0 w-[2px] rounded-full bg-foreground/35 transition-all duration-150"
+            className="absolute inset-y-0 w-[2px] rounded-full bg-foreground/30 transition-all duration-150"
             style={{ left: `${Math.sqrt(Math.min(peak * 2.5, 1)) * 100}%` }}
           />
         )}

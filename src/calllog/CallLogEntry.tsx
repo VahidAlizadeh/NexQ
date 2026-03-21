@@ -15,19 +15,19 @@ const MODE_COLORS: Record<
   IntelligenceMode,
   { badge: string; dot: string }
 > = {
-  Assist: { badge: "bg-info/15 text-info", dot: "bg-info" },
+  Assist: { badge: "bg-info/20 text-info", dot: "bg-info" },
   WhatToSay: {
-    badge: "bg-primary/15 text-primary",
+    badge: "bg-primary/20 text-primary",
     dot: "bg-primary",
   },
-  Shorten: { badge: "bg-warning/15 text-warning", dot: "bg-warning" },
-  FollowUp: { badge: "bg-info/15 text-info", dot: "bg-info" },
+  Shorten: { badge: "bg-warning/20 text-warning", dot: "bg-warning" },
+  FollowUp: { badge: "bg-info/20 text-info", dot: "bg-info" },
   Recap: {
-    badge: "bg-success/15 text-success",
+    badge: "bg-success/20 text-success",
     dot: "bg-success",
   },
-  AskQuestion: { badge: "bg-destructive/15 text-destructive", dot: "bg-destructive" },
-  MeetingSummary: { badge: "bg-primary/15 text-primary", dot: "bg-primary" },
+  AskQuestion: { badge: "bg-destructive/20 text-destructive", dot: "bg-destructive" },
+  MeetingSummary: { badge: "bg-primary/20 text-primary", dot: "bg-primary" },
 };
 
 // -- Context source badges ---------------------------------------------------
@@ -65,7 +65,7 @@ export function CallLogEntry({ entry, isSelected }: Props) {
       onClick={handleClick}
       className={`flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-100 ${
         isSelected
-          ? "bg-primary/8 ring-1 ring-primary/20"
+          ? "bg-primary/10 ring-1 ring-primary/20"
           : "hover:bg-accent/30"
       }`}
     >

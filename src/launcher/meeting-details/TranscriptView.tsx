@@ -96,10 +96,10 @@ export function TranscriptView({ segments, search, meetingStartTime }: Transcrip
                 ref={(el) => { segmentRefs.current[i] = el; }}
                 onClick={() => handleSegmentClick(i)}
                 className={`flex items-start gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all duration-100 border-l-2 ${
-                  segment.speaker === "User" ? "border-l-speaker-user/25" : "border-l-speaker-interviewer/25"
+                  segment.speaker === "User" ? "border-l-speaker-user/20" : "border-l-speaker-interviewer/20"
                 } ${
                   isSelected
-                    ? "bg-primary/8 ring-1 ring-primary/20"
+                    ? "bg-primary/10 ring-1 ring-primary/20"
                     : isSearchMatch
                       ? "bg-highlight/10 ring-1 ring-highlight/20"
                       : "hover:bg-secondary/20"
@@ -274,7 +274,7 @@ function TimelineScrubber({
         {/* Track */}
         <div
           ref={containerRef}
-          className="relative flex-1 h-4 cursor-pointer rounded-lg bg-secondary/25 overflow-hidden"
+          className="relative flex-1 h-4 cursor-pointer rounded-lg bg-secondary/20 overflow-hidden"
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHover(null)}
           onClick={handleClick}

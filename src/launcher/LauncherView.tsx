@@ -215,7 +215,7 @@ export function LauncherView() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* ═══ HEADER ═══ */}
-      <header className="dash-header flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border/15">
+      <header className="dash-header flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border/20">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
             <Mic className="h-3.5 w-3.5 text-white" aria-hidden="true" />
@@ -227,13 +227,13 @@ export function LauncherView() {
         {activeMeeting && (
           <button
             onClick={() => setCurrentView("overlay")}
-            className="group live-ring-pulse flex items-center gap-2 rounded-full border border-success/25 bg-success/8 pl-3 pr-2 py-1.5 shadow-sm shadow-success/8 transition-all hover:bg-success/15 hover:border-success/35 hover:shadow-md hover:shadow-success/12 cursor-pointer"
+            className="group live-ring-pulse flex items-center gap-2 rounded-full border border-success/20 bg-success/10 pl-3 pr-2 py-1.5 shadow-sm shadow-success/10 transition-all hover:bg-success/20 hover:border-success/30 hover:shadow-md hover:shadow-success/10 cursor-pointer"
           >
             <Radio className="h-3 w-3 text-success animate-pulse" />
             <span className="text-xs font-medium text-success max-w-[200px] truncate">
               {activeMeeting.title}
             </span>
-            <span className="flex items-center gap-0.5 rounded-full bg-success/15 px-1.5 py-0.5 text-meta font-semibold text-success">
+            <span className="flex items-center gap-0.5 rounded-full bg-success/20 px-1.5 py-0.5 text-meta font-semibold text-success">
               RETURN <ArrowRight className="h-2.5 w-2.5" />
             </span>
           </button>
@@ -294,7 +294,7 @@ export function LauncherView() {
               ))}
             </div>
             {recentMeetings.length > 0 && (
-              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/50 transition-all duration-150 hover:text-destructive hover:bg-destructive/8 active:scale-90 cursor-pointer" aria-label="Delete all meetings">
+              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/50 transition-all duration-150 hover:text-destructive hover:bg-destructive/10 active:scale-90 cursor-pointer" aria-label="Delete all meetings">
                 <Trash2 className="h-3 w-3" aria-hidden="true" />
               </button>
             )}
@@ -308,7 +308,7 @@ export function LauncherView() {
           </div>
 
           {/* Scrollable meeting list */}
-          <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin scrollbar-thumb-border/15">
+          <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin scrollbar-thumb-border/20">
             <RecentMeetings
               meetings={displayedMeetings}
               onSelect={handleSelectMeeting}
@@ -331,9 +331,9 @@ export function LauncherView() {
                 onClick={handleStartMeeting}
                 disabled={isStarting}
                 aria-busy={isStarting}
-                className="group dash-start-btn start-btn-glow relative flex items-center gap-3.5 rounded-2xl bg-primary pl-5 pr-7 py-4 font-semibold text-white shadow-md shadow-primary/15 transition-all duration-150 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0.5 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 cursor-pointer"
+                className="group dash-start-btn start-btn-glow relative flex items-center gap-3.5 rounded-2xl bg-primary pl-5 pr-7 py-4 font-semibold text-white shadow-md shadow-primary/20 transition-all duration-150 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0.5 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 cursor-pointer"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
                   {isStarting
                     ? <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
                     : <Play className="h-4 w-4 ml-0.5" fill="white" aria-hidden="true" />
@@ -384,8 +384,8 @@ export function LauncherView() {
                         settingsStale
                           ? "border-warning/40 bg-warning/5 text-warning hover:bg-warning/10 hover:border-warning/60"
                           : isFirstBuild
-                            ? "border-primary/25 bg-primary/5 text-primary/70 hover:bg-primary/10 hover:border-primary/40"
-                            : "border-success/25 bg-success/5 text-success/70 hover:bg-success/10 hover:border-success/40"
+                            ? "border-primary/20 bg-primary/5 text-primary/70 hover:bg-primary/10 hover:border-primary/40"
+                            : "border-success/20 bg-success/5 text-success/70 hover:bg-success/10 hover:border-success/40"
                       }`}
                     >
                       {settingsStale ? (
@@ -472,7 +472,7 @@ export function LauncherView() {
       </div>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="dash-footer flex items-center justify-between border-t border-border/15">
+      <footer className="dash-footer flex items-center justify-between border-t border-border/20">
         <ServiceStatusBar />
         <div className="flex items-center gap-2 pr-5 text-xs text-muted-foreground/60">
           <span>&copy; {new Date().getFullYear()} {NEXQ_DEVELOPER}</span>

@@ -230,7 +230,7 @@ function TranscriptView({ segments }: { segments: TranscriptSegment[] }) {
           >
             {getSpeakerLabel(segment.speaker)}
           </span>
-          <span className="text-xs leading-relaxed text-foreground/85">{segment.text}</span>
+          <span className="text-xs leading-relaxed text-foreground/80">{segment.text}</span>
         </div>
       ))}
     </div>
@@ -275,7 +275,7 @@ function AIInteractionLog({
                 <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-meta font-medium text-primary">
                   {getModeLabel(interaction.mode)}
                 </span>
-                <span className="text-xs text-foreground/75 truncate max-w-[220px]">
+                <span className="text-xs text-foreground/70 truncate max-w-[220px]">
                   {interaction.question_context}
                 </span>
               </div>
@@ -326,8 +326,8 @@ function SummaryView({ summary }: { summary: string | null }) {
 
   return (
     <div className="p-6">
-      <div className="rounded-xl border border-border/15 bg-card/30 p-6">
-        <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/85">
+      <div className="rounded-xl border border-border/20 bg-card/30 p-6">
+        <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/80">
           {summary}
         </p>
       </div>

@@ -805,7 +805,7 @@ function ProviderCard({
       aria-pressed={isSelected}
       className={`relative flex flex-col items-start rounded-xl border p-3 text-left transition-all duration-150 ${
         isSelected
-          ? "border-primary bg-primary/8 ring-1 ring-primary/25 shadow-sm"
+          ? "border-primary bg-primary/10 ring-1 ring-primary/20 shadow-sm"
           : "border-border/40 bg-card/30 hover:border-border/70 hover:bg-accent/60"
       }`}
     >
@@ -832,9 +832,9 @@ function ProviderCard({
 
 function ProviderBadge({ text, variant }: { text: string; variant: BadgeVariant }) {
   const styles: Record<BadgeVariant, string> = {
-    ready: "bg-success/15 text-success border-success/25",
-    warning: "bg-warning/15 text-warning border-warning/25",
-    error: "bg-destructive/15 text-destructive border-destructive/25",
+    ready: "bg-success/20 text-success border-success/20",
+    warning: "bg-warning/20 text-warning border-warning/20",
+    error: "bg-destructive/20 text-destructive border-destructive/20",
   };
   return (
     <span
@@ -953,12 +953,12 @@ function DeepgramAdvancedSettings() {
           </div>
           <span className="text-xs font-semibold text-foreground">Deepgram Settings</span>
           {activePresetId !== "custom" && (
-            <span className="ml-1 rounded border border-primary/30 bg-primary/8 px-1.5 py-0.5 text-meta font-semibold text-primary uppercase tracking-wide">
+            <span className="ml-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-meta font-semibold text-primary uppercase tracking-wide">
               {DEEPGRAM_PRESETS.find((p) => p.id === activePresetId)?.label}
             </span>
           )}
           {activePresetId === "custom" && (
-            <span className="ml-1 rounded border border-warning/30 bg-warning/8 px-1.5 py-0.5 text-meta font-semibold text-warning uppercase tracking-wide">
+            <span className="ml-1 rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-meta font-semibold text-warning uppercase tracking-wide">
               Custom
             </span>
           )}
@@ -1008,7 +1008,7 @@ function DeepgramAdvancedSettings() {
                 onClick={() => updateField("model", model.id)}
                 className={`flex items-start rounded-lg border px-3 py-2 text-left transition-all ${
                   deepgramConfig.model === model.id
-                    ? "border-primary bg-primary/8 ring-1 ring-primary/20"
+                    ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                     : "border-border/30 hover:border-border/60 hover:bg-accent/40"
                 }`}
               >
@@ -1382,12 +1382,12 @@ function GroqAdvancedSettings() {
           </div>
           <span className="text-xs font-semibold text-foreground">Groq Whisper Settings</span>
           {activePresetId !== "custom" && (
-            <span className="ml-1 rounded border border-primary/30 bg-primary/8 px-1.5 py-0.5 text-meta font-semibold text-primary uppercase tracking-wide">
+            <span className="ml-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-meta font-semibold text-primary uppercase tracking-wide">
               {GROQ_PRESETS.find((p) => p.id === activePresetId)?.label}
             </span>
           )}
           {activePresetId === "custom" && (
-            <span className="ml-1 rounded border border-warning/30 bg-warning/8 px-1.5 py-0.5 text-meta font-semibold text-warning uppercase tracking-wide">
+            <span className="ml-1 rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-meta font-semibold text-warning uppercase tracking-wide">
               Custom
             </span>
           )}
@@ -1434,7 +1434,7 @@ function GroqAdvancedSettings() {
               onClick={() => updateField("model", model.id)}
               className={`flex items-start rounded-lg border px-3 py-2 text-left transition-all ${
                 groqConfig.model === model.id
-                  ? "border-primary bg-primary/8 ring-1 ring-primary/20"
+                  ? "border-primary bg-primary/10 ring-1 ring-primary/20"
                   : "border-border/30 hover:border-border/60 hover:bg-accent/40"
               }`}
             >

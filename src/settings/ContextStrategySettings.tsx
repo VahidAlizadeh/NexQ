@@ -313,7 +313,7 @@ function HelpPanel({ id }: { id: string }) {
   const content = HELP[id];
   if (!content) return null;
   return (
-    <div className="mt-2 rounded-lg border border-primary/15 bg-primary/5 px-3.5 py-3 space-y-1">
+    <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-3 space-y-1">
       <p className="text-xs font-semibold text-primary/80">{content.title}</p>
       <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
         {content.body}

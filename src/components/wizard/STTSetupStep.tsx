@@ -122,7 +122,7 @@ export function STTSetupStep() {
 
       <div className="w-full max-w-lg space-y-6">
         {/* Recommended free setup banner */}
-        <div className="rounded-xl border border-success/25 bg-success/5 px-4 py-3">
+        <div className="rounded-xl border border-success/20 bg-success/5 px-4 py-3">
           <p className="text-xs text-success leading-relaxed">
             <strong>Recommended (Free):</strong> Web Speech for You + Windows
             Native for Them. No API keys needed!

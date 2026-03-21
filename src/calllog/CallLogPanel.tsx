@@ -145,7 +145,7 @@ export function CallLogPanel() {
                     onClick={() => setFilter(value)}
                     className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-meta font-medium transition-colors duration-100 ${
                       isActive
-                        ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                        ? "bg-primary/20 text-primary ring-1 ring-primary/30"
                         : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
                     }`}
                   >

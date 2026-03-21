@@ -183,7 +183,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
           role="dialog"
           aria-modal="true"
           aria-label="Settings"
-          className={`w-[640px] max-h-[520px] flex flex-col rounded-xl border border-border/40 bg-card shadow-2xl shadow-black/15 transition-all duration-200 ${
+          className={`w-[640px] max-h-[520px] flex flex-col rounded-xl border border-border/40 bg-card shadow-2xl shadow-black/20 transition-all duration-200 ${
             isVisible
               ? "opacity-100 scale-100 translate-y-0"
               : "opacity-0 scale-[0.97] translate-y-3"

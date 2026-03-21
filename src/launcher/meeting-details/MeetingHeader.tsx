@@ -98,7 +98,7 @@ export function MeetingHeader({
     : "In progress";
 
   return (
-    <div className="border-b border-border/15">
+    <div className="border-b border-border/20">
       {/* Row 1: Back + Title + Layout toggle */}
       <div className="flex items-center gap-3 px-5 pt-3 pb-1.5">
         <button
@@ -146,11 +146,11 @@ export function MeetingHeader({
         </div>
 
         {/* Layout toggle */}
-        <div className="flex items-center rounded-lg border border-border/20 bg-secondary/15 p-0.5">
+        <div className="flex items-center rounded-lg border border-border/20 bg-secondary/20 p-0.5">
           <button
             onClick={() => onLayoutChange("single")}
             className={`rounded-md p-1.5 transition-colors cursor-pointer ${
-              layoutMode === "single" ? "bg-primary/15 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
+              layoutMode === "single" ? "bg-primary/20 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
             }`}
             aria-label="Single column layout"
             aria-pressed={layoutMode === "single"}
@@ -160,7 +160,7 @@ export function MeetingHeader({
           <button
             onClick={() => onLayoutChange("split")}
             className={`rounded-md p-1.5 transition-colors cursor-pointer ${
-              layoutMode === "split" ? "bg-primary/15 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
+              layoutMode === "split" ? "bg-primary/20 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
             }`}
             aria-label="Two column layout"
             aria-pressed={layoutMode === "split"}
@@ -195,7 +195,7 @@ export function MeetingHeader({
 
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-lg bg-secondary/25 px-2.5 py-1">
+    <div className="flex items-center gap-1.5 rounded-lg bg-secondary/20 px-2.5 py-1">
       <span className="text-muted-foreground/50">{icon}</span>
       <div className="flex items-baseline gap-1">
         <span className="text-xs font-semibold tabular-nums text-foreground/80">{value}</span>

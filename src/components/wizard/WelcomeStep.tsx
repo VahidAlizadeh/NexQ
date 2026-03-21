@@ -143,7 +143,7 @@ export function WelcomeStep({ onDetectionComplete }: WelcomeStepProps) {
     <div className="flex flex-col items-center text-center">
       {/* Welcome header */}
       <div className="mb-10">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/8">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Sparkles className="h-8 w-8 text-primary" />
         </div>
         <h2 className="text-2xl font-semibold text-foreground">
@@ -262,8 +262,8 @@ function DetectionRow({
         status === "detecting"
           ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/5"
           : status === "done"
-            ? "border-border/40 bg-secondary/15"
-            : "border-border/15 bg-secondary/5 opacity-50"
+            ? "border-border/40 bg-secondary/20"
+            : "border-border/20 bg-secondary/5 opacity-50"
       }`}
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground">

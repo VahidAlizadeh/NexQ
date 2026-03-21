@@ -138,12 +138,12 @@ function CollapsibleSection({
   if (!content && !isResponse) return null;
 
   const badgeColors: Record<string, string> = {
-    amber: "bg-warning/10 text-warning border-warning/15",
-    blue: "bg-info/10 text-info border-info/15",
-    green: "bg-success/10 text-success border-success/15",
-    rose: "bg-destructive/10 text-destructive border-destructive/15",
+    amber: "bg-warning/10 text-warning border-warning/20",
+    blue: "bg-info/10 text-info border-info/20",
+    green: "bg-success/10 text-success border-success/20",
+    rose: "bg-destructive/10 text-destructive border-destructive/20",
     gray: "bg-secondary/60 text-muted-foreground/70 border-border/20",
-    emerald: "bg-success/10 text-success border-success/15",
+    emerald: "bg-success/10 text-success border-success/20",
   };
 
   const badgeClass = badge ? badgeColors[badge.color] || badgeColors.gray : "";

@@ -225,7 +225,7 @@ export function AudioSetupStep() {
 
         {/* Scan Results */}
         {scanResults.length > 0 && (
-          <div className="rounded-xl border border-border/40 bg-secondary/15 p-3.5 space-y-1.5">
+          <div className="rounded-xl border border-border/40 bg-secondary/20 p-3.5 space-y-1.5">
             <p className="text-meta font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Scan Results
             </p>
@@ -347,7 +347,7 @@ export function AudioSetupStep() {
         </button>
 
         {/* Live Audio Test */}
-        <div className="rounded-xl border border-border/40 bg-secondary/15 p-5">
+        <div className="rounded-xl border border-border/40 bg-secondary/20 p-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">
               Microphone Test

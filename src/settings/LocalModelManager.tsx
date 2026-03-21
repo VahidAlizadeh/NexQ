@@ -263,7 +263,7 @@ function ModelRow({
               {compact ? model.id : model.name}
             </span>
             {isActive && (
-              <span className="shrink-0 rounded bg-primary/15 px-1.5 py-0.5 text-meta font-semibold text-primary">
+              <span className="shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-meta font-semibold text-primary">
                 Active
               </span>
             )}

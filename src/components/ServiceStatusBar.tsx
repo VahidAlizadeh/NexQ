@@ -321,22 +321,22 @@ const COLOR_MAP = {
   blue: {
     active: "text-info",
     dot: "bg-info",
-    bg: "bg-info/8",
-    border: "border-info/15",
+    bg: "bg-info/10",
+    border: "border-info/20",
     glow: "shadow-info/20",
   },
   sky: {
     active: "text-info",
     dot: "bg-info",
-    bg: "bg-info/8",
-    border: "border-info/15",
+    bg: "bg-info/10",
+    border: "border-info/20",
     glow: "shadow-info/20",
   },
   amber: {
     active: "text-warning",
     dot: "bg-warning",
-    bg: "bg-warning/8",
-    border: "border-warning/15",
+    bg: "bg-warning/10",
+    border: "border-warning/20",
     glow: "shadow-warning/20",
   },
 } as const;
@@ -436,7 +436,7 @@ function STTChip({
     <div
       className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-all duration-200 ${
         muted
-          ? "bg-destructive/[0.04] border border-destructive/12"
+          ? "bg-destructive/5 border border-destructive/10"
           : active
             ? `${c.bg} border ${c.border} shadow-sm ${c.glow}`
             : "bg-secondary/30 border border-transparent"
@@ -605,7 +605,7 @@ function STTPickerDropdown({
   return (
     <div
       ref={ref}
-      className="absolute bottom-full left-0 mb-2 min-w-[200px] rounded-xl border border-border/30 bg-popover/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
+      className="absolute bottom-full left-0 mb-2 min-w-[200px] rounded-xl border border-border/30 bg-popover/90 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
     >
       {loading ? (
         <div className="px-4 py-3 text-xs text-muted-foreground">Loading providers...</div>
@@ -613,7 +613,7 @@ function STTPickerDropdown({
         <>
           {localOpts.length > 0 && (
             <div>
-              <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+              <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
                 <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
                 <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Local & Built-in
@@ -627,7 +627,7 @@ function STTPickerDropdown({
                     key={opt.value}
                     onClick={() => onSelect(opt.value)}
                     className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
-                      selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                      selected ? "bg-primary/10 text-primary" : "text-foreground/80 hover:bg-accent/40"
                     }`}
                   >
                     <Icon className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : "text-emerald-400"}`} />
@@ -641,7 +641,7 @@ function STTPickerDropdown({
 
           {cloudOpts.length > 0 && (
             <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
-              <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+              <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
                 <Cloud className="h-2.5 w-2.5 text-blue-400" />
                 <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Cloud
@@ -655,7 +655,7 @@ function STTPickerDropdown({
                     key={opt.value}
                     onClick={() => onSelect(opt.value)}
                     className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
-                      selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                      selected ? "bg-primary/10 text-primary" : "text-foreground/80 hover:bg-accent/40"
                     }`}
                   >
                     <Icon className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : "text-blue-400"}`} />
@@ -767,12 +767,12 @@ function LLMPickerDropdown({
   return (
     <div
       ref={ref}
-      className="absolute bottom-full left-0 mb-2 min-w-[240px] rounded-xl border border-border/30 bg-popover/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
+      className="absolute bottom-full left-0 mb-2 min-w-[240px] rounded-xl border border-border/30 bg-popover/90 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
     >
       {/* ── Provider section ── */}
       {localOpts.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+          <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
             <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
             <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">Local</span>
           </div>
@@ -785,7 +785,7 @@ function LLMPickerDropdown({
                 key={opt.value}
                 onClick={() => setPendingProvider(opt.value)}
                 className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
-                  isPending ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                  isPending ? "bg-primary/10 text-primary" : "text-foreground/80 hover:bg-accent/40"
                 }`}
               >
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-emerald-400"}`} />
@@ -799,7 +799,7 @@ function LLMPickerDropdown({
 
       {cloudOpts.length > 0 && (
         <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
-          <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+          <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
             <Cloud className="h-2.5 w-2.5 text-blue-400" />
             <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">Cloud</span>
           </div>
@@ -812,7 +812,7 @@ function LLMPickerDropdown({
                 key={opt.value}
                 onClick={() => setPendingProvider(opt.value)}
                 className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
-                  isPending ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                  isPending ? "bg-primary/10 text-primary" : "text-foreground/80 hover:bg-accent/40"
                 }`}
               >
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-blue-400"}`} />
@@ -832,7 +832,7 @@ function LLMPickerDropdown({
 
       {/* ── Model section (for pending provider) ── */}
       <div className="border-t border-border/10">
-        <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
+        <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
           <Brain className="h-2.5 w-2.5 text-violet-400" />
           <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
             Model — {LLM_LABELS[pendingProvider] || pendingProvider}
@@ -850,7 +850,7 @@ function LLMPickerDropdown({
                   key={m.id}
                   onClick={() => onApply(pendingProvider, m.id)}
                   className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer ${
-                    isCurrentModel ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
+                    isCurrentModel ? "bg-primary/10 text-primary" : "text-foreground/80 hover:bg-accent/40"
                   }`}
                 >
                   <span className="flex-1 text-left font-medium truncate">{formatModel(m.id)}</span>
@@ -872,5 +872,5 @@ function LLMPickerDropdown({
 // ── Divider ─────────────────────────────────────────────────────────
 
 function Divider() {
-  return <div className="h-4 w-px shrink-0 bg-border/15" />;
+  return <div className="h-4 w-px shrink-0 bg-border/20" />;
 }

@@ -265,7 +265,7 @@ function AudioActivityBar({
 
   return (
     <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors duration-200 ${
-      muted ? "bg-destructive/[0.03]" : "bg-muted/15"
+      muted ? "bg-destructive/5" : "bg-muted/20"
     }`}>
       {/* Mute toggle */}
       <button
@@ -297,7 +297,7 @@ function AudioActivityBar({
       >
         <div
           className={`h-full rounded-full audio-bar-spring ${
-            muted ? "bg-muted-foreground/8" : colorClass
+            muted ? "bg-muted-foreground/10" : colorClass
           }`}
           style={{
             width: muted ? "100%" : `${barWidth}%`,

@@ -52,7 +52,7 @@ export function GeneralSettings() {
                 onClick={() => setTheme(opt.value)}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer ${
                   theme === opt.value
-                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 active:scale-95"
                 }`}
               >
@@ -126,7 +126,7 @@ export function GeneralSettings() {
       </div>
 
       {/* Moved notice */}
-      <div className="rounded-xl border border-info/15 bg-info/[0.04] px-5 py-3">
+      <div className="rounded-xl border border-info/20 bg-info/5 px-5 py-3">
         <p className="text-xs text-info/80">
           Context Window, Auto-Trigger, and AI instructions have moved to the <strong className="text-info">AI Actions</strong> tab.
         </p>

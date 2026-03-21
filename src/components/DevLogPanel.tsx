@@ -69,7 +69,7 @@ export function DevLogPanel({
 
   if (!open) return null;
   return (
-    <div className="shrink-0 flex flex-col border-t border-border/30 bg-card/95" style={{ height }}>
+    <div className="shrink-0 flex flex-col border-t border-border/30 bg-card/90" style={{ height }}>
       {/* Resize handle at top */}
       <div
         onMouseDown={onMouseDown}
@@ -148,7 +148,7 @@ function DevLogContent({
   return (
     <>
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border/15 px-3 py-1.5">
+      <div className="flex shrink-0 items-center justify-between border-b border-border/20 px-3 py-1.5">
         <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
           Dev Log
         </span>

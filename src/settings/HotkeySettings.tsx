@@ -138,7 +138,7 @@ export function HotkeySettings() {
           </div>
           <button
             onClick={handleResetDefaults}
-            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/30 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/30 px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-150 hover:bg-secondary hover:text-foreground hover:-translate-y-px active:translate-y-px active:scale-[0.97] cursor-pointer"
             aria-label="Reset all hotkeys to defaults"
           >
             <RotateCcw className="h-3 w-3" />

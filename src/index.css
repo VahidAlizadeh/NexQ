@@ -280,6 +280,102 @@
   animation-name: slide-up;
 }
 
+/* ── Toast spring entrance ── */
+@keyframes toast-spring-in {
+  0% {
+    transform: translateX(120%) scale(0.92);
+    opacity: 0;
+  }
+  65% {
+    transform: translateX(-3%) scale(1.01);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.toast-enter {
+  animation: toast-spring-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Toast exit ── */
+@keyframes toast-slide-out {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(110%) scale(0.92);
+    opacity: 0;
+  }
+}
+
+.toast-exit {
+  animation: toast-slide-out 280ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+/* ── Toast auto-dismiss progress bar ── */
+@keyframes toast-progress-shrink {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.toast-progress-bar {
+  transform-origin: left;
+  animation: toast-progress-shrink 4000ms linear both;
+}
+
+/* ── Toast icon success pop ── */
+@keyframes toast-icon-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.toast-icon-pop {
+  animation: toast-icon-pop 350ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+
+/* ── Toast icon error shake ── */
+@keyframes toast-icon-shake {
+  0%, 100% { transform: translateX(0); }
+  15%, 55% { transform: translateX(-2px); }
+  35%, 75% { transform: translateX(2px); }
+}
+
+.toast-icon-shake {
+  animation: toast-icon-shake 400ms ease 80ms;
+}
+
+/* ── Settings tab content entrance ── */
+@keyframes settings-content-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-content-enter {
+  animation: settings-content-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Audio level gradient (green → yellow → red) ── */
+.audio-level-gradient {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--success)) 0%,
+    hsl(var(--success)) 55%,
+    hsl(var(--warning)) 78%,
+    hsl(var(--destructive)) 96%
+  );
+}
+
 /* Ensure select/option elements use theme colors */
 select option {
   background: hsl(var(--background));

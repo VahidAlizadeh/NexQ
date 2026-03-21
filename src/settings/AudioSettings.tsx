@@ -257,16 +257,8 @@ function AudioLevelMeter({
   peak: number;
   label: string;
 }) {
-  // Clamp values to 0-1
   const clampedLevel = Math.min(Math.max(level, 0), 1);
   const clampedPeak = Math.min(Math.max(peak, 0), 1);
-
-  // Determine color based on level
-  const getBarColor = () => {
-    if (clampedLevel > 0.8) return "bg-destructive";
-    if (clampedLevel > 0.5) return "bg-warning";
-    return "bg-success";
-  };
 
   return (
     <div
@@ -278,16 +270,16 @@ function AudioLevelMeter({
       aria-valuemax={100}
     >
       <span className="w-12 text-xs text-muted-foreground">{label}</span>
-      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-success/8">
-        {/* Level bar */}
+      <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-muted/20">
+        {/* Gradient level bar — color follows position (green → yellow → red) */}
         <div
-          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-75 ${getBarColor()}`}
+          className="absolute inset-y-0 left-0 rounded-full audio-level-gradient audio-bar-spring"
           style={{ width: `${clampedLevel * 100}%` }}
         />
         {/* Peak indicator */}
         {clampedPeak > 0.01 && (
           <div
-            className="absolute inset-y-0 w-0.5 bg-foreground/60"
+            className="absolute inset-y-0 w-[2px] rounded-full bg-foreground/40 transition-all duration-150"
             style={{ left: `${clampedPeak * 100}%` }}
           />
         )}

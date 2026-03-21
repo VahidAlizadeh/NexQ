@@ -330,9 +330,9 @@ export function MeetingAudioSettings() {
           <button
             key={preset.name}
             onClick={() => handlePresetSelect(preset)}
-            className={`cursor-pointer rounded-lg border px-3 py-1 text-[11px] font-medium transition-all ${
+            className={`cursor-pointer rounded-lg border px-3 py-1 text-[11px] font-medium transition-all duration-150 active:scale-95 ${
               config.preset_name === preset.name
-                ? "border-primary/50 bg-primary/10 text-primary"
+                ? "border-primary/50 bg-primary/10 text-primary shadow-sm shadow-primary/10"
                 : "border-border/30 text-muted-foreground/70 hover:border-border/60 hover:bg-accent/40 hover:text-foreground"
             }`}
           >
@@ -384,13 +384,13 @@ export function MeetingAudioSettings() {
           role="switch"
           aria-checked={config.recording_enabled}
           aria-label="Toggle recording"
-          className={`relative h-5 w-9 cursor-pointer rounded-full transition-colors duration-200 ${
-            config.recording_enabled ? "bg-primary" : "bg-muted"
+          className={`relative h-5 w-9 cursor-pointer rounded-full transition-all duration-200 ${
+            config.recording_enabled ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]" : "bg-muted"
           }`}
         >
           <span
-            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-              config.recording_enabled ? "translate-x-4" : "translate-x-0"
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200 ${
+              config.recording_enabled ? "translate-x-4 scale-105" : "translate-x-0"
             }`}
           />
         </button>
@@ -648,21 +648,15 @@ function PartyPanel({
           </select>
         </div>
 
-        {/* Level bar */}
-        <div className="relative h-3 overflow-hidden rounded-full bg-success/8">
+        {/* Level bar — gradient zones */}
+        <div className="relative h-3 overflow-hidden rounded-full bg-muted/15">
           <div
-            className={`absolute inset-y-0 left-0 rounded-full transition-all duration-75 ${
-              scaledLv > 0.9
-                ? "bg-destructive"
-                : scaledLv > 0.7
-                  ? "bg-warning"
-                  : "bg-success"
-            }`}
+            className="absolute inset-y-0 left-0 rounded-full audio-level-gradient audio-bar-spring"
             style={{ width: `${scaledLv * 100}%` }}
           />
           {peak > 0.005 && (
             <div
-              className="absolute inset-y-0 w-0.5 bg-foreground/60"
+              className="absolute inset-y-0 w-[2px] rounded-full bg-foreground/50 transition-all duration-150"
               style={{ left: `${Math.sqrt(Math.min(peak * 2.5, 1)) * 100}%` }}
             />
           )}
@@ -883,22 +877,14 @@ function DeviceLevelRow({
       <span className={`w-28 truncate text-[10px] ${isSelected ? "font-medium text-foreground" : "text-muted-foreground/60"}`}>
         {name}
       </span>
-      <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-success/8">
+      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted/15">
         <div
-          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-75 ${
-            scaled > 0.9
-              ? "bg-destructive"
-              : scaled > 0.7
-                ? "bg-warning"
-                : level > 0
-                  ? "bg-success"
-                  : "bg-transparent"
-          }`}
+          className="absolute inset-y-0 left-0 rounded-full audio-level-gradient audio-bar-spring"
           style={{ width: `${scaled * 100}%` }}
         />
         {peak > 0.005 && (
           <div
-            className="absolute inset-y-0 w-0.5 bg-foreground/40"
+            className="absolute inset-y-0 w-[2px] rounded-full bg-foreground/35 transition-all duration-150"
             style={{ left: `${Math.sqrt(Math.min(peak * 2.5, 1)) * 100}%` }}
           />
         )}

@@ -50,10 +50,10 @@ export function GeneralSettings() {
               <button
                 key={opt.value}
                 onClick={() => setTheme(opt.value)}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer ${
                   theme === opt.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 active:scale-95"
                 }`}
               >
                 {opt.icon}
@@ -83,13 +83,13 @@ export function GeneralSettings() {
             role="switch"
             aria-checked={autoSummary}
             aria-label="Toggle auto-summary"
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
-              autoSummary ? "bg-primary" : "bg-muted"
+            className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-all duration-200 ${
+              autoSummary ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]" : "bg-muted"
             }`}
           >
             <span
-              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                autoSummary ? "translate-x-5" : "translate-x-0"
+              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200 ${
+                autoSummary ? "translate-x-5 scale-[1.05]" : "translate-x-0"
               }`}
             />
           </button>
@@ -112,13 +112,13 @@ export function GeneralSettings() {
             role="switch"
             aria-checked={startOnLogin}
             aria-label="Toggle start on login"
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
-              startOnLogin ? "bg-primary" : "bg-muted"
+            className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-all duration-200 ${
+              startOnLogin ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]" : "bg-muted"
             }`}
           >
             <span
-              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                startOnLogin ? "translate-x-5" : "translate-x-0"
+              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200 ${
+                startOnLogin ? "translate-x-5 scale-[1.05]" : "translate-x-0"
               }`}
             />
           </button>
@@ -150,7 +150,7 @@ export function GeneralSettings() {
           </div>
           <button
             onClick={handleChangeDataDir}
-            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/30 px-3.5 py-2.5 text-xs font-medium text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/30 px-3.5 py-2.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:bg-secondary hover:text-foreground hover:-translate-y-px active:translate-y-px active:scale-[0.97] cursor-pointer"
           >
             <FolderOpen className="h-3.5 w-3.5" />
             Change

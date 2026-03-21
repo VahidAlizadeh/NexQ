@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useToastStore } from "../stores/toastStore";
 import type { Toast as ToastData } from "../stores/toastStore";
 import { CheckCircle, XCircle, Info, X } from "lucide-react";
@@ -8,46 +9,99 @@ const iconMap = {
   info: Info,
 };
 
-const colorMap = {
-  success:
-    "border-success/30 bg-success/10 text-success",
-  error:
-    "border-destructive/30 bg-destructive/10 text-destructive",
-  info:
-    "border-info/30 bg-info/10 text-info",
+/** Left accent border color per type */
+const accentMap = {
+  success: "border-l-[hsl(var(--success))]",
+  error: "border-l-[hsl(var(--destructive))]",
+  info: "border-l-[hsl(var(--info))]",
 };
 
-const iconColorMap = {
-  success: "text-success",
-  error: "text-destructive",
-  info: "text-info",
+/** Icon circle background + icon color */
+const iconBgMap = {
+  success: "bg-success/15 text-success",
+  error: "bg-destructive/15 text-destructive",
+  info: "bg-info/15 text-info",
+};
+
+/** Entrance animation for the icon */
+const iconAnimMap = {
+  success: "toast-icon-pop",
+  error: "toast-icon-shake",
+  info: "toast-icon-pop",
+};
+
+/** Progress bar color */
+const progressMap = {
+  success: "bg-success/50",
+  error: "bg-destructive/50",
+  info: "bg-info/50",
 };
 
 function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => void }) {
   const Icon = iconMap[toast.type];
+  const [exiting, setExiting] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Auto-dismiss with exit animation (component-driven)
+  useEffect(() => {
+    timerRef.current = setTimeout(() => {
+      setExiting(true);
+      setTimeout(onDismiss, 280);
+    }, 4000);
+    return () => clearTimeout(timerRef.current);
+  }, [onDismiss]);
+
+  const handleDismiss = useCallback(() => {
+    if (exiting) return;
+    clearTimeout(timerRef.current);
+    setExiting(true);
+    setTimeout(onDismiss, 280);
+  }, [exiting, onDismiss]);
 
   return (
     <div
       role="alert"
       aria-live="polite"
-      className={`flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 shadow-lg transition-all duration-300 animate-in slide-in-from-right ${colorMap[toast.type]}`}
-      style={{ maxWidth: 360 }}
+      className={`
+        group relative flex items-start gap-3 overflow-hidden
+        rounded-xl border border-border/25 border-l-[3.5px]
+        ${accentMap[toast.type]}
+        bg-card/95 backdrop-blur-md
+        px-4 py-3
+        shadow-xl shadow-black/8
+        ${exiting ? "toast-exit" : "toast-enter"}
+      `}
+      style={{ maxWidth: 400, minWidth: 280 }}
     >
-      <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${iconColorMap[toast.type]}`} />
-      <p className="flex-1 text-xs font-medium leading-relaxed">{toast.message}</p>
+      {/* Icon with colored circle background */}
+      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${iconBgMap[toast.type]} ${iconAnimMap[toast.type]}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+
+      {/* Message */}
+      <p className="flex-1 min-w-0 pt-[3px] text-[13px] font-medium leading-snug text-foreground/90">
+        {toast.message}
+      </p>
+
+      {/* Dismiss button — visible on hover or always on touch */}
       <button
-        onClick={onDismiss}
-        className="shrink-0 rounded p-0.5 opacity-60 transition-opacity hover:opacity-100"
+        onClick={handleDismiss}
+        className="shrink-0 rounded-lg p-1 text-muted-foreground/30 transition-all duration-150 hover:bg-accent hover:text-foreground/70 group-hover:text-muted-foreground/60"
         aria-label="Dismiss notification"
       >
-        <X className="h-3 w-3" />
+        <X className="h-3.5 w-3.5" />
       </button>
+
+      {/* Progress bar — visual countdown to auto-dismiss */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
+        <div className={`h-full ${progressMap[toast.type]} toast-progress-bar`} />
+      </div>
     </div>
   );
 }
 
 /**
- * Toast container -- renders in bottom-right of the viewport.
+ * Toast container — renders in bottom-right of the viewport.
  * Mount once at the app root.
  */
 export function ToastContainer() {
@@ -58,9 +112,8 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"
+      className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2.5"
       aria-label="Notifications"
-      aria-atomic="true"
     >
       {toasts.map((toast) => (
         <ToastItem

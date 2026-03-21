@@ -183,11 +183,12 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
           role="dialog"
           aria-modal="true"
           aria-label="Settings"
-          className={`w-[640px] max-h-[520px] flex flex-col rounded-xl border border-border/50 bg-card shadow-2xl transition-all duration-150 ${
+          className={`w-[640px] max-h-[520px] flex flex-col rounded-xl border border-border/40 bg-card shadow-2xl shadow-black/15 transition-all duration-200 ${
             isVisible
               ? "opacity-100 scale-100 translate-y-0"
-              : "opacity-0 scale-95 translate-y-2"
+              : "opacity-0 scale-[0.97] translate-y-3"
           }`}
+          style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border/30 px-5 py-3.5">
@@ -220,12 +221,16 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition-all duration-150 cursor-pointer ${
+                className={`relative flex items-center gap-1.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition-colors duration-150 cursor-pointer ${
                   activeTab === tab.id
-                    ? "border-b-2 border-primary text-foreground"
-                    : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
+                {/* Animated active underline */}
+                <div className={`absolute bottom-0 left-1 right-1 h-[2px] rounded-full bg-primary transition-all duration-200 ${
+                  activeTab === tab.id ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0"
+                }`} />
                 {tab.icon}
                 {tab.label}
               </button>
@@ -233,7 +238,9 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto p-5" role="tabpanel">{renderTabContent()}</div>
+          <div className="flex-1 overflow-y-auto p-5" role="tabpanel">
+            <div key={activeTab} className="settings-content-enter">{renderTabContent()}</div>
+          </div>
         </div>
       </div>
     );
@@ -285,10 +292,10 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
                           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                       }`}
                     >
-                      {/* Active indicator bar */}
-                      {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary" />
-                      )}
+                      {/* Active indicator bar — CSS transition instead of mount/unmount */}
+                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-primary transition-all duration-200 ease-out ${
+                        isActive ? "h-5 w-[3px] opacity-100" : "h-0 w-[3px] opacity-0"
+                      }`} />
                       <span className={`shrink-0 transition-colors duration-150 ${
                         isActive ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground/70"
                       }`}>
@@ -323,11 +330,14 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
           {/* Section Heading */}
           <div className="mb-8">
             <h1 className="text-xl font-semibold text-foreground">{currentTabLabel}</h1>
-            <div className="mt-2 h-px bg-border/30" />
+            <div className="mt-2.5 flex items-center gap-2">
+              <div className="h-[2px] w-8 rounded-full bg-primary/70" />
+              <div className="h-px flex-1 bg-border/20" />
+            </div>
           </div>
 
-          {/* Tab Content */}
-          <div className="transition-opacity duration-150">{renderTabContent()}</div>
+          {/* Tab Content — animate on tab switch */}
+          <div key={activeTab} className="settings-content-enter">{renderTabContent()}</div>
         </div>
       </main>
     </div>

@@ -110,7 +110,7 @@ impl STTProvider for SherpaOfflineSTT {
     }
 
     fn provider_type(&self) -> STTProviderType {
-        self.provider_type
+        self.provider_type.clone()
     }
 
     async fn start_stream(
@@ -412,7 +412,7 @@ impl STTProvider for SherpaOfflineSTT {
         chunk: AudioChunk,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(ref tx) = self.audio_tx {
-            let _ = tx.send(AudioMessage::Samples(chunk.samples));
+            let _ = tx.send(AudioMessage::Samples(chunk.pcm_data));
         }
         Ok(())
     }

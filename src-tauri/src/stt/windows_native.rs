@@ -598,6 +598,9 @@ fn run_windows_speech_recognizer(
 
     // Set up Completed handler — fires if the session terminates unexpectedly
     // (timeout, network failure, user cancellation, etc.)
+    // Use a shared flag so the pump loop can detect session-end and auto-restart.
+    let session_ended = Arc::new(AtomicBool::new(false));
+    let session_ended_for_handler = Arc::clone(&session_ended);
     let completed_app_handle = app_handle.clone();
     let completed_party = party.to_string();
     let completed_handler = TypedEventHandler::<
@@ -620,8 +623,19 @@ fn run_windows_speech_recognizer(
                     SpeechRecognitionResultStatus::MicrophoneUnavailable => "MicrophoneUnavailable",
                     _ => "Other",
                 };
-                log::warn!("WindowsNativeSTT: Session Completed with status: {}", status_name);
-                if status != SpeechRecognitionResultStatus::Success {
+
+                // Recoverable statuses: auto-restart instead of giving up
+                let is_recoverable = matches!(status,
+                    SpeechRecognitionResultStatus::UserCanceled
+                    | SpeechRecognitionResultStatus::TimeoutExceeded
+                    | SpeechRecognitionResultStatus::PauseLimitExceeded
+                );
+
+                if is_recoverable {
+                    log::info!("WindowsNativeSTT: Session ended with {} — will auto-restart", status_name);
+                    session_ended_for_handler.store(true, Ordering::SeqCst);
+                } else {
+                    log::warn!("WindowsNativeSTT: Session Completed with status: {}", status_name);
                     emit_thread_status(&completed_app_handle, &completed_party, "error",
                         Some(format!("Recognition session ended: {}", status_name)));
                 }
@@ -664,7 +678,38 @@ fn run_windows_speech_recognizer(
     // The SpeechRecognizer delivers ResultGenerated callbacks via COM messages,
     // so the pump MUST run for recognition to work.
     let mut pump_iterations: u64 = 0;
+    let mut restart_count: u32 = 0;
     while !stop_flag.load(Ordering::SeqCst) {
+        // Auto-restart session if it ended due to timeout/pause/cancel
+        if session_ended.load(Ordering::SeqCst) {
+            session_ended.store(false, Ordering::SeqCst);
+            restart_count += 1;
+            log::info!("WindowsNativeSTT: Auto-restarting session (attempt #{})", restart_count);
+
+            // Brief pause before restart to avoid tight loops on persistent failures
+            std::thread::sleep(std::time::Duration::from_millis(200));
+
+            match session.StartAsync() {
+                Ok(op) => match op.get() {
+                    Ok(_) => {
+                        log::info!("WindowsNativeSTT: Session restarted successfully");
+                        emit_thread_status(app_handle, party, "connected",
+                            Some("Listening for speech (auto-restarted)".to_string()));
+                    }
+                    Err(e) => {
+                        log::error!("WindowsNativeSTT: Restart failed: {}", e);
+                        emit_thread_status(app_handle, party, "error",
+                            Some(format!("Restart failed: {}", e)));
+                        break;
+                    }
+                },
+                Err(e) => {
+                    log::error!("WindowsNativeSTT: Restart StartAsync failed: {}", e);
+                    break;
+                }
+            }
+        }
+
         #[cfg(target_os = "windows")]
         unsafe {
             use windows::Win32::UI::WindowsAndMessaging::{

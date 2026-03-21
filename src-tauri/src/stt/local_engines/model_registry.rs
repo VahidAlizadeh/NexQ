@@ -192,19 +192,32 @@ static ORT_STREAMING_MODELS: &[ModelDefinition] = &[
 ];
 
 /// NVIDIA Parakeet TDT models — CTC/TDT architecture, ONNX format.
-/// #1 on Open ASR Leaderboard (~6% WER), 0.6B parameters.
+/// #1 on Open ASR Leaderboard (~6% WER).
 static PARAKEET_TDT_MODELS: &[ModelDefinition] = &[
     ModelDefinition {
         engine: "parakeet_tdt",
-        model_id: "parakeet-tdt-0.6b-int8",
-        display_name: "Parakeet TDT 0.6B (int8, ~300 MB, best accuracy)",
-        size_bytes: 320_000_000,
-        download_url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-int8.tar.bz2",
+        model_id: "parakeet-tdt-0.6b-v3-int8",
+        display_name: "Parakeet TDT 0.6B v3 (int8, best accuracy)",
+        size_bytes: 487_587_840, // 465 MB
+        download_url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
         sha256: "",
         accuracy_rating: 5,
-        speed_rating: 4,
+        speed_rating: 3,
         is_streaming: false,
-        filename: "sherpa-onnx-nemo-parakeet-tdt-0.6b-int8",
+        filename: "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+        is_archive: true,
+    },
+    ModelDefinition {
+        engine: "parakeet_tdt",
+        model_id: "parakeet-tdt-ctc-110m-int8",
+        display_name: "Parakeet CTC 110M (int8, fast & lightweight)",
+        size_bytes: 104_857_600, // 100 MB
+        download_url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8.tar.bz2",
+        sha256: "",
+        accuracy_rating: 4,
+        speed_rating: 5,
+        is_streaming: false,
+        filename: "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
         is_archive: true,
     },
 ];

@@ -1342,7 +1342,7 @@ async fn create_stt_provider_for_party(
             }
         }
         STTProviderType::ParakeetTdt => {
-            let model_id = config.local_model_id.as_deref().unwrap_or("parakeet-tdt-0.6b-int8");
+            let model_id = config.local_model_id.as_deref().unwrap_or("parakeet-tdt-ctc-110m-int8");
             let model_result = get_local_model_path(state, "parakeet_tdt", model_id);
             match model_result {
                 Ok(model_dir) => {

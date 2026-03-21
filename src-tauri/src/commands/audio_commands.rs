@@ -796,16 +796,20 @@ pub async fn start_capture_per_party(
     // Web Speech and Windows Speech always use the OS default recording device.
     // If the user selected a non-default device, temporarily change the system default.
     {
-        let needs_override = |config: &crate::audio::PartyAudioConfig| -> bool {
+        let needs_override = |config: &crate::audio::PartyAudioConfig, role: &str| -> bool {
             let provider = config.stt_provider.as_str();
-            (provider == "web_speech" || provider == "windows_native")
-                && config.is_input_device
-                && config.device_id != "default"
+            let is_web_or_win = provider == "web_speech" || provider == "windows_native";
+            let result = is_web_or_win && config.is_input_device && config.device_id != "default";
+            log::info!(
+                "IPolicyConfig check [{}]: provider='{}', is_input={}, device_id='{}', needs_override={}",
+                role, provider, config.is_input_device, config.device_id, result
+            );
+            result
         };
 
-        if needs_override(&you) || needs_override(&them) {
+        if needs_override(&you, "You") || needs_override(&them, "Them") {
             // Pick the device that needs the override (prefer "You" if both need it)
-            let target_device = if needs_override(&you) {
+            let target_device = if needs_override(&you, "You") {
                 &you.device_id
             } else {
                 &them.device_id
@@ -1343,6 +1347,9 @@ async fn create_stt_provider_for_party(
         }
         STTProviderType::ParakeetTdt => {
             let model_id = config.local_model_id.as_deref().unwrap_or("parakeet-tdt-ctc-110m-int8");
+            crate::stt::emit_stt_debug(app, "info", "stt",
+                &format!("[{}] Parakeet TDT: looking for model '{}' (local_model_id={:?})",
+                    party_role, model_id, config.local_model_id));
             let model_result = get_local_model_path(state, "parakeet_tdt", model_id);
             match model_result {
                 Ok(model_dir) => {

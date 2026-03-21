@@ -561,6 +561,32 @@ export const useConfigStore = create<ConfigState>((set) => ({
         ...(pauseThresholdMs != null && { pauseThresholdMs }),
       }));
 
+      // Post-load: ensure local providers have a local_model_id so footer/backend use the right model
+      if (resolvedMeetingConfig) {
+        const amp = activeModelPerEngine ?? {};
+        const defaultModels: Record<string, string> = {
+          sherpa_onnx: "streaming-zipformer-en-20M",
+          ort_streaming: "zipformer-en-20M",
+          parakeet_tdt: "parakeet-tdt-0.6b-v3-int8",
+        };
+        const localProviders = ["sherpa_onnx", "ort_streaming", "parakeet_tdt", "whisper_cpp"];
+        let needsPersist = false;
+        for (const party of ["you", "them"] as const) {
+          const p = resolvedMeetingConfig[party];
+          if (localProviders.includes(p.stt_provider) && !p.local_model_id) {
+            resolvedMeetingConfig[party] = {
+              ...p,
+              local_model_id: amp[p.stt_provider] ?? defaultModels[p.stt_provider] ?? undefined,
+            };
+            needsPersist = true;
+          }
+        }
+        if (needsPersist) {
+          set({ meetingAudioConfig: resolvedMeetingConfig });
+          persistValue("meetingAudioConfig", resolvedMeetingConfig);
+        }
+      }
+
       // Set up cross-window sync: when another window changes the store,
       // update this window's Zustand state automatically.
       store.onKeyChange<MeetingAudioConfig>("meetingAudioConfig", (val) => {

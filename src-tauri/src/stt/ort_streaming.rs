@@ -673,6 +673,7 @@ fn inference_thread_main(
     // Decode state
     let mut pcm_buffer: Vec<f32> = Vec::new();
     let mut emitted_tokens: Vec<i64> = Vec::new();
+    let mut last_decoder_error: Option<std::time::Instant> = None;
     let mut segment_counter = segment_counter_start;
     let mut consecutive_blanks: usize = 0;
     let mut first_transcription = true;
@@ -721,7 +722,11 @@ fn inference_thread_main(
                 let decoder_out = match run_decoder(&mut decoder, &emitted_tokens) {
                     Ok(out) => out,
                     Err(e) => {
-                        debug("error", &format!("Decoder error: {}", e));
+                        let now = std::time::Instant::now();
+                        if last_decoder_error.map_or(true, |t| now.duration_since(t).as_secs() >= 5) {
+                            debug("error", &format!("Decoder error: {}", e));
+                            last_decoder_error = Some(now);
+                        }
                         continue;
                     }
                 };
@@ -843,6 +848,15 @@ fn run_decoder(
 ) -> Result<Vec<f32>, String> {
     use ort::value::Tensor;
 
+    // Check if decoder expects i32 inputs (e.g., Parakeet TDT) vs default i64
+    let expects_i32 = session.inputs().first()
+        .and_then(|i| match i.dtype() {
+            ort::value::ValueType::Tensor { ty, .. } =>
+                Some(*ty == ort::value::TensorElementType::Int32),
+            _ => None,
+        })
+        .unwrap_or(false);
+
     // Use last 2 tokens (or pad with blanks)
     let context: Vec<i64> = if token_context.len() >= 2 {
         token_context[token_context.len() - 2..].to_vec()
@@ -856,14 +870,22 @@ fn run_decoder(
         ctx
     };
 
-    let arr = ndarray::Array2::from_shape_vec((1, context.len()), context)
-        .map_err(|e| format!("decoder input shape error: {}", e))?;
-    let input = Tensor::from_array(arr)
-        .map_err(|e| format!("decoder tensor creation failed: {}", e))?;
-
-    let outputs = session
-        .run(ort::inputs![input])
-        .map_err(|e| format!("decoder inference failed: {}", e))?;
+    let outputs = if expects_i32 {
+        let context_i32: Vec<i32> = context.iter().map(|&t| t as i32).collect();
+        let arr = ndarray::Array2::from_shape_vec((1, context_i32.len()), context_i32)
+            .map_err(|e| format!("decoder input shape error: {}", e))?;
+        let input = Tensor::from_array(arr)
+            .map_err(|e| format!("decoder tensor creation failed: {}", e))?;
+        session.run(ort::inputs![input])
+            .map_err(|e| format!("decoder inference failed: {}", e))?
+    } else {
+        let arr = ndarray::Array2::from_shape_vec((1, context.len()), context)
+            .map_err(|e| format!("decoder input shape error: {}", e))?;
+        let input = Tensor::from_array(arr)
+            .map_err(|e| format!("decoder tensor creation failed: {}", e))?;
+        session.run(ort::inputs![input])
+            .map_err(|e| format!("decoder inference failed: {}", e))?
+    };
 
     let (_shape, data) = outputs[0]
         .try_extract_tensor::<f32>()

@@ -560,7 +560,14 @@ function PartyPanel({
     if (newProvider === "sherpa_onnx" || newProvider === "ort_streaming" || newProvider === "parakeet_tdt") {
       // Use per-engine active model, falling back to legacy activeWhisperModel
       const activeModelPerEngine = useConfigStore.getState().activeModelPerEngine;
-      const engineModel = activeModelPerEngine[newProvider] ?? activeWhisperModel;
+      const DEFAULT_MODEL_PER_ENGINE: Record<string, string> = {
+        sherpa_onnx: "streaming-zipformer-en-20M",
+        ort_streaming: "zipformer-en-20M",
+        parakeet_tdt: "parakeet-tdt-0.6b-v3-int8",
+      };
+      const engineModel = activeModelPerEngine[newProvider]
+        ?? DEFAULT_MODEL_PER_ENGINE[newProvider]
+        ?? activeWhisperModel;
       if (engineModel) updates.local_model_id = engineModel;
     } else {
       // Clear local_model_id for non-local providers to prevent cross-engine contamination

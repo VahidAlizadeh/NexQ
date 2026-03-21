@@ -147,9 +147,16 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
   const llmProviderLabel = LLM_LABELS[streamProvider || llmProvider] || (streamProvider || llmProvider);
   const llmModelLabel = formatModel(streamModel || llmModel);
 
+  const DEFAULT_MODEL_PER_ENGINE: Record<string, string> = {
+    sherpa_onnx: "streaming-zipformer-en-20M",
+    ort_streaming: "zipformer-en-20M",
+    parakeet_tdt: "parakeet-tdt-0.6b-v3-int8",
+  };
+
   const youSttProvider = meetingAudioConfig?.you.stt_provider ?? "web_speech";
   const youLocalModel = meetingAudioConfig?.you.local_model_id
     || activeModelPerEngine[youSttProvider]
+    || DEFAULT_MODEL_PER_ENGINE[youSttProvider]
     || (youSttProvider === "whisper_cpp" ? activeWhisperModel : undefined);
   const youStt = formatSttLabel(youSttProvider, youLocalModel || undefined);
   const youActive = isRecording && !mutedYou && micLevel > 0.02;
@@ -157,6 +164,7 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
   const themSttProvider = meetingAudioConfig?.them.stt_provider ?? "—";
   const themLocalModel = meetingAudioConfig?.them.local_model_id
     || activeModelPerEngine[themSttProvider]
+    || DEFAULT_MODEL_PER_ENGINE[themSttProvider]
     || (themSttProvider === "whisper_cpp" ? activeWhisperModel : undefined);
   const themStt = formatSttLabel(themSttProvider, themLocalModel || undefined);
   const themActive = isRecording && !mutedThem && systemLevel > 0.02;
@@ -167,9 +175,9 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
     if (!meetingAudioConfig) return;
     const updates: Partial<typeof meetingAudioConfig.you> = { stt_provider: provider };
     if (provider === "sherpa_onnx" || provider === "ort_streaming" || provider === "parakeet_tdt") {
-      // Use per-engine active model — not the legacy global activeWhisperModel
       const activeModelPerEngine = useConfigStore.getState().activeModelPerEngine;
       const engineModel = activeModelPerEngine[provider]
+        ?? DEFAULT_MODEL_PER_ENGINE[provider]
         ?? useConfigStore.getState().activeWhisperModel;
       if (engineModel) updates.local_model_id = engineModel;
     }

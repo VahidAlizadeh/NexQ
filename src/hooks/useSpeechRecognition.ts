@@ -106,6 +106,16 @@ export function useSpeechRecognition() {
       currentCfg?.them.is_input_device;
 
     if (!youUsesWebSpeech && !themUsesWebSpeech) {
+      // Clean up any existing recognition before bailing —
+      // critical for hot-swap: switching away from web_speech must
+      // stop the old instance, otherwise it's orphaned and blocks
+      // future instances when switching back.
+      if (recognitionRef.current) {
+        shouldRestartRef.current = false;
+        try { recognitionRef.current.stop(); } catch {}
+        recognitionRef.current = null;
+        console.log("[STT] Web Speech cleaned up (provider changed away)");
+      }
       console.log("[STT] No party with input device uses web_speech — skipping");
       return;
     }
@@ -119,6 +129,14 @@ export function useSpeechRecognition() {
         "[STT] Web Speech API not supported in this WebView"
       );
       return;
+    }
+
+    // Guard: stop any existing instance before creating a new one
+    // (prevents duplicate recognition instances on rapid config changes)
+    if (recognitionRef.current) {
+      shouldRestartRef.current = false;
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
     }
 
     const recognition = new SpeechRecognition();

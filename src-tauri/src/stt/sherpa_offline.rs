@@ -199,23 +199,21 @@ impl STTProvider for SherpaOfflineSTT {
                         continue;
                     }
 
-                    // Build CLI arguments (use to_string_lossy for consistent path format)
+                    // Build CLI arguments — use separate --flag value pairs
+                    // (not --flag=value) because sherpa-onnx's Kaldi-style
+                    // ParseOptions can misinterpret Windows paths with = format.
                     let model_flag = match model_type {
-                        OfflineModelType::SenseVoice => format!(
-                            "--sense-voice-model={}",
-                            model_path.to_string_lossy()
-                        ),
-                        OfflineModelType::NemoCtc => format!(
-                            "--nemo-ctc-model={}",
-                            model_path.to_string_lossy()
-                        ),
+                        OfflineModelType::SenseVoice => "--sense-voice-model",
+                        OfflineModelType::NemoCtc => "--nemo-ctc-model",
                     };
+                    let model_str = model_path.to_string_lossy().to_string();
+                    let tokens_str = tokens_path.to_string_lossy().to_string();
 
-                    let mut args = vec![
-                        model_flag,
-                        format!("--tokens={}", tokens_path.to_string_lossy()),
-                        "--num-threads=4".to_string(),
-                        "--provider=cpu".to_string(),
+                    let mut args: Vec<String> = vec![
+                        model_flag.to_string(), model_str,
+                        "--tokens".to_string(), tokens_str,
+                        "--num-threads".to_string(), "4".to_string(),
+                        "--provider".to_string(), "cpu".to_string(),
                     ];
 
                     // SenseVoice-specific: set language and enable ITN
@@ -227,8 +225,10 @@ impl STTProvider for SherpaOfflineSTT {
                             "yue" => "yue",
                             _ => "en",
                         };
-                        args.push(format!("--sense-voice-language={}", sv_lang));
-                        args.push("--sense-voice-use-itn=true".to_string());
+                        args.push("--sense-voice-language".to_string());
+                        args.push(sv_lang.to_string());
+                        args.push("--sense-voice-use-itn".to_string());
+                        args.push("true".to_string());
                     }
 
                     args.push(wav_path.to_string_lossy().to_string());
@@ -300,9 +300,9 @@ impl STTProvider for SherpaOfflineSTT {
                                 segment_id += 1;
                                 segment_counter.store(segment_id, AtomicOrdering::Relaxed);
                             } else if output.status.success() {
-                                // Sidecar succeeded but no "text:" line found — log raw output for debugging
-                                let raw_stderr: String = stderr.chars().take(300).collect();
-                                let raw_stdout: String = stdout.chars().take(300).collect();
+                                // Sidecar succeeded but no "text:" line found — log full output for debugging
+                                let raw_stderr: String = stderr.chars().take(500).collect();
+                                let raw_stdout: String = stdout.chars().take(500).collect();
                                 log::warn!(
                                     "SherpaOfflineSTT: No text found in output. stderr=[{}] stdout=[{}]",
                                     raw_stderr, raw_stdout
@@ -313,7 +313,7 @@ impl STTProvider for SherpaOfflineSTT {
                                         handle,
                                         "warn",
                                         "sherpa_offline",
-                                        &format!("No text in output: {}", snippet.chars().take(120).collect::<String>()),
+                                        &format!("No text in output: {}", snippet.chars().take(300).collect::<String>()),
                                     );
                                 }
                             }
@@ -363,21 +363,17 @@ impl STTProvider for SherpaOfflineSTT {
                 let wav_path = std::env::temp_dir().join("nexq_offline_stt_final.wav");
                 if write_wav(&wav_path, &buffer, SAMPLE_RATE).is_ok() && model_path.exists() {
                     let model_flag = match model_type {
-                        OfflineModelType::SenseVoice => format!(
-                            "--sense-voice-model={}",
-                            model_path.to_string_lossy()
-                        ),
-                        OfflineModelType::NemoCtc => format!(
-                            "--nemo-ctc-model={}",
-                            model_path.to_string_lossy()
-                        ),
+                        OfflineModelType::SenseVoice => "--sense-voice-model",
+                        OfflineModelType::NemoCtc => "--nemo-ctc-model",
                     };
+                    let model_str = model_path.to_string_lossy().to_string();
+                    let tokens_str = tokens_path.to_string_lossy().to_string();
 
-                    let mut args = vec![
-                        model_flag,
-                        format!("--tokens={}", tokens_path.to_string_lossy()),
-                        "--num-threads=4".to_string(),
-                        "--provider=cpu".to_string(),
+                    let mut args: Vec<String> = vec![
+                        model_flag.to_string(), model_str,
+                        "--tokens".to_string(), tokens_str,
+                        "--num-threads".to_string(), "4".to_string(),
+                        "--provider".to_string(), "cpu".to_string(),
                     ];
 
                     if matches!(model_type, OfflineModelType::SenseVoice) {
@@ -388,8 +384,10 @@ impl STTProvider for SherpaOfflineSTT {
                             "yue" => "yue",
                             _ => "en",
                         };
-                        args.push(format!("--sense-voice-language={}", sv_lang));
-                        args.push("--sense-voice-use-itn=true".to_string());
+                        args.push("--sense-voice-language".to_string());
+                        args.push(sv_lang.to_string());
+                        args.push("--sense-voice-use-itn".to_string());
+                        args.push("true".to_string());
                     }
 
                     args.push(wav_path.to_string_lossy().to_string());

@@ -1089,12 +1089,18 @@ impl DecoderStateManager {
             .run(input_values)
             .map_err(|e| format!("decoder inference failed: {}", e))?;
 
-        // Extract decoder embedding output
+        // Extract decoder embedding output — try i32 first (Parakeet TDT),
+        // fall back to f32 for other transducer models.
         let out_idx = self.decoder_out_index.min(outputs.len().saturating_sub(1));
-        let (_shape, data) = outputs[out_idx]
-            .try_extract_tensor::<f32>()
-            .map_err(|e| format!("decoder output extraction failed: {}", e))?;
-        let result = data.to_vec();
+        let result: Vec<f32> = match outputs[out_idx].try_extract_tensor::<i32>() {
+            Ok((_shape, data)) => data.iter().map(|&x| x as f32).collect(),
+            Err(_) => {
+                let (_shape, data) = outputs[out_idx]
+                    .try_extract_tensor::<f32>()
+                    .map_err(|e| format!("decoder output extraction failed: {}", e))?;
+                data.to_vec()
+            }
+        };
 
         // Update states from outputs
         for (input_name, output_name) in &self.state_pairs {

@@ -362,7 +362,7 @@ export function LauncherView() {
               <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Meeting Context
               </span>
-              <div className="flex-1 border-t border-border/10" />
+              <div className="flex-1 border-t border-border/20" />
             </div>
 
             {/* Dropzone */}

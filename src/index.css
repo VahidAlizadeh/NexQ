@@ -127,13 +127,6 @@
   opacity: 0.6;
 }
 
-/* Glass card effect */
-.glass-card {
-  background: hsl(var(--card) / 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid hsl(var(--border) / 0.4);
-}
-
 /* Subtle glow on primary elements */
 .glow-primary {
   box-shadow: 0 0 12px -4px hsl(var(--primary) / 0.1),

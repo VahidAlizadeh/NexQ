@@ -150,7 +150,7 @@ function CollapsibleSection({
   const Icon = badge?.icon || FileText;
 
   return (
-    <div className="border-b border-border/10">
+    <div className="border-b border-border/20">
       {/* Header */}
       <button
         onClick={() => setExpanded((v) => !v)}
@@ -183,7 +183,7 @@ function CollapsibleSection({
       {expanded ? (
         <div className="px-3 pb-3">
           <div
-            className={`max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 ${
+            className={`max-h-60 overflow-y-auto rounded-md bg-secondary/20 p-2.5 ${
               isResponse
                 ? "text-sm leading-relaxed text-foreground/90"
                 : "font-mono text-xs leading-relaxed text-foreground/80"
@@ -222,7 +222,7 @@ function RawView({ entry }: { entry: LogEntry }) {
           </span>
           <SectionCopyButton text={entry.actualSystemPrompt} />
         </div>
-        <pre className="max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
+        <pre className="max-h-60 overflow-y-auto rounded-md bg-secondary/20 p-2.5 font-mono text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
           {entry.actualSystemPrompt || "(empty)"}
         </pre>
       </div>
@@ -235,7 +235,7 @@ function RawView({ entry }: { entry: LogEntry }) {
           </span>
           <SectionCopyButton text={entry.actualUserPrompt} />
         </div>
-        <pre className="max-h-80 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
+        <pre className="max-h-80 overflow-y-auto rounded-md bg-secondary/20 p-2.5 font-mono text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
           {entry.actualUserPrompt || "(empty)"}
         </pre>
       </div>
@@ -254,7 +254,7 @@ function RawView({ entry }: { entry: LogEntry }) {
             </span>
             <SectionCopyButton text={entry.responseContentClean} />
           </div>
-          <pre className="max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
+          <pre className="max-h-60 overflow-y-auto rounded-md bg-secondary/20 p-2.5 font-mono text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
             {entry.responseContentClean}
           </pre>
         </div>

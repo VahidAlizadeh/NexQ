@@ -162,7 +162,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Left: Transcript (always visible) */}
           <div className="flex flex-1 flex-col border-r border-border/10 min-w-0">
-            <div className="px-5 py-1.5 border-b border-border/10">
+            <div className="px-5 py-1.5 border-b border-border/20">
               <span className="text-xs font-semibold text-muted-foreground/50">
                 Transcript
                 <span className="ml-1.5 text-muted-foreground/30">{meeting.transcript.length}</span>

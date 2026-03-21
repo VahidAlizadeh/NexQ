@@ -140,7 +140,7 @@ export function QuestionDetector() {
                 className={`group/q flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 cursor-pointer question-card-enter ${
                   q.assisted
                     ? "bg-success/5 border border-success/10"
-                    : "bg-card/20 border border-border/10 hover:bg-card/40 hover:border-border/20"
+                    : "bg-card/20 hover:bg-card/40 hover:border-border/20"
                 }`}
                 title={q.text}
               >

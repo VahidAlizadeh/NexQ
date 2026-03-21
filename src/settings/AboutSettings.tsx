@@ -66,7 +66,7 @@ export function AboutSettings() {
                   key={shortcut.keys}
                   className={
                     idx < shortcuts.length - 1
-                      ? "border-b border-border/10"
+                      ? "border-b border-border/20"
                       : ""
                   }
                 >

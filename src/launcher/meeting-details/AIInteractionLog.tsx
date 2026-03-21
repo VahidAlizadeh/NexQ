@@ -45,7 +45,7 @@ export function AIInteractionLog({ interactions, expandedId, onToggle }: AIInter
               </div>
             </button>
             {isExpanded && (
-              <div className="border-t border-border/10 px-4 py-3">
+              <div className="border-t border-border/20 px-4 py-3">
                 <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground/50">
                   <span>{interaction.provider}/{interaction.model}</span>
                   <span>&middot;</span>

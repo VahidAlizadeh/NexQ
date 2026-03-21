@@ -193,7 +193,7 @@ export function HotkeySettings() {
                       isEditing
                         ? "bg-primary/10"
                         : "hover:bg-accent/50"
-                    } ${idx < arr.length - 1 ? "border-b border-border/10" : ""}`}
+                    } ${idx < arr.length - 1 ? "border-b border-border/20" : ""}`}
                   >
                     <td className="px-4 py-2.5 text-foreground/80">
                       {HOTKEY_LABELS[action]}

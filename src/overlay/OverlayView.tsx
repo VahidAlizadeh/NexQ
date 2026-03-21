@@ -96,8 +96,8 @@ export function OverlayView() {
       <div className="flex flex-1 flex-wrap gap-2.5 overflow-hidden px-3 py-2.5">
 
         {/* ── LEFT: TRANSCRIPT ── */}
-        <div className="flex min-w-[180px] flex-1 basis-[220px] flex-col overflow-hidden rounded-xl border border-border/10 bg-card/20">
-          <div className="flex items-center border-b border-border/10 px-3 py-1.5">
+        <div className="flex min-w-[180px] flex-1 basis-[220px] flex-col overflow-hidden rounded-xl bg-card/20">
+          <div className="flex items-center border-b border-border/20 px-3 py-1.5">
             <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">Transcript</span>
           </div>
           <div className="flex-1 overflow-y-auto p-2.5">
@@ -115,8 +115,8 @@ export function OverlayView() {
           )}
 
           {/* AI Response */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/10 bg-card/20">
-            <div className="flex items-center gap-1 border-b border-border/10 px-2.5 py-1.5">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card/20">
+            <div className="flex items-center gap-1 border-b border-border/20 px-2.5 py-1.5">
               <ModeButtons />
             </div>
             <div className="flex-1 overflow-y-auto p-3">
@@ -128,7 +128,7 @@ export function OverlayView() {
 
       {/* Ask input */}
       {askInputVisible && (
-        <div className="border-t border-border/10 px-3 py-1.5 slide-down-enter">
+        <div className="border-t border-border/20 px-3 py-1.5 slide-down-enter">
           <AskInput visible={askInputVisible} onClose={() => setAskInputVisible(false)} />
         </div>
       )}

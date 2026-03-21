@@ -613,7 +613,7 @@ function STTPickerDropdown({
         <>
           {localOpts.length > 0 && (
             <div>
-              <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
+              <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/20">
                 <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
                 <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Local & Built-in
@@ -640,8 +640,8 @@ function STTPickerDropdown({
           )}
 
           {cloudOpts.length > 0 && (
-            <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
-              <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
+            <div className={localOpts.length > 0 ? "border-t border-border/20" : ""}>
+              <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/20">
                 <Cloud className="h-2.5 w-2.5 text-blue-400" />
                 <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Cloud
@@ -772,7 +772,7 @@ function LLMPickerDropdown({
       {/* ── Provider section ── */}
       {localOpts.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
+          <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/20">
             <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
             <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">Local</span>
           </div>
@@ -798,8 +798,8 @@ function LLMPickerDropdown({
       )}
 
       {cloudOpts.length > 0 && (
-        <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
-          <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
+        <div className={localOpts.length > 0 ? "border-t border-border/20" : ""}>
+          <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/20">
             <Cloud className="h-2.5 w-2.5 text-blue-400" />
             <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">Cloud</span>
           </div>
@@ -831,8 +831,8 @@ function LLMPickerDropdown({
       )}
 
       {/* ── Model section (for pending provider) ── */}
-      <div className="border-t border-border/10">
-        <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/10">
+      <div className="border-t border-border/20">
+        <div className="flex items-center gap-1.5 bg-muted/20 px-3 py-1.5 border-b border-border/20">
           <Brain className="h-2.5 w-2.5 text-violet-400" />
           <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
             Model — {LLM_LABELS[pendingProvider] || pendingProvider}

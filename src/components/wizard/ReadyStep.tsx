@@ -97,7 +97,7 @@ export function ReadyStep({
                 {SHORTCUTS.map((s) => (
                   <tr
                     key={s.keys}
-                    className="group border-b border-border/10 last:border-0"
+                    className="group border-b border-border/20 last:border-0"
                   >
                     <td className="px-3 py-1.5">
                       <kbd className="inline-flex items-center rounded border border-border/50 bg-background px-1.5 py-0.5 font-mono text-xs text-foreground">

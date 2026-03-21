@@ -135,12 +135,12 @@ export function MeetingCard({
       role="button"
       tabIndex={0}
       aria-label={`Meeting: ${meeting.title}, ${formatRelativeTime(meeting.start_time)}`}
-      className={`group meeting-card-enter meeting-card-interactive relative cursor-pointer rounded-xl border border-border/20 bg-card/40 px-4 py-3 border-l-2 ${
+      className={`group meeting-card-enter meeting-card-interactive relative cursor-pointer rounded-xl bg-card/40 px-4 py-3 border-l-[3px] ${
         isLive
           ? "border-l-success/50"
           : meeting.has_summary
             ? "border-l-info/30"
-            : "border-l-primary/10"
+            : "border-l-border/20"
       }`}
       style={{ animationDelay: `${300 + staggerIndex * 50}ms` }}
     >

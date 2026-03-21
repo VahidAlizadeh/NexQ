@@ -265,9 +265,11 @@ impl STTProvider for SherpaOfflineSTT {
                                 let result = TranscriptResult {
                                     text: text.clone(),
                                     is_final: true,
-                                    language: language.clone(),
+                                    confidence: 1.0,
                                     timestamp_ms,
-                                    segment_id,
+                                    speaker: None,
+                                    language: Some(language.clone()),
+                                    segment_id: Some(segment_id.to_string()),
                                 };
 
                                 if let Err(e) = result_tx.blocking_send(result) {
@@ -377,13 +379,15 @@ impl STTProvider for SherpaOfflineSTT {
                                     let _ = result_tx.blocking_send(TranscriptResult {
                                         text,
                                         is_final: true,
-                                        language: language.clone(),
+                                        confidence: 1.0,
                                         timestamp_ms: std::time::SystemTime::now()
                                             .duration_since(std::time::UNIX_EPOCH)
                                             .unwrap_or_default()
                                             .as_millis()
                                             as u64,
-                                        segment_id,
+                                        speaker: None,
+                                        language: Some(language.clone()),
+                                        segment_id: Some(segment_id.to_string()),
                                     });
                                 }
                                 break;
@@ -405,12 +409,16 @@ impl STTProvider for SherpaOfflineSTT {
 
     async fn feed_audio(
         &mut self,
-        chunk: &AudioChunk,
+        chunk: AudioChunk,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(ref tx) = self.audio_tx {
-            let _ = tx.send(AudioMessage::Samples(chunk.samples.clone()));
+            let _ = tx.send(AudioMessage::Samples(chunk.samples));
         }
         Ok(())
+    }
+
+    async fn test_connection(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.binary_path.exists())
     }
 
     async fn stop_stream(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

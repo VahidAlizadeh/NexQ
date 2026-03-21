@@ -37,6 +37,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Cpu,
+  Download,
 } from "lucide-react";
 import { BUILT_IN_PRESETS, type MeetingPreset, applyPreset } from "./presets";
 
@@ -726,20 +727,28 @@ function ProviderSelect({
   }
 
   function isAvailable(opt: typeof STT_OPTIONS[0]): boolean {
-    // Don't show providers that require downloads/keys even if currently selected
     if (opt.inputOnly && !isInput) return false;
+    // Local engine providers: always show in dropdown so users can discover
+    // and download models. Cloud providers: require API key.
+    if (opt.requiresDownload) return true;
+    if (opt.requiresKey) return apiKeyStatus[opt.value] ?? false;
+    return true;
+  }
+
+  /** True when the provider has at least one model downloaded and ready to use. */
+  function isReady(opt: typeof STT_OPTIONS[0]): boolean {
     if (opt.requiresDownload) return isLocalEngineReady(opt.requiresDownload);
     if (opt.requiresKey) return apiKeyStatus[opt.value] ?? false;
     return true;
   }
 
-  // Auto-reset to a working provider if the current one is no longer available
+  // Auto-reset to a working provider if the current one has no downloaded models
   useEffect(() => {
     const currentOpt = STT_OPTIONS.find((o) => o.value === value);
-    if (currentOpt && !isAvailable(currentOpt)) {
+    if (currentOpt && !isReady(currentOpt) && !isAvailable(currentOpt)) {
       // Fall back to web_speech (always available) or first available
       const fallback = STT_OPTIONS.find(
-        (o) => o.value !== value && isAvailable(o)
+        (o) => o.value !== value && isAvailable(o) && isReady(o)
       );
       if (fallback) {
         onChange(fallback.value);
@@ -781,24 +790,33 @@ function ProviderSelect({
                   Local & Built-in
                 </span>
               </div>
-              {localOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => { onChange(opt.value); setOpen(false); }}
-                  className={`flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs transition-colors hover:bg-accent ${
-                    value === opt.value ? "bg-primary/5 text-primary" : "text-foreground"
-                  }`}
-                >
-                  <span className={`shrink-0 ${value === opt.value ? "text-primary" : "text-emerald-500"}`}>
-                    {opt.icon}
-                  </span>
-                  <span className="flex-1 text-left">{opt.label}</span>
-                  {value === opt.value && (
-                    <CheckCircle className="h-3 w-3 shrink-0 text-primary" />
-                  )}
-                </button>
-              ))}
+              {localOptions.map((opt) => {
+                const needsDownload = opt.requiresDownload && !isLocalEngineReady(opt.requiresDownload);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => { onChange(opt.value); setOpen(false); }}
+                    className={`flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs transition-colors hover:bg-accent ${
+                      value === opt.value ? "bg-primary/5 text-primary" : "text-foreground"
+                    }`}
+                  >
+                    <span className={`shrink-0 ${value === opt.value ? "text-primary" : "text-emerald-500"}`}>
+                      {opt.icon}
+                    </span>
+                    <span className="flex-1 text-left">{opt.label}</span>
+                    {needsDownload && (
+                      <span className="flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] text-amber-400">
+                        <Download className="h-2.5 w-2.5" />
+                        Model
+                      </span>
+                    )}
+                    {value === opt.value && (
+                      <CheckCircle className="h-3 w-3 shrink-0 text-primary" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
 

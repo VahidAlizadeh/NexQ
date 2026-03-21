@@ -149,10 +149,13 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
   // Updates meetingAudioConfig; useAudioConfigSync automatically restarts capture.
   const handleProviderChange = useCallback((party: "you" | "them", provider: STTProviderType) => {
     if (!meetingAudioConfig) return;
-    const whisperModel = useConfigStore.getState().activeWhisperModel;
     const updates: Partial<typeof meetingAudioConfig.you> = { stt_provider: provider };
-    if ((provider === "sherpa_onnx" || provider === "ort_streaming") && whisperModel) {
-      updates.local_model_id = whisperModel;
+    if (provider === "sherpa_onnx" || provider === "ort_streaming") {
+      // Use per-engine active model — not the legacy global activeWhisperModel
+      const activeModelPerEngine = useConfigStore.getState().activeModelPerEngine;
+      const engineModel = activeModelPerEngine[provider]
+        ?? useConfigStore.getState().activeWhisperModel;
+      if (engineModel) updates.local_model_id = engineModel;
     }
     setMeetingAudioConfig({
       ...meetingAudioConfig,

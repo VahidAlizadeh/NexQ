@@ -103,6 +103,123 @@ pub fn start_mic_capture(
     Ok(stream)
 }
 
+/// Start a single capture that emits each chunk TWICE — once as Mic, once as System.
+/// Used when both YOU and THEM share the same input device to avoid opening two
+/// competing cpal streams on the same hardware.
+pub fn start_mic_capture_dual(
+    device_id: &str,
+    tx: mpsc::Sender<AudioChunk>,
+) -> Result<Stream, String> {
+    let device = super::device_manager::find_input_device(device_id)?;
+    let device_name = device.name().unwrap_or_else(|_| "unknown".into());
+    log::info!("Starting dual-tagged capture on device: {}", device_name);
+
+    let config = device
+        .default_input_config()
+        .map_err(|e| format!("Failed to get default input config: {}", e))?;
+
+    let sample_rate = config.sample_rate().0;
+    let channels = config.channels();
+    let sample_format = config.sample_format();
+
+    let err_fn = |err: cpal::StreamError| {
+        log::error!("Dual capture stream error: {}", err);
+    };
+
+    let stream = match sample_format {
+        SampleFormat::I16 => {
+            let tx = tx.clone();
+            device
+                .build_input_stream(
+                    &config.into(),
+                    move |data: &[i16], _: &cpal::InputCallbackInfo| {
+                        handle_dual_data_i16(data, sample_rate, channels, &tx);
+                    },
+                    err_fn,
+                    None,
+                )
+                .map_err(|e| format!("Failed to build dual i16 stream: {}", e))?
+        }
+        SampleFormat::F32 => {
+            let tx = tx.clone();
+            device
+                .build_input_stream(
+                    &config.into(),
+                    move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                        handle_dual_data_f32(data, sample_rate, channels, &tx);
+                    },
+                    err_fn,
+                    None,
+                )
+                .map_err(|e| format!("Failed to build dual f32 stream: {}", e))?
+        }
+        _ => {
+            return Err(format!("Unsupported sample format for dual capture: {:?}", sample_format));
+        }
+    };
+
+    stream
+        .play()
+        .map_err(|e| format!("Failed to start dual stream: {}", e))?;
+
+    log::info!("Dual-tagged capture started successfully");
+    Ok(stream)
+}
+
+fn handle_dual_data_i16(
+    data: &[i16],
+    sample_rate: u32,
+    channels: u16,
+    tx: &mpsc::Sender<AudioChunk>,
+) {
+    if data.is_empty() { return; }
+    let pcm_data = resample(data, sample_rate, TARGET_SAMPLE_RATE, channels);
+    let ts = current_timestamp_ms();
+
+    // Emit as Mic
+    let _ = tx.try_send(AudioChunk {
+        pcm_data: pcm_data.clone(),
+        source: AudioSource::Mic,
+        timestamp_ms: ts,
+        is_speech: false,
+    });
+    // Emit as System
+    let _ = tx.try_send(AudioChunk {
+        pcm_data,
+        source: AudioSource::System,
+        timestamp_ms: ts,
+        is_speech: false,
+    });
+}
+
+fn handle_dual_data_f32(
+    data: &[f32],
+    sample_rate: u32,
+    channels: u16,
+    tx: &mpsc::Sender<AudioChunk>,
+) {
+    if data.is_empty() { return; }
+    let i16_data: Vec<i16> = data
+        .iter()
+        .map(|&s| (s.clamp(-1.0, 1.0) * i16::MAX as f32) as i16)
+        .collect();
+    let pcm_data = resample(&i16_data, sample_rate, TARGET_SAMPLE_RATE, channels);
+    let ts = current_timestamp_ms();
+
+    let _ = tx.try_send(AudioChunk {
+        pcm_data: pcm_data.clone(),
+        source: AudioSource::Mic,
+        timestamp_ms: ts,
+        is_speech: false,
+    });
+    let _ = tx.try_send(AudioChunk {
+        pcm_data,
+        source: AudioSource::System,
+        timestamp_ms: ts,
+        is_speech: false,
+    });
+}
+
 fn current_timestamp_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)

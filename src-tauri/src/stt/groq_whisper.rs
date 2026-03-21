@@ -139,6 +139,9 @@ pub struct GroqWhisperSTT {
     start_time: Option<Instant>,
     /// Accumulated PCM samples for the current segment.
     audio_buffer: Vec<i16>,
+    /// Number of consecutive silence samples at the tail of audio_buffer.
+    /// Used to split segments at pause boundaries before sending to API.
+    trailing_silence_samples: usize,
     /// Segment counter for diagnostics.
     segment_counter: u64,
     /// Chunks fed since stream start (for periodic diagnostics).
@@ -162,6 +165,7 @@ impl GroqWhisperSTT {
             stop_flag: Arc::new(AtomicBool::new(false)),
             start_time: None,
             audio_buffer: Vec::new(),
+            trailing_silence_samples: 0,
             segment_counter: 0,
             chunks_fed: 0,
             app_handle: None,
@@ -596,15 +600,45 @@ impl STTProvider for GroqWhisperSTT {
             );
         }
 
+        // Track trailing silence for pause-based splitting.
+        // If this chunk is mostly silence, add its length to the counter;
+        // otherwise reset to 0 (speech resumed).
+        let chunk_rms = Self::segment_rms(&chunk.pcm_data);
+        if chunk_rms < SILENCE_RMS_THRESHOLD {
+            self.trailing_silence_samples += chunk.pcm_data.len();
+        } else {
+            self.trailing_silence_samples = 0;
+        }
+
         self.audio_buffer.extend_from_slice(&chunk.pcm_data);
 
         // Dynamic threshold from current config (picks up live setting changes)
         let config = self.current_config();
         let threshold = (SAMPLE_RATE as f32 * config.segment_duration_secs) as usize;
 
-        if self.audio_buffer.len() >= threshold {
+        // Pause-based split: if we've accumulated at least 0.5s of speech
+        // AND trailing silence exceeds 2 seconds, send the speech portion
+        // now instead of waiting for the full segment_duration.
+        let pause_samples = (SAMPLE_RATE as usize) * 2; // 2 seconds
+        let min_speech = (SAMPLE_RATE as usize) / 2; // 0.5 seconds minimum
+        let speech_len = self.audio_buffer.len().saturating_sub(self.trailing_silence_samples);
+
+        let should_send = if self.trailing_silence_samples >= pause_samples && speech_len >= min_speech {
+            true // Pause detected — send speech portion
+        } else {
+            self.audio_buffer.len() >= threshold // Normal: buffer full
+        };
+
+        if should_send {
             self.segment_counter += 1;
-            let segment = std::mem::take(&mut self.audio_buffer);
+            // Trim trailing silence from the segment to send cleaner audio
+            let full_buffer = std::mem::take(&mut self.audio_buffer);
+            let segment = if self.trailing_silence_samples > 0 && self.trailing_silence_samples < full_buffer.len() {
+                full_buffer[..full_buffer.len() - self.trailing_silence_samples].to_vec()
+            } else {
+                full_buffer
+            };
+            self.trailing_silence_samples = 0;
             let timestamp_ms = self
                 .start_time
                 .map(|t| t.elapsed().as_millis() as u64)

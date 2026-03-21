@@ -136,26 +136,54 @@ impl AudioCaptureManager {
         // Reset stop flag
         self.stop_flag.store(false, Ordering::SeqCst);
 
-        // Start mic capture
-        let mic_tx = tx.clone();
-        match mic_capture::start_mic_capture(mic_device_id, mic_tx, AudioSource::Mic) {
-            Ok(stream) => {
-                self.mic_stream = Some(stream);
-                log::info!("Mic capture started");
+        // Same-device optimization: when both parties use the same input device,
+        // open ONE capture and duplicate chunks with both Mic + System tags.
+        // This avoids two cpal streams contending for the same 256-slot channel.
+        let same_device = system_is_input
+            && !system_device_id.is_empty()
+            && system_device_id != "default"
+            && mic_device_id == system_device_id;
+
+        if same_device {
+            log::info!(
+                "Same input device for mic & system ('{}') — single capture with dual tagging",
+                mic_device_id
+            );
+            // Single capture that produces both Mic and System chunks
+            let dual_tx = tx.clone();
+            match mic_capture::start_mic_capture_dual(mic_device_id, dual_tx) {
+                Ok(stream) => {
+                    self.mic_stream = Some(stream);
+                    log::info!("Dual-tagged capture started on shared device");
+                }
+                Err(e) => {
+                    log::error!("Failed to start dual capture: {}", e);
+                    return Err(format!("Dual capture failed: {}", e));
+                }
             }
-            Err(e) => {
-                log::error!("Failed to start mic capture: {}", e);
-                return Err(format!("Mic capture failed: {}", e));
+        } else {
+            // Standard: separate mic capture
+            let mic_tx = tx.clone();
+            match mic_capture::start_mic_capture(mic_device_id, mic_tx, AudioSource::Mic) {
+                Ok(stream) => {
+                    self.mic_stream = Some(stream);
+                    log::info!("Mic capture started");
+                }
+                Err(e) => {
+                    log::error!("Failed to start mic capture: {}", e);
+                    return Err(format!("Mic capture failed: {}", e));
+                }
             }
         }
 
-        // Start system audio capture
-        if system_is_input && !system_device_id.is_empty() && system_device_id != "default" {
-            // "Them" is an input device (e.g. virtual cable) — capture as mic, tag as System
+        // Start system audio capture (only if not already handled by same-device path)
+        if same_device {
+            // Already handled above — both Mic and System chunks from single stream
+        } else if system_is_input && !system_device_id.is_empty() && system_device_id != "default" {
+            // "Them" is a different input device — capture tagged as System
             let system_tx = tx.clone();
             match mic_capture::start_mic_capture(system_device_id, system_tx, AudioSource::System) {
                 Ok(stream) => {
-                    // Store as system_stream (separate field) to keep it alive
                     self.system_input_stream = Some(stream);
                     log::info!("System audio capture started via input device (tagged as System)");
                 }

@@ -188,21 +188,32 @@ impl STTProvider for SherpaOfflineSTT {
                         continue;
                     }
 
-                    // Build CLI arguments
+                    // Verify model file exists before calling sidecar
+                    if !model_path.exists() {
+                        log::error!("SherpaOfflineSTT: Model file not found: {}", model_path.display());
+                        if let Some(ref handle) = app_handle {
+                            crate::stt::emit_stt_debug(handle, "error", "sherpa_offline",
+                                &format!("Model file missing: {}", model_path.display()));
+                        }
+                        let _ = std::fs::remove_file(&wav_path);
+                        continue;
+                    }
+
+                    // Build CLI arguments (use to_string_lossy for consistent path format)
                     let model_flag = match model_type {
                         OfflineModelType::SenseVoice => format!(
                             "--sense-voice-model={}",
-                            model_path.display()
+                            model_path.to_string_lossy()
                         ),
                         OfflineModelType::NemoCtc => format!(
                             "--nemo-ctc-model={}",
-                            model_path.display()
+                            model_path.to_string_lossy()
                         ),
                     };
 
                     let mut args = vec![
                         model_flag,
-                        format!("--tokens={}", tokens_path.display()),
+                        format!("--tokens={}", tokens_path.to_string_lossy()),
                         "--num-threads=4".to_string(),
                         "--provider=cpu".to_string(),
                     ];
@@ -220,7 +231,9 @@ impl STTProvider for SherpaOfflineSTT {
                         args.push("--sense-voice-use-itn=true".to_string());
                     }
 
-                    args.push(wav_path.display().to_string());
+                    args.push(wav_path.to_string_lossy().to_string());
+
+                    log::debug!("SherpaOfflineSTT: cmd={} args={:?}", binary_path.display(), args);
 
                     // Run sherpa-onnx-offline
                     match std::process::Command::new(&binary_path)
@@ -348,21 +361,21 @@ impl STTProvider for SherpaOfflineSTT {
             // Process any remaining audio in the buffer
             if !buffer.is_empty() && !stop_flag.load(AtomicOrdering::SeqCst) {
                 let wav_path = std::env::temp_dir().join("nexq_offline_stt_final.wav");
-                if write_wav(&wav_path, &buffer, SAMPLE_RATE).is_ok() {
+                if write_wav(&wav_path, &buffer, SAMPLE_RATE).is_ok() && model_path.exists() {
                     let model_flag = match model_type {
                         OfflineModelType::SenseVoice => format!(
                             "--sense-voice-model={}",
-                            model_path.display()
+                            model_path.to_string_lossy()
                         ),
                         OfflineModelType::NemoCtc => format!(
                             "--nemo-ctc-model={}",
-                            model_path.display()
+                            model_path.to_string_lossy()
                         ),
                     };
 
                     let mut args = vec![
                         model_flag,
-                        format!("--tokens={}", tokens_path.display()),
+                        format!("--tokens={}", tokens_path.to_string_lossy()),
                         "--num-threads=4".to_string(),
                         "--provider=cpu".to_string(),
                     ];
@@ -379,7 +392,9 @@ impl STTProvider for SherpaOfflineSTT {
                         args.push("--sense-voice-use-itn=true".to_string());
                     }
 
-                    args.push(wav_path.display().to_string());
+                    args.push(wav_path.to_string_lossy().to_string());
+
+                    log::debug!("SherpaOfflineSTT: final cmd={} args={:?}", binary_path.display(), args);
 
                     if let Ok(output) = std::process::Command::new(&binary_path)
                         .args(&args)

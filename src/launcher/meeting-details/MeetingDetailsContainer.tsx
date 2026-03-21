@@ -168,7 +168,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
                 <span className="ml-1.5 text-muted-foreground/30">{meeting.transcript.length}</span>
               </span>
             </div>
-            <TranscriptView segments={meeting.transcript} search={search} />
+            <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
           </div>
 
           {/* Right: Tabbed content */}
@@ -180,7 +180,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
             />
             <div className="flex-1 overflow-y-auto">
               {activeTab === "transcript" && (
-                <TranscriptView segments={meeting.transcript} search={search} />
+                <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
               )}
               {activeTab === "summary" && (
                 <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />
@@ -217,7 +217,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
       <div className="flex-1 overflow-y-auto">
         {activeTab === "transcript" && (
-          <TranscriptView segments={meeting.transcript} search={search} />
+          <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
         )}
         {activeTab === "summary" && (
           <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />
@@ -241,9 +241,10 @@ function meetingToMarkdown(meeting: Meeting): string {
   md += `**Segments:** ${meeting.transcript.length}\n\n`;
   if (meeting.summary) md += `## Summary\n\n${meeting.summary}\n\n`;
   if (meeting.transcript.length > 0) {
+    const meetingStart = new Date(meeting.start_time).getTime();
     md += `## Transcript\n\n`;
     for (const seg of meeting.transcript) {
-      md += `**[${formatTimestamp(seg.timestamp_ms)}] ${getSpeakerLabel(seg.speaker)}:** ${seg.text}\n\n`;
+      md += `**[${formatTimestamp(Math.max(0, seg.timestamp_ms - meetingStart))}] ${getSpeakerLabel(seg.speaker)}:** ${seg.text}\n\n`;
     }
   }
   if (meeting.ai_interactions.length > 0) {

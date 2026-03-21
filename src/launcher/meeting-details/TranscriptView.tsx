@@ -12,6 +12,7 @@ import { FileText } from "lucide-react";
 interface TranscriptViewProps {
   segments: TranscriptSegment[];
   search: TranscriptSearchState;
+  meetingStartTime?: number;
 }
 
 // Speaker colors for timeline blocks
@@ -22,9 +23,12 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "#6b7280",
 };
 
-export function TranscriptView({ segments, search }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const toElapsed = (ms: number) =>
+    meetingStartTime ? Math.max(0, ms - meetingStartTime) : ms;
 
   // Search: scroll to match
   useEffect(() => {
@@ -75,6 +79,7 @@ export function TranscriptView({ segments, search }: TranscriptViewProps) {
         segments={segments}
         selectedIndex={selectedIndex}
         onJump={handleTimelineJump}
+        meetingStartTime={meetingStartTime}
       />
 
       {/* Transcript rows */}
@@ -102,7 +107,7 @@ export function TranscriptView({ segments, search }: TranscriptViewProps) {
                 <span className={`shrink-0 pt-0.5 text-xs tabular-nums font-medium ${
                   isSelected ? "text-primary/70" : "text-muted-foreground/50"
                 }`}>
-                  {formatTimestamp(segment.timestamp_ms)}
+                  {formatTimestamp(toElapsed(segment.timestamp_ms))}
                 </span>
 
                 {/* Speaker */}
@@ -154,10 +159,12 @@ function TimelineScrubber({
   segments,
   selectedIndex,
   onJump,
+  meetingStartTime,
 }: {
   segments: TranscriptSegment[];
   selectedIndex: number | null;
   onJump: (index: number) => void;
+  meetingStartTime?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{
@@ -209,10 +216,11 @@ function TimelineScrubber({
     const r = findClosest(e.clientX);
     if (!r) return;
     const seg = segments[r.idx];
+    const elapsedMs = meetingStartTime ? Math.max(0, seg.timestamp_ms - meetingStartTime) : seg.timestamp_ms;
     setHover({
       x: r.x,
       segmentIndex: r.idx,
-      timestamp: formatTimestamp(seg.timestamp_ms),
+      timestamp: formatTimestamp(elapsedMs),
       speaker: getSpeakerLabel(seg.speaker),
       text: seg.text.length > 50 ? seg.text.slice(0, 50) + "..." : seg.text,
     });
@@ -258,7 +266,7 @@ function TimelineScrubber({
       {/* Time labels + track */}
       <div className="flex items-center gap-2">
         <span className="shrink-0 text-[11px] tabular-nums font-medium text-muted-foreground/40 w-8">
-          {fmtTime(firstTs)}
+          {fmtTime(firstTs - (meetingStartTime || firstTs))}
         </span>
 
         {/* Track */}
@@ -300,7 +308,7 @@ function TimelineScrubber({
         </div>
 
         <span className="shrink-0 text-[11px] tabular-nums font-medium text-muted-foreground/40 w-8 text-right">
-          {fmtTime(lastTs)}
+          {fmtTime(lastTs - (meetingStartTime || firstTs))}
         </span>
       </div>
 

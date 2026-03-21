@@ -268,9 +268,10 @@ fn detokenize(token_ids: &[i64], vocab: &HashMap<i64, String>) -> String {
     }
 }
 
-/// State tensor that can be either f32 or i64 (matching model expectations).
+/// State tensor that can be f32, i32, or i64 (matching model expectations).
 enum StateTensor {
     F32(ndarray::ArrayD<f32>),
+    I32(ndarray::ArrayD<i32>),
     I64(ndarray::ArrayD<i64>),
 }
 
@@ -407,6 +408,8 @@ impl EncoderStateManager {
                         .collect();
                     let state = if *ty == ort::value::TensorElementType::Int64 {
                         StateTensor::I64(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                    } else if *ty == ort::value::TensorElementType::Int32 {
+                        StateTensor::I32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
                     } else {
                         StateTensor::F32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
                     };
@@ -422,13 +425,15 @@ impl EncoderStateManager {
         }
 
         let i64_count = states.values().filter(|s| matches!(s, StateTensor::I64(_))).count();
+        let i32_count = states.values().filter(|s| matches!(s, StateTensor::I32(_))).count();
         let f32_count = states.values().filter(|s| matches!(s, StateTensor::F32(_))).count();
         log::info!(
-            "EncoderState: audio='{}', lens={:?}, {} state pairs ({} f32, {} i64), {} encoder outputs, chunk={}frames, feature_dim={}",
+            "EncoderState: audio='{}', lens={:?}, {} state pairs ({} f32, {} i32, {} i64), {} encoder outputs, chunk={}frames, feature_dim={}",
             audio_input_name,
             lens_input_name,
             state_pairs.len(),
             f32_count,
+            i32_count,
             i64_count,
             encoder_out_indices.len(),
             required_chunk_frames,
@@ -490,6 +495,11 @@ impl EncoderStateManager {
                             .map_err(|e| format!("state '{}' (f32): {}", name, e))?;
                         input_values.push((name.clone().into(), tensor.into()));
                     }
+                    StateTensor::I32(arr) => {
+                        let tensor = ort::value::Tensor::from_array(arr.clone())
+                            .map_err(|e| format!("state '{}' (i32): {}", name, e))?;
+                        input_values.push((name.clone().into(), tensor.into()));
+                    }
                     StateTensor::I64(arr) => {
                         let tensor = ort::value::Tensor::from_array(arr.clone())
                             .map_err(|e| format!("state '{}' (i64): {}", name, e))?;
@@ -532,12 +542,22 @@ impl EncoderStateManager {
             if let Some(out_idx) = self.output_order.iter().position(|n| n == output_name) {
                 if out_idx < outputs.len() {
                     let is_i64 = matches!(self.states.get(input_name), Some(StateTensor::I64(_)));
+                    let is_i32 = matches!(self.states.get(input_name), Some(StateTensor::I32(_)));
                     let new_state = if is_i64 {
                         let (shape, data) = outputs[out_idx]
                             .try_extract_tensor::<i64>()
                             .map_err(|e| format!("state output '{}' (i64): {}", output_name, e))?;
                         let dims: Vec<usize> = shape.iter().map(|&d| d as usize).collect();
                         StateTensor::I64(
+                            ndarray::ArrayD::from_shape_vec(ndarray::IxDyn(&dims), data.to_vec())
+                                .map_err(|e| format!("state reshape '{}': {}", input_name, e))?,
+                        )
+                    } else if is_i32 {
+                        let (shape, data) = outputs[out_idx]
+                            .try_extract_tensor::<i32>()
+                            .map_err(|e| format!("state output '{}' (i32): {}", output_name, e))?;
+                        let dims: Vec<usize> = shape.iter().map(|&d| d as usize).collect();
+                        StateTensor::I32(
                             ndarray::ArrayD::from_shape_vec(ndarray::IxDyn(&dims), data.to_vec())
                                 .map_err(|e| format!("state reshape '{}': {}", input_name, e))?,
                         )
@@ -969,8 +989,7 @@ impl DecoderStateManager {
                     let state = if *ty == ort::value::TensorElementType::Int64 {
                         StateTensor::I64(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
                     } else if *ty == ort::value::TensorElementType::Int32 {
-                        // i32 state: store as f32 zeros (will be cast on use)
-                        StateTensor::F32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                        StateTensor::I32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
                     } else {
                         StateTensor::F32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
                     };
@@ -1052,6 +1071,11 @@ impl DecoderStateManager {
                             .map_err(|e| format!("decoder state '{}' (f32): {}", name, e))?;
                         input_values.push((name.clone().into(), tensor.into()));
                     }
+                    StateTensor::I32(arr) => {
+                        let tensor = Tensor::from_array(arr.clone())
+                            .map_err(|e| format!("decoder state '{}' (i32): {}", name, e))?;
+                        input_values.push((name.clone().into(), tensor.into()));
+                    }
                     StateTensor::I64(arr) => {
                         let tensor = Tensor::from_array(arr.clone())
                             .map_err(|e| format!("decoder state '{}' (i64): {}", name, e))?;
@@ -1077,12 +1101,22 @@ impl DecoderStateManager {
             if let Some(out_idx) = self.output_order.iter().position(|n| n == output_name) {
                 if out_idx < outputs.len() {
                     let is_i64 = matches!(self.states.get(input_name), Some(StateTensor::I64(_)));
+                    let is_i32 = matches!(self.states.get(input_name), Some(StateTensor::I32(_)));
                     let new_state = if is_i64 {
                         let (shape, data) = outputs[out_idx]
                             .try_extract_tensor::<i64>()
                             .map_err(|e| format!("decoder state out '{}' (i64): {}", output_name, e))?;
                         let dims: Vec<usize> = shape.iter().map(|&d| d as usize).collect();
                         StateTensor::I64(
+                            ndarray::ArrayD::from_shape_vec(ndarray::IxDyn(&dims), data.to_vec())
+                                .map_err(|e| format!("decoder state reshape '{}': {}", input_name, e))?,
+                        )
+                    } else if is_i32 {
+                        let (shape, data) = outputs[out_idx]
+                            .try_extract_tensor::<i32>()
+                            .map_err(|e| format!("decoder state out '{}' (i32): {}", output_name, e))?;
+                        let dims: Vec<usize> = shape.iter().map(|&d| d as usize).collect();
+                        StateTensor::I32(
                             ndarray::ArrayD::from_shape_vec(ndarray::IxDyn(&dims), data.to_vec())
                                 .map_err(|e| format!("decoder state reshape '{}': {}", input_name, e))?,
                         )
@@ -1116,6 +1150,8 @@ impl DecoderStateManager {
                         .collect();
                     let state = if *ty == ort::value::TensorElementType::Int64 {
                         StateTensor::I64(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
+                    } else if *ty == ort::value::TensorElementType::Int32 {
+                        StateTensor::I32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
                     } else {
                         StateTensor::F32(ndarray::ArrayD::zeros(ndarray::IxDyn(&dims)))
                     };

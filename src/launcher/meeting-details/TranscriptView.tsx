@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, useState, useCallback } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import type { TranscriptSegment } from "../../lib/types";
 import type { TranscriptSearchState } from "../../hooks/useTranscriptSearch";
 import { TranscriptSearch } from "./TranscriptSearch";
@@ -14,35 +14,48 @@ interface TranscriptViewProps {
   search: TranscriptSearchState;
 }
 
-// Speaker colors for the timeline scrubber
-const SCRUBBER_COLORS: Record<string, string> = {
-  User: "bg-blue-500/70",
-  Interviewer: "bg-purple-500/70",
-  Them: "bg-emerald-500/70",
-  Unknown: "bg-muted-foreground/40",
+// Speaker border/accent colors
+const SPEAKER_ACCENT: Record<string, string> = {
+  User: "border-l-blue-500",
+  Interviewer: "border-l-purple-500",
+  Them: "border-l-emerald-500",
+  Unknown: "border-l-gray-500",
+};
+
+const SPEAKER_BG_ACTIVE: Record<string, string> = {
+  User: "bg-blue-500/8",
+  Interviewer: "bg-purple-500/8",
+  Them: "bg-emerald-500/8",
+  Unknown: "bg-gray-500/8",
+};
+
+// Timeline gradient colors
+const TIMELINE_COLORS: Record<string, string> = {
+  User: "#3b82f6",
+  Interviewer: "#a855f7",
+  Them: "#10b981",
+  Unknown: "#6b7280",
 };
 
 export function TranscriptView({ segments, search }: TranscriptViewProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // Auto-scroll to current match
+  // Auto-scroll to current search match
   useEffect(() => {
     if (search.totalMatches === 0) return;
     const match = search.matches[search.currentMatchIndex];
     if (!match) return;
     const el = segmentRefs.current[match.segmentIndex];
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [search.currentMatchIndex, search.matches, search.totalMatches]);
 
-  // Build set of segment indices that have the current active match
+  // Build match lookup per segment
   const activeMatchSegment = search.totalMatches > 0
     ? search.matches[search.currentMatchIndex]?.segmentIndex ?? -1
     : -1;
 
-  // Build match lookup per segment for highlighting
   const segmentMatches = useMemo(() => {
     const map = new Map<number, number[]>();
     for (const m of search.matches) {
@@ -52,11 +65,20 @@ export function TranscriptView({ segments, search }: TranscriptViewProps) {
     return map;
   }, [search.matches]);
 
+  const handleTimelineJump = (index: number) => {
+    setSelectedIndex(index);
+    segmentRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const handleSegmentClick = (index: number) => {
+    setSelectedIndex(selectedIndex === index ? null : index);
+  };
+
   if (segments.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/60">
-        <FileText className="mb-4 h-7 w-7" />
-        <p className="text-sm font-medium">No transcript segments</p>
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+        <FileText className="mb-3 h-6 w-6" />
+        <p className="text-xs font-medium">No transcript segments</p>
       </div>
     );
   }
@@ -69,42 +91,48 @@ export function TranscriptView({ segments, search }: TranscriptViewProps) {
       {/* Timeline scrubber */}
       <TimelineScrubber
         segments={segments}
-        onJump={(index) => {
-          segmentRefs.current[index]?.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }}
+        selectedIndex={selectedIndex}
+        onJump={handleTimelineJump}
       />
 
-      {/* Segments */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        <div className="space-y-0.5 p-5">
+      {/* Transcript rows */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border/15">
+        <div className="py-1">
           {segments.map((segment, i) => {
             const offsets = segmentMatches.get(i);
-            const isActiveSegment = i === activeMatchSegment;
+            const isSearchMatch = i === activeMatchSegment;
+            const isSelected = i === selectedIndex;
 
             return (
               <div
                 key={segment.id || i}
                 ref={(el) => { segmentRefs.current[i] = el; }}
-                className={`flex gap-3 rounded-lg px-3 py-2 transition-colors ${
-                  isActiveSegment
-                    ? "bg-yellow-400/10 ring-1 ring-yellow-400/20"
-                    : "hover:bg-secondary/20"
-                }`}
+                onClick={() => handleSegmentClick(i)}
+                className={`group flex items-start gap-0 border-l-2 px-3 py-1 cursor-pointer transition-all duration-100
+                  ${SPEAKER_ACCENT[segment.speaker] || SPEAKER_ACCENT.Unknown}
+                  ${isSelected
+                    ? `${SPEAKER_BG_ACTIVE[segment.speaker] || SPEAKER_BG_ACTIVE.Unknown} border-l-3`
+                    : isSearchMatch
+                      ? "bg-yellow-400/8 border-l-yellow-400"
+                      : "border-l-transparent hover:bg-secondary/15"
+                  }`}
               >
-                <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-muted-foreground/60">
+                {/* Timestamp */}
+                <span className={`shrink-0 w-10 pt-px text-[9px] tabular-nums ${
+                  isSelected ? "text-foreground/60" : "text-muted-foreground/40"
+                }`}>
                   {formatTimestamp(segment.timestamp_ms)}
                 </span>
-                <span
-                  className={`shrink-0 pt-0.5 text-[10px] font-medium ${getSpeakerColor(segment.speaker)}`}
-                >
-                  {getSpeakerLabel(segment.speaker)}
+                {/* Speaker tag */}
+                <span className={`shrink-0 w-8 pt-px text-[9px] font-semibold ${getSpeakerColor(segment.speaker)}`}>
+                  {getSpeakerLabel(segment.speaker).slice(0, 3)}
                 </span>
-                <span className="text-xs leading-relaxed text-foreground/85">
+                {/* Text */}
+                <span className={`flex-1 text-[11px] leading-relaxed ${
+                  isSelected ? "text-foreground" : "text-foreground/75"
+                }`}>
                   {offsets
-                    ? highlightText(segment.text, search.query, offsets, isActiveSegment)
+                    ? highlightText(segment.text, search.query, offsets, isSearchMatch)
                     : segment.text}
                 </span>
               </div>
@@ -116,7 +144,7 @@ export function TranscriptView({ segments, search }: TranscriptViewProps) {
   );
 }
 
-// Highlight matching text spans
+// Highlight matching text
 function highlightText(
   text: string,
   query: string,
@@ -124,22 +152,17 @@ function highlightText(
   isActive: boolean
 ): React.ReactNode {
   if (!query || offsets.length === 0) return text;
-
   const needle = query.toLowerCase();
   const parts: React.ReactNode[] = [];
   let lastEnd = 0;
-
   const sorted = [...offsets].sort((a, b) => a - b);
-
   for (const offset of sorted) {
-    if (offset > lastEnd) {
-      parts.push(text.slice(lastEnd, offset));
-    }
+    if (offset > lastEnd) parts.push(text.slice(lastEnd, offset));
     parts.push(
       <mark
         key={offset}
         className={`rounded px-0.5 ${
-          isActive ? "bg-yellow-400/50 text-yellow-100" : "bg-yellow-400/25 text-yellow-200"
+          isActive ? "bg-yellow-400/40 text-yellow-100" : "bg-yellow-400/20 text-yellow-200"
         }`}
       >
         {text.slice(offset, offset + needle.length)}
@@ -147,38 +170,31 @@ function highlightText(
     );
     lastEnd = offset + needle.length;
   }
-
-  if (lastEnd < text.length) {
-    parts.push(text.slice(lastEnd));
-  }
-
+  if (lastEnd < text.length) parts.push(text.slice(lastEnd));
   return <>{parts}</>;
 }
 
-// Speaker gradient colors for scrubber segments
-const SCRUBBER_GRADIENTS: Record<string, string> = {
-  User: "from-blue-500 to-blue-400",
-  Interviewer: "from-purple-500 to-purple-400",
-  Them: "from-emerald-500 to-emerald-400",
-  Unknown: "from-gray-500 to-gray-400",
-};
+// ═══════════════════════════════════════════════
+// Interactive Timeline Scrubber
+// ═══════════════════════════════════════════════
 
-// Timeline scrubber bar with hover tooltip
 function TimelineScrubber({
   segments,
+  selectedIndex,
   onJump,
 }: {
   segments: TranscriptSegment[];
+  selectedIndex: number | null;
   onJump: (index: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [tooltip, setTooltip] = useState<{
-    visible: boolean;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hover, setHover] = useState<{
     x: number;
+    segmentIndex: number;
     timestamp: string;
     speaker: string;
-    segmentIndex: number;
-  }>({ visible: false, x: 0, timestamp: "", speaker: "", segmentIndex: 0 });
+  } | null>(null);
 
   if (segments.length < 2) return null;
 
@@ -187,112 +203,132 @@ function TimelineScrubber({
   const totalDuration = lastTs - firstTs;
   if (totalDuration <= 0) return null;
 
-  // Find which segment corresponds to a given x position
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, x / rect.width));
-    const hoverTs = firstTs + ratio * totalDuration;
-
-    // Find the closest segment
-    let closestIdx = 0;
-    let closestDist = Infinity;
-    for (let i = 0; i < segments.length; i++) {
-      const dist = Math.abs(segments[i].timestamp_ms - hoverTs);
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestIdx = i;
-      }
-    }
-
-    setTooltip({
-      visible: true,
-      x: Math.max(30, Math.min(x, rect.width - 30)),
-      timestamp: formatTimestamp(segments[closestIdx].timestamp_ms),
-      speaker: getSpeakerLabel(segments[closestIdx].speaker),
-      segmentIndex: closestIdx,
-    });
+  // Format time label (m:ss)
+  const formatTimeLabel = (ms: number) => {
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
   };
 
-  const handleMouseLeave = () => {
-    setTooltip((prev) => ({ ...prev, visible: false }));
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (tooltip.visible) {
-      onJump(tooltip.segmentIndex);
-    }
-  };
-
-  // Pre-compute segment blocks (merge consecutive same-speaker segments for cleaner look)
-  const blocks: { speaker: string; startRatio: number; widthRatio: number }[] = [];
-  let blockStart = 0;
-  let blockSpeaker = segments[0].speaker;
+  // Build merged blocks
+  const blocks: { speaker: string; startRatio: number; widthRatio: number; startIdx: number; endIdx: number }[] = [];
+  let bStart = 0;
+  let bSpeaker = segments[0].speaker;
   for (let i = 1; i <= segments.length; i++) {
-    const seg = segments[i];
-    if (i === segments.length || seg.speaker !== blockSpeaker) {
+    if (i === segments.length || segments[i].speaker !== bSpeaker) {
       const endTs = i < segments.length ? segments[i].timestamp_ms : lastTs;
-      const startRatio = (segments[blockStart].timestamp_ms - firstTs) / totalDuration;
-      const widthRatio = (endTs - segments[blockStart].timestamp_ms) / totalDuration;
-      if (widthRatio > 0.002) {
-        blocks.push({ speaker: blockSpeaker, startRatio, widthRatio });
+      const startRatio = (segments[bStart].timestamp_ms - firstTs) / totalDuration;
+      const widthRatio = (endTs - segments[bStart].timestamp_ms) / totalDuration;
+      if (widthRatio > 0.001) {
+        blocks.push({ speaker: bSpeaker, startRatio, widthRatio, startIdx: bStart, endIdx: i - 1 });
       }
       if (i < segments.length) {
-        blockStart = i;
-        blockSpeaker = seg.speaker;
+        bStart = i;
+        bSpeaker = segments[i].speaker;
       }
     }
   }
 
+  // Find closest segment to x position
+  const findSegment = (clientX: number) => {
+    const container = containerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, x / rect.width));
+    const hoverTs = firstTs + ratio * totalDuration;
+    let closestIdx = 0;
+    let closestDist = Infinity;
+    for (let i = 0; i < segments.length; i++) {
+      const dist = Math.abs(segments[i].timestamp_ms - hoverTs);
+      if (dist < closestDist) { closestDist = dist; closestIdx = i; }
+    }
+    return { x, segmentIndex: closestIdx };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const result = findSegment(e.clientX);
+    if (!result) return;
+    setHover({
+      x: result.x,
+      segmentIndex: result.segmentIndex,
+      timestamp: formatTimestamp(segments[result.segmentIndex].timestamp_ms),
+      speaker: getSpeakerLabel(segments[result.segmentIndex].speaker),
+    });
+  };
+
+  const handleClick = () => {
+    if (hover) onJump(hover.segmentIndex);
+  };
+
+  // Selected marker position
+  const selectedRatio = selectedIndex !== null
+    ? (segments[selectedIndex].timestamp_ms - firstTs) / totalDuration
+    : null;
+
+  // Time markers
+  const midTs = firstTs + totalDuration / 2;
+
   return (
-    <div className="relative mx-5 mt-3 mb-1">
+    <div className="relative mx-3 mt-1.5 mb-0.5">
       {/* Tooltip */}
-      {tooltip.visible && (
+      {hover && (
         <div
-          className="pointer-events-none absolute -top-8 z-20 -translate-x-1/2"
-          style={{ left: tooltip.x }}
+          className="pointer-events-none absolute z-20 -translate-x-1/2"
+          style={{ left: hover.x, top: -24 }}
         >
-          <div className="rounded-lg border border-border/30 bg-card/95 px-2 py-1 shadow-lg backdrop-blur-sm">
-            <span className="text-[10px] font-medium tabular-nums text-foreground/90">
-              {tooltip.timestamp}
-            </span>
-            <span className="ml-1.5 text-[10px] text-muted-foreground/60">
-              {tooltip.speaker}
-            </span>
+          <div className="flex items-center gap-1 rounded-md border border-border/25 bg-card/95 px-1.5 py-0.5 shadow-lg backdrop-blur-md">
+            <span className="text-[9px] font-semibold tabular-nums text-foreground">{hover.timestamp}</span>
+            <span className="text-[8px] text-muted-foreground/50">{hover.speaker}</span>
           </div>
-          <div className="mx-auto h-1.5 w-px bg-primary/40" />
         </div>
       )}
 
-      {/* Scrubber track */}
+      {/* Track */}
       <div
         ref={containerRef}
-        className="relative h-2 cursor-pointer rounded-full bg-secondary/30"
+        className="relative h-3 cursor-pointer rounded-md bg-secondary/20 overflow-hidden"
         onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onMouseLeave={() => setHover(null)}
         onClick={handleClick}
       >
+        {/* Speaker blocks */}
         {blocks.map((block, i) => (
           <div
             key={i}
-            className={`absolute top-0 h-full rounded-full bg-gradient-to-r ${
-              SCRUBBER_GRADIENTS[block.speaker] || SCRUBBER_GRADIENTS.Unknown
-            } opacity-75 transition-opacity hover:opacity-100`}
+            className="absolute top-0 h-full transition-opacity"
             style={{
               left: `${block.startRatio * 100}%`,
               width: `${block.widthRatio * 100}%`,
+              backgroundColor: TIMELINE_COLORS[block.speaker] || TIMELINE_COLORS.Unknown,
+              opacity: 0.6,
             }}
           />
         ))}
-        {/* Hover indicator line */}
-        {tooltip.visible && (
+
+        {/* Selected position marker */}
+        {selectedRatio !== null && (
           <div
-            className="pointer-events-none absolute top-0 h-full w-px bg-primary/60"
-            style={{ left: tooltip.x }}
+            className="absolute top-0 h-full w-0.5 bg-white/90 shadow-[0_0_6px_rgba(255,255,255,0.5)]"
+            style={{ left: `${selectedRatio * 100}%` }}
           />
         )}
+
+        {/* Hover indicator */}
+        {hover && (
+          <div
+            className="pointer-events-none absolute top-0 h-full w-px bg-white/50"
+            style={{ left: hover.x }}
+          />
+        )}
+      </div>
+
+      {/* Time markers */}
+      <div className="flex justify-between px-0.5 mt-px">
+        <span className="text-[8px] tabular-nums text-muted-foreground/30">{formatTimeLabel(firstTs)}</span>
+        <span className="text-[8px] tabular-nums text-muted-foreground/30">{formatTimeLabel(midTs)}</span>
+        <span className="text-[8px] tabular-nums text-muted-foreground/30">{formatTimeLabel(lastTs)}</span>
       </div>
     </div>
   );

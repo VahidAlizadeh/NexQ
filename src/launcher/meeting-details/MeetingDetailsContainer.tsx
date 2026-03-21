@@ -7,12 +7,11 @@ import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
 import { useSummaryGeneration } from "../../hooks/useSummaryGeneration";
 import { showToast } from "../../stores/toastStore";
-import { MeetingHeader } from "./MeetingHeader";
+import { MeetingHeader, type LayoutMode } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
 import { TranscriptView } from "./TranscriptView";
 import { SummaryView } from "./SummaryView";
 import { AIInteractionLog } from "./AIInteractionLog";
-import { MeetingStatsFooter } from "./MeetingStatsFooter";
 import {
   formatTimestamp,
   formatDurationLong,
@@ -32,6 +31,15 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<MeetingTab>("transcript");
   const [expandedInteraction, setExpandedInteraction] = useState<string | null>(null);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
+    try { return (localStorage.getItem("nexq_meeting_layout") as LayoutMode) || "single"; }
+    catch { return "single"; }
+  });
+
+  const handleLayoutChange = useCallback((mode: LayoutMode) => {
+    setLayoutMode(mode);
+    try { localStorage.setItem("nexq_meeting_layout", mode); } catch {}
+  }, []);
 
   const loadMeeting = useCallback(async () => {
     setLoading(true);
@@ -46,11 +54,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     }
   }, [meetingId]);
 
-  useEffect(() => {
-    loadMeeting();
-  }, [loadMeeting]);
+  useEffect(() => { loadMeeting(); }, [loadMeeting]);
 
-  // Subscribe to live transcript if viewing the active meeting
+  // Live transcript subscription
   const activeMeetingId = useMeetingStore((s) => s.activeMeeting?.id);
   const isActiveMeeting = activeMeetingId === meetingId;
 
@@ -62,9 +68,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         return { ...prev, transcript: [...prev.transcript, event.segment] };
       });
     });
-    return () => {
-      unlistenPromise.then((unlisten) => unlisten());
-    };
+    return () => { unlistenPromise.then((unlisten) => unlisten()); };
   }, [isActiveMeeting]);
 
   // Hooks
@@ -77,33 +81,31 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Ctrl+F — open search (transcript tab)
-      if ((e.ctrlKey || e.metaKey) && e.key === "f" && activeTab === "transcript") {
-        e.preventDefault();
-        search.open();
-      }
-      // Ctrl+S — generate summary (summary tab)
-      if ((e.ctrlKey || e.metaKey) && e.key === "s" && activeTab === "summary") {
-        e.preventDefault();
-        if (!summaryGeneration.isGenerating && meeting && !meeting.summary) {
-          summaryGeneration.generate();
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        if (activeTab === "transcript" || layoutMode === "split") {
+          e.preventDefault();
+          search.open();
         }
       }
-      // Escape — close search
-      if (e.key === "Escape" && search.isOpen) {
-        search.close();
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        if (activeTab === "summary" || layoutMode === "split") {
+          e.preventDefault();
+          if (!summaryGeneration.isGenerating && meeting && !meeting.summary) {
+            summaryGeneration.generate();
+          }
+        }
       }
+      if (e.key === "Escape" && search.isOpen) search.close();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [activeTab, search, summaryGeneration, meeting]);
+  }, [activeTab, layoutMode, search, summaryGeneration, meeting]);
 
-  // Export meeting as Markdown
+  // Export
   const handleExport = useCallback(async () => {
     if (!meeting) return;
     try {
       const md = meetingToMarkdown(meeting);
-      // Use Tauri dialog for file save
       const { save } = await import("@tauri-apps/plugin-dialog");
       const filePath = await save({
         defaultPath: `${meeting.title.replace(/[^a-zA-Z0-9 ]/g, "").trim()}.md`,
@@ -120,109 +122,135 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     }
   }, [meeting]);
 
-  // Title rename handler
   const handleTitleChanged = useCallback((title: string) => {
     setMeeting((prev) => (prev ? { ...prev, title } : prev));
   }, []);
 
-  // Loading state
   if (loading) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading meeting...</p>
+      <div className="flex h-full flex-col items-center justify-center gap-2">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <p className="text-xs text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
-  // Error state
   if (error || !meeting) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3">
-        <p className="text-sm text-red-400">{error || "Meeting not found"}</p>
-        <button
-          onClick={onBack}
-          className="text-sm text-primary hover:underline cursor-pointer"
-        >
-          Go back
-        </button>
+      <div className="flex h-full flex-col items-center justify-center gap-2">
+        <p className="text-xs text-red-400">{error || "Meeting not found"}</p>
+        <button onClick={onBack} className="text-xs text-primary hover:underline cursor-pointer">Go back</button>
       </div>
     );
   }
 
+  // ═══════════════════════════════════════════
+  // SPLIT LAYOUT — Transcript left, Tabs right
+  // ═══════════════════════════════════════════
+  if (layoutMode === "split") {
+    return (
+      <div className="flex h-full flex-col">
+        <MeetingHeader
+          meeting={meeting}
+          stats={stats}
+          onBack={onBack}
+          onTitleChanged={handleTitleChanged}
+          layoutMode={layoutMode}
+          onLayoutChange={handleLayoutChange}
+        />
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left: Transcript (always visible) */}
+          <div className="flex flex-1 flex-col border-r border-border/10 min-w-0">
+            <div className="px-3 py-1 border-b border-border/8">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+                Transcript
+                <span className="ml-1 text-muted-foreground/25">{meeting.transcript.length}</span>
+              </span>
+            </div>
+            <TranscriptView segments={meeting.transcript} search={search} />
+          </div>
+
+          {/* Right: Tabbed content */}
+          <div className="flex w-[45%] min-w-[300px] max-w-[500px] flex-col">
+            <MeetingTabBar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              meeting={meeting}
+            />
+            <div className="flex-1 overflow-y-auto">
+              {activeTab === "transcript" && (
+                <TranscriptView segments={meeting.transcript} search={search} />
+              )}
+              {activeTab === "summary" && (
+                <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />
+              )}
+              {activeTab === "ai" && (
+                <AIInteractionLog
+                  interactions={meeting.ai_interactions}
+                  expandedId={expandedInteraction}
+                  onToggle={(id) => setExpandedInteraction(expandedInteraction === id ? null : id)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // SINGLE COLUMN LAYOUT
+  // ═══════════════════════════════════════════
   return (
     <div className="flex h-full flex-col">
       <MeetingHeader
         meeting={meeting}
+        stats={stats}
         onBack={onBack}
         onTitleChanged={handleTitleChanged}
+        layoutMode={layoutMode}
+        onLayoutChange={handleLayoutChange}
       />
 
-      <MeetingTabBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        meeting={meeting}
-      />
+      <MeetingTabBar activeTab={activeTab} setActiveTab={setActiveTab} meeting={meeting} />
 
-      {/* Tab content */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === "transcript" && (
-          <TranscriptView
-            segments={meeting.transcript}
-            search={search}
-          />
+          <TranscriptView segments={meeting.transcript} search={search} />
         )}
         {activeTab === "summary" && (
-          <SummaryView
-            meeting={meeting}
-            generation={summaryGeneration}
-            onExport={handleExport}
-          />
+          <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />
         )}
         {activeTab === "ai" && (
           <AIInteractionLog
             interactions={meeting.ai_interactions}
             expandedId={expandedInteraction}
-            onToggle={(id) =>
-              setExpandedInteraction(expandedInteraction === id ? null : id)
-            }
+            onToggle={(id) => setExpandedInteraction(expandedInteraction === id ? null : id)}
           />
         )}
       </div>
-
-      {/* Stats footer */}
-      <MeetingStatsFooter stats={stats} />
     </div>
   );
 }
 
-// Generate Markdown export of a meeting
 function meetingToMarkdown(meeting: Meeting): string {
   let md = `# ${meeting.title}\n\n`;
   md += `**Date:** ${new Date(meeting.start_time).toLocaleString()}\n`;
-  if (meeting.duration_seconds) {
-    md += `**Duration:** ${formatDurationLong(meeting.duration_seconds * 1000)}\n`;
-  }
+  if (meeting.duration_seconds) md += `**Duration:** ${formatDurationLong(meeting.duration_seconds * 1000)}\n`;
   md += `**Segments:** ${meeting.transcript.length}\n\n`;
-
-  if (meeting.summary) {
-    md += `## Summary\n\n${meeting.summary}\n\n`;
-  }
-
+  if (meeting.summary) md += `## Summary\n\n${meeting.summary}\n\n`;
   if (meeting.transcript.length > 0) {
     md += `## Transcript\n\n`;
     for (const seg of meeting.transcript) {
       md += `**[${formatTimestamp(seg.timestamp_ms)}] ${getSpeakerLabel(seg.speaker)}:** ${seg.text}\n\n`;
     }
   }
-
   if (meeting.ai_interactions.length > 0) {
     md += `## AI Interactions\n\n`;
     for (const ai of meeting.ai_interactions) {
-      md += `### ${getModeLabel(ai.mode)} (${ai.provider}/${ai.model})\n\n`;
-      md += `${ai.response}\n\n---\n\n`;
+      md += `### ${getModeLabel(ai.mode)} (${ai.provider}/${ai.model})\n\n${ai.response}\n\n---\n\n`;
     }
   }
-
   return md;
 }

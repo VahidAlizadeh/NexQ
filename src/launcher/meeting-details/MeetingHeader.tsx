@@ -1,20 +1,44 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Meeting } from "../../lib/types";
+import type { MeetingStats } from "../../hooks/useMeetingStats";
 import { renameMeeting } from "../../lib/ipc";
 import { useMeetingStore } from "../../stores/meetingStore";
+import { formatRelativeTime, formatDurationLong } from "../../lib/utils";
 import {
-  formatRelativeTime,
-  formatDurationLong,
-} from "../../lib/utils";
-import { ArrowLeft, Pencil, Check, X } from "lucide-react";
+  ArrowLeft,
+  Pencil,
+  Check,
+  X,
+  Clock,
+  FileText,
+  Zap,
+  Mic,
+  Volume2,
+  Brain,
+  Timer,
+  Columns2,
+  Rows3,
+} from "lucide-react";
+
+export type LayoutMode = "single" | "split";
 
 interface MeetingHeaderProps {
   meeting: Meeting;
+  stats: MeetingStats;
   onBack: () => void;
   onTitleChanged: (title: string) => void;
+  layoutMode: LayoutMode;
+  onLayoutChange: (mode: LayoutMode) => void;
 }
 
-export function MeetingHeader({ meeting, onBack, onTitleChanged }: MeetingHeaderProps) {
+export function MeetingHeader({
+  meeting,
+  stats,
+  onBack,
+  onTitleChanged,
+  layoutMode,
+  onLayoutChange,
+}: MeetingHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(meeting.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +63,6 @@ export function MeetingHeader({ meeting, onBack, onTitleChanged }: MeetingHeader
       try {
         await renameMeeting(meeting.id, trimmed);
         onTitleChanged(trimmed);
-        // Update active meeting title if this is the live meeting
         if (meeting.id === activeMeetingId) {
           const active = useMeetingStore.getState().activeMeeting;
           if (active) {
@@ -72,16 +95,19 @@ export function MeetingHeader({ meeting, onBack, onTitleChanged }: MeetingHeader
     : "In progress";
 
   return (
-    <div className="flex items-center gap-4 border-b border-border/20 px-6 py-4">
+    <div className="flex items-center gap-3 border-b border-border/20 bg-card/20 px-4 py-2">
+      {/* Back */}
       <button
         onClick={onBack}
-        className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
+        className="rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
       >
-        <ArrowLeft className="h-5 w-5" />
+        <ArrowLeft className="h-4 w-4" />
       </button>
+
+      {/* Title + meta */}
       <div className="group min-w-0 flex-1">
         {isEditing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <input
               ref={inputRef}
               type="text"
@@ -89,40 +115,80 @@ export function MeetingHeader({ meeting, onBack, onTitleChanged }: MeetingHeader
               onChange={(e) => setEditTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               onBlur={handleSaveEdit}
-              className="w-full rounded-lg border border-primary/30 bg-background px-3 py-1.5 text-base font-semibold text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+              className="w-full rounded-md border border-primary/30 bg-background px-2 py-0.5 text-sm font-semibold text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
             />
-            <button
-              onClick={handleSaveEdit}
-              className="rounded-md p-1.5 text-green-400 hover:bg-green-400/10 cursor-pointer"
-            >
-              <Check className="h-4 w-4" />
+            <button onClick={handleSaveEdit} className="rounded p-1 text-green-400 hover:bg-green-400/10 cursor-pointer">
+              <Check className="h-3.5 w-3.5" />
             </button>
-            <button
-              onClick={handleCancelEdit}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary cursor-pointer"
-            >
-              <X className="h-4 w-4" />
+            <button onClick={handleCancelEdit} className="rounded p-1 text-muted-foreground hover:bg-secondary cursor-pointer">
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         ) : (
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={handleStartEdit}
-          >
-            <h2 className="truncate text-base font-semibold text-foreground">
-              {meeting.title}
-            </h2>
-            <Pencil className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
+          <div className="flex items-center gap-1.5 cursor-pointer" onClick={handleStartEdit}>
+            <h2 className="truncate text-sm font-semibold text-foreground">{meeting.title}</h2>
+            <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
         )}
-        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
           <span>{formatRelativeTime(meeting.start_time)}</span>
-          <span className="text-muted-foreground/60">&middot;</span>
+          <span>&middot;</span>
           <span>{durationDisplay}</span>
-          <span className="text-muted-foreground/60">&middot;</span>
-          <span>{meeting.transcript.length} segments</span>
+          <span>&middot;</span>
+          <span>{meeting.transcript.length} seg</span>
         </div>
       </div>
+
+      {/* Inline stats */}
+      <div className="hidden md:flex items-center gap-1">
+        <MiniStat icon={<Clock className="h-2.5 w-2.5" />} value={stats.durationDisplay} />
+        <MiniStat icon={<FileText className="h-2.5 w-2.5" />} value={`${stats.wordCount}`} />
+        <MiniStat icon={<Zap className="h-2.5 w-2.5" />} value={`${stats.wordsPerMinute}/m`} />
+        {stats.speakerBreakdown.map((s) => (
+          <MiniStat
+            key={s.speaker}
+            icon={
+              s.speaker === "User" || s.speaker === "Interviewer"
+                ? <Mic className={`h-2.5 w-2.5 ${s.color}`} />
+                : <Volume2 className={`h-2.5 w-2.5 ${s.color}`} />
+            }
+            value={`${s.percentage}%`}
+          />
+        ))}
+        {stats.aiCount > 0 && <MiniStat icon={<Brain className="h-2.5 w-2.5" />} value={`${stats.aiCount}`} />}
+        {stats.avgLatencyMs !== null && <MiniStat icon={<Timer className="h-2.5 w-2.5" />} value={`${stats.avgLatencyMs}ms`} />}
+      </div>
+
+      {/* Layout toggle */}
+      <div className="flex items-center rounded-lg border border-border/15 bg-secondary/20">
+        <button
+          onClick={() => onLayoutChange("single")}
+          className={`rounded-l-lg p-1.5 transition-colors cursor-pointer ${
+            layoutMode === "single" ? "bg-primary/15 text-primary" : "text-muted-foreground/40 hover:text-muted-foreground"
+          }`}
+          title="Single column"
+        >
+          <Rows3 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => onLayoutChange("split")}
+          className={`rounded-r-lg p-1.5 transition-colors cursor-pointer ${
+            layoutMode === "split" ? "bg-primary/15 text-primary" : "text-muted-foreground/40 hover:text-muted-foreground"
+          }`}
+          title="Two columns"
+        >
+          <Columns2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ icon, value }: { icon: React.ReactNode; value: string }) {
+  return (
+    <div className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] tabular-nums font-medium text-muted-foreground/60">
+      {icon}
+      {value}
     </div>
   );
 }

@@ -64,94 +64,67 @@ declare global {
  * Produces real transcription — interim results stream into the current segment,
  * final results (on pause) create a new segment block.
  *
- * Speaker label is determined by the meetingAudioConfig:
- * - If "You" uses web_speech → speaker is "User"
- * - If "Them" uses web_speech → speaker is "Them"
- * - Default (no config): speaker is "User"
+ * Speaker label is always "User" because Web Speech API captures from
+ * the browser's default microphone (cannot capture system/loopback audio).
  */
 export function useSpeechRecognition() {
   const isRecording = useMeetingStore((s) => s.isRecording);
-  const meetingStartTime = useMeetingStore((s) => s.meetingStartTime);
-  const updateInterimSegment = useTranscriptStore(
-    (s) => s.updateInterimSegment
-  );
-  const appendSegment = useTranscriptStore((s) => s.appendSegment);
-  const meetingAudioConfig = useConfigStore((s) => s.meetingAudioConfig);
+
+  // Derive a stable boolean from the config — only re-runs when the
+  // web_speech active status actually changes, not on every config mutation.
+  const usesWebSpeech = useConfigStore((s) => {
+    const cfg = s.meetingAudioConfig;
+    if (!cfg) return false;
+    return (
+      (cfg.you.stt_provider === "web_speech" && cfg.you.is_input_device) ||
+      (cfg.them.stt_provider === "web_speech" && cfg.them.is_input_device)
+    );
+  });
+
+  // Use a ref for updateInterimSegment so it's always fresh
+  // without being a dependency that triggers effect re-runs.
+  const updateInterimRef = useRef(useTranscriptStore.getState().updateInterimSegment);
+  useEffect(() => {
+    return useTranscriptStore.subscribe((s) => {
+      updateInterimRef.current = s.updateInterimSegment;
+    });
+  }, []);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const segmentCounterRef = useRef(0);
   const shouldRestartRef = useRef(false);
-  // Unique prefix per session to prevent ID collisions on mid-meeting restarts
   const sessionPrefixRef = useRef("");
+  // Instance ID to prevent stale onend handlers from interfering
+  const instanceIdRef = useRef(0);
 
   useEffect(() => {
-    if (!isRecording) {
-      // Stop recognition when meeting ends
-      if (recognitionRef.current) {
-        shouldRestartRef.current = false;
-        recognitionRef.current.stop();
-        recognitionRef.current = null;
-      }
-      return;
-    }
-
-    // Only activate Web Speech if at least one party with an input device
-    // has web_speech as their STT provider
-    const currentCfg = useConfigStore.getState().meetingAudioConfig;
-    const youUsesWebSpeech =
-      currentCfg?.you.stt_provider === "web_speech" &&
-      currentCfg?.you.is_input_device;
-    const themUsesWebSpeech =
-      currentCfg?.them.stt_provider === "web_speech" &&
-      currentCfg?.them.is_input_device;
-
-    if (!youUsesWebSpeech && !themUsesWebSpeech) {
-      // Clean up any existing recognition before bailing —
-      // critical for hot-swap: switching away from web_speech must
-      // stop the old instance, otherwise it's orphaned and blocks
-      // future instances when switching back.
-      if (recognitionRef.current) {
-        shouldRestartRef.current = false;
-        try { recognitionRef.current.stop(); } catch {}
-        recognitionRef.current = null;
-        console.log("[STT] Web Speech cleaned up (provider changed away)");
-      }
-      console.log("[STT] No party with input device uses web_speech — skipping");
-      return;
-    }
-
-    // Check for Web Speech API support
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      console.warn(
-        "[STT] Web Speech API not supported in this WebView"
-      );
-      return;
-    }
-
-    // Guard: stop any existing instance before creating a new one
-    // (prevents duplicate recognition instances on rapid config changes)
+    // Always clean up any existing recognition first
     if (recognitionRef.current) {
       shouldRestartRef.current = false;
       try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
     }
 
+    // Don't start if meeting isn't recording or web_speech isn't active
+    if (!isRecording || !usesWebSpeech) {
+      return;
+    }
+
+    // Check for Web Speech API support
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("[STT] Web Speech API not supported in this WebView");
+      return;
+    }
+
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
+    recognition.lang = "en-US";
 
-    // Use configured language or default to en-US
-    recognition.lang = "en-US"; // Could be made configurable
-
-    // Web Speech API always captures from the browser's default mic (your
-    // physical microphone). It can NEVER capture system/loopback audio.
-    // Therefore the speaker label should always be "User" — regardless of
-    // which party has web_speech configured. If a user assigns web_speech
-    // to "Them" by mistake, it still captures YOUR mic, so label it "User".
+    // Web Speech API always captures from the browser's default mic.
     const speakerLabel: "User" | "Them" = "User";
 
     const currentConfig = useConfigStore.getState().meetingAudioConfig;
@@ -166,8 +139,8 @@ export function useSpeechRecognition() {
 
     recognitionRef.current = recognition;
     shouldRestartRef.current = true;
-    // Generate unique prefix for this session to avoid ID collisions on restart
     sessionPrefixRef.current = Date.now().toString(36).slice(-4);
+    const myInstanceId = ++instanceIdRef.current;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -177,15 +150,12 @@ export function useSpeechRecognition() {
 
         if (!transcript) continue;
 
-        // Use the SAME id for interim and final so final replaces interim in-place
         const segId = `web_${sessionPrefixRef.current}_${segmentCounterRef.current + 1}`;
 
         if (result.isFinal) {
           segmentCounterRef.current += 1;
           const now = Date.now();
-
-          // Replace the interim segment in-place with the final version
-          updateInterimSegment({
+          updateInterimRef.current({
             id: segId,
             text: transcript,
             speaker: speakerLabel,
@@ -193,12 +163,9 @@ export function useSpeechRecognition() {
             is_final: true,
             confidence,
           });
-
-          // Push to backend intelligence engine for AI context
           pushTranscript(transcript, speakerLabel, now, true).catch(() => {});
         } else {
-          // Interim result — updates in-place (same id as the eventual final)
-          updateInterimSegment({
+          updateInterimRef.current({
             id: segId,
             text: transcript,
             speaker: speakerLabel,
@@ -212,13 +179,8 @@ export function useSpeechRecognition() {
 
     recognition.onerror = (event: Event & { error: string }) => {
       const error = event.error;
-      // "no-speech" is normal — just means silence, keep going
-      // "aborted" happens when we stop intentionally
-      if (error === "no-speech" || error === "aborted") {
-        return;
-      }
+      if (error === "no-speech" || error === "aborted") return;
       console.error("[STT] Speech recognition error:", error);
-      // "not-allowed" means mic permission denied — Web Speech won't work
       if (error === "not-allowed") {
         console.error(
           "[STT] Microphone access denied for Web Speech API. " +
@@ -227,40 +189,35 @@ export function useSpeechRecognition() {
       }
     };
 
-    let isRunning = false;
-
-    recognition.onstart = () => {
-      isRunning = true;
-    };
-
     recognition.onend = () => {
-      isRunning = false;
-      // Auto-restart if meeting is still active
-      // Web Speech API stops after ~60s of continuous recognition
-      if (shouldRestartRef.current && recognitionRef.current) {
-        setTimeout(() => {
-          if (shouldRestartRef.current && recognitionRef.current && !isRunning) {
-            // Check fresh config — if no party uses web_speech anymore (provider
-            // switched mid-meeting), don't restart the old recognition instance.
-            const freshCfg = useConfigStore.getState().meetingAudioConfig;
-            const stillUsesWebSpeech =
-              (freshCfg?.you.stt_provider === "web_speech" && freshCfg?.you.is_input_device) ||
-              (freshCfg?.them.stt_provider === "web_speech" && freshCfg?.them.is_input_device);
-            if (!stillUsesWebSpeech) {
-              console.log("[STT] Web Speech onend: config no longer uses web_speech — not restarting");
-              return;
-            }
-            try {
-              recognitionRef.current.start();
-            } catch {
-              // ignore — will retry on next onend
-            }
-          }
-        }, 200);
-      }
+      // Only restart if this is still the current instance
+      if (instanceIdRef.current !== myInstanceId) return;
+      if (!shouldRestartRef.current || !recognitionRef.current) return;
+
+      // Web Speech API stops after ~60s of continuous recognition — restart
+      setTimeout(() => {
+        if (instanceIdRef.current !== myInstanceId) return;
+        if (!shouldRestartRef.current || !recognitionRef.current) return;
+
+        // Check fresh config — don't restart if web_speech was disabled
+        const freshCfg = useConfigStore.getState().meetingAudioConfig;
+        const stillActive =
+          (freshCfg?.you.stt_provider === "web_speech" && freshCfg?.you.is_input_device) ||
+          (freshCfg?.them.stt_provider === "web_speech" && freshCfg?.them.is_input_device);
+        if (!stillActive) {
+          console.log("[STT] Web Speech onend: config no longer uses web_speech — not restarting");
+          return;
+        }
+
+        try {
+          recognitionRef.current!.start();
+          console.log("[STT] Web Speech API auto-restarted");
+        } catch {
+          // Will retry on next onend cycle
+        }
+      }, 300);
     };
 
-    // Start recognition (with guard against double-start)
     try {
       recognition.start();
       console.log("[STT] Web Speech API recognition started");
@@ -271,13 +228,9 @@ export function useSpeechRecognition() {
     return () => {
       shouldRestartRef.current = false;
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {
-          // ignore
-        }
+        try { recognitionRef.current.stop(); } catch {}
         recognitionRef.current = null;
       }
     };
-  }, [isRecording, meetingStartTime, updateInterimSegment, appendSegment, meetingAudioConfig]);
+  }, [isRecording, usesWebSpeech]);
 }

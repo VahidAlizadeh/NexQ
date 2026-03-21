@@ -12,14 +12,16 @@ use super::{AudioChunk, AudioSource};
 /// Target sample rate for all audio output
 const TARGET_SAMPLE_RATE: u32 = 16000;
 
-/// Start capturing audio from the specified microphone device.
+/// Start capturing audio from the specified input device.
 /// Returns a cpal::Stream handle — dropping it will stop the stream.
 ///
 /// Audio is resampled to 16kHz mono 16-bit PCM and sent as AudioChunk
-/// through the provided mpsc channel.
+/// through the provided mpsc channel. The `source` tag determines whether
+/// chunks are labeled as Mic or System (for input devices used as "Them").
 pub fn start_mic_capture(
     device_id: &str,
     tx: mpsc::Sender<AudioChunk>,
+    source: AudioSource,
 ) -> Result<Stream, String> {
     let device = super::device_manager::find_input_device(device_id)?;
 
@@ -48,11 +50,12 @@ pub fn start_mic_capture(
     let stream = match sample_format {
         SampleFormat::I16 => {
             let tx = tx.clone();
+            let src = source.clone();
             device
                 .build_input_stream(
                     &config.into(),
                     move |data: &[i16], _: &cpal::InputCallbackInfo| {
-                        handle_mic_data_i16(data, sample_rate, channels, &tx);
+                        handle_mic_data_i16(data, sample_rate, channels, &tx, &src);
                     },
                     err_fn,
                     None,
@@ -61,11 +64,12 @@ pub fn start_mic_capture(
         }
         SampleFormat::F32 => {
             let tx = tx.clone();
+            let src = source.clone();
             device
                 .build_input_stream(
                     &config.into(),
                     move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                        handle_mic_data_f32(data, sample_rate, channels, &tx);
+                        handle_mic_data_f32(data, sample_rate, channels, &tx, &src);
                     },
                     err_fn,
                     None,
@@ -74,11 +78,12 @@ pub fn start_mic_capture(
         }
         SampleFormat::U16 => {
             let tx = tx.clone();
+            let src = source;
             device
                 .build_input_stream(
                     &config.into(),
                     move |data: &[u16], _: &cpal::InputCallbackInfo| {
-                        handle_mic_data_u16(data, sample_rate, channels, &tx);
+                        handle_mic_data_u16(data, sample_rate, channels, &tx, &src);
                     },
                     err_fn,
                     None,
@@ -110,6 +115,7 @@ fn handle_mic_data_i16(
     sample_rate: u32,
     channels: u16,
     tx: &mpsc::Sender<AudioChunk>,
+    source: &AudioSource,
 ) {
     if data.is_empty() {
         return;
@@ -119,9 +125,9 @@ fn handle_mic_data_i16(
 
     let chunk = AudioChunk {
         pcm_data,
-        source: AudioSource::Mic,
+        source: source.clone(),
         timestamp_ms: current_timestamp_ms(),
-        is_speech: false, // VAD will update this later
+        is_speech: false,
     };
 
     // Non-blocking send — drop chunk if channel is full
@@ -135,6 +141,7 @@ fn handle_mic_data_f32(
     sample_rate: u32,
     channels: u16,
     tx: &mpsc::Sender<AudioChunk>,
+    source: &AudioSource,
 ) {
     if data.is_empty() {
         return;
@@ -150,7 +157,7 @@ fn handle_mic_data_f32(
 
     let chunk = AudioChunk {
         pcm_data,
-        source: AudioSource::Mic,
+        source: source.clone(),
         timestamp_ms: current_timestamp_ms(),
         is_speech: false,
     };
@@ -165,6 +172,7 @@ fn handle_mic_data_u16(
     sample_rate: u32,
     channels: u16,
     tx: &mpsc::Sender<AudioChunk>,
+    source: &AudioSource,
 ) {
     if data.is_empty() {
         return;
@@ -180,7 +188,7 @@ fn handle_mic_data_u16(
 
     let chunk = AudioChunk {
         pcm_data,
-        source: AudioSource::Mic,
+        source: source.clone(),
         timestamp_ms: current_timestamp_ms(),
         is_speech: false,
     };

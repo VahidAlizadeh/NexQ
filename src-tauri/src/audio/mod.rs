@@ -57,8 +57,10 @@ pub struct AudioCaptureManager {
     stop_flag: Arc<AtomicBool>,
     /// The cpal stream handle for mic capture (dropping stops the stream)
     mic_stream: Option<cpal::Stream>,
-    /// The system capture thread handle
+    /// The system capture thread handle (WASAPI loopback)
     system_thread: Option<std::thread::JoinHandle<()>>,
+    /// System capture via input device (cpal stream, for virtual cables tagged as System)
+    system_input_stream: Option<cpal::Stream>,
     /// Active recorder (if recording is enabled)
     recorder: Option<SharedRecorder>,
     /// Current meeting ID for recording file naming
@@ -94,6 +96,7 @@ impl AudioCaptureManager {
             stop_flag: Arc::new(AtomicBool::new(false)),
             mic_stream: None,
             system_thread: None,
+            system_input_stream: None,
             recorder: None,
             meeting_id: None,
             mic_vad: VoiceActivityDetector::new(),
@@ -113,10 +116,15 @@ impl AudioCaptureManager {
     ///
     /// `tx` is the channel where AudioChunks (with VAD applied) will be sent.
     /// The caller (typically the STT module) receives chunks from this channel.
+    ///
+    /// When `system_is_input` is true, the system device is an input device
+    /// (e.g. a virtual cable like AudienceMix) — capture it via standard
+    /// mic capture tagged as AudioSource::System instead of WASAPI loopback.
     pub fn start_capture(
         &mut self,
         mic_device_id: &str,
         system_device_id: &str,
+        system_is_input: bool,
         tx: mpsc::Sender<AudioChunk>,
     ) -> Result<(), String> {
         if self.is_capturing {
@@ -130,7 +138,7 @@ impl AudioCaptureManager {
 
         // Start mic capture
         let mic_tx = tx.clone();
-        match mic_capture::start_mic_capture(mic_device_id, mic_tx) {
+        match mic_capture::start_mic_capture(mic_device_id, mic_tx, AudioSource::Mic) {
             Ok(stream) => {
                 self.mic_stream = Some(stream);
                 log::info!("Mic capture started");
@@ -141,24 +149,43 @@ impl AudioCaptureManager {
             }
         }
 
-        // Start system audio capture (WASAPI loopback on selected output device)
-        let system_tx = tx.clone();
-        let stop_flag = Arc::clone(&self.stop_flag);
-        let device_name = if system_device_id.is_empty() || system_device_id == "default" {
-            None
-        } else {
-            Some(system_device_id.to_string())
-        };
-        match system_capture::start_system_capture_device(system_tx, stop_flag, device_name) {
-            Ok(handle) => {
-                self.system_thread = Some(handle);
-                log::info!("System audio capture started via WASAPI loopback");
+        // Start system audio capture
+        if system_is_input && !system_device_id.is_empty() && system_device_id != "default" {
+            // "Them" is an input device (e.g. virtual cable) — capture as mic, tag as System
+            let system_tx = tx.clone();
+            match mic_capture::start_mic_capture(system_device_id, system_tx, AudioSource::System) {
+                Ok(stream) => {
+                    // Store as system_stream (separate field) to keep it alive
+                    self.system_input_stream = Some(stream);
+                    log::info!("System audio capture started via input device (tagged as System)");
+                }
+                Err(e) => {
+                    log::error!(
+                        "Failed to start system input capture: {}. System audio will not be captured.",
+                        e
+                    );
+                }
             }
-            Err(e) => {
-                log::error!(
-                    "WASAPI loopback failed: {}. System audio (remote party) will not be captured.",
-                    e
-                );
+        } else {
+            // Standard path: WASAPI loopback on output device
+            let system_tx = tx.clone();
+            let stop_flag = Arc::clone(&self.stop_flag);
+            let device_name = if system_device_id.is_empty() || system_device_id == "default" {
+                None
+            } else {
+                Some(system_device_id.to_string())
+            };
+            match system_capture::start_system_capture_device(system_tx, stop_flag, device_name) {
+                Ok(handle) => {
+                    self.system_thread = Some(handle);
+                    log::info!("System audio capture started via WASAPI loopback");
+                }
+                Err(e) => {
+                    log::error!(
+                        "WASAPI loopback failed: {}. System audio (remote party) will not be captured.",
+                        e
+                    );
+                }
             }
         }
 
@@ -185,6 +212,9 @@ impl AudioCaptureManager {
 
         // Drop the mic stream (this stops cpal capture)
         self.mic_stream.take();
+
+        // Drop system input stream (if using input device capture for "Them")
+        self.system_input_stream.take();
 
         // Wait for system capture thread to finish (with timeout)
         if let Some(thread) = self.system_thread.take() {
@@ -290,7 +320,7 @@ impl AudioCaptureManager {
         self.test_audio_detected.store(false, Ordering::SeqCst);
 
         if is_input {
-            let stream = mic_capture::start_mic_capture(device_id, tx)?;
+            let stream = mic_capture::start_mic_capture(device_id, tx, AudioSource::Mic)?;
             self.test_stream = Some(stream);
             log::info!("Audio test started for input device: {}", device_id);
         } else {

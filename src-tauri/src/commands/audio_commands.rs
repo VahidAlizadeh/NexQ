@@ -50,7 +50,7 @@ pub async fn start_capture(
             .lock()
             .map_err(|_| "Audio state lock poisoned".to_string())?;
         let mgr = guard.get_or_insert_with(AudioCaptureManager::new);
-        mgr.start_capture(&mic_device_id, &system_device_id, tx)?;
+        mgr.start_capture(&mic_device_id, &system_device_id, false, tx)?;
     }
 
     // ---- System Audio STT (for remote party in calls) ----
@@ -773,11 +773,10 @@ pub async fn start_capture_per_party(
     } else {
         "default".to_string()
     };
-    let system_device = if !them.is_input_device {
-        them.device_id.clone()
-    } else {
-        "default".to_string()
-    };
+    // Always use the user's selected device for "Them" — the AudioCaptureManager
+    // will choose the right capture method (loopback vs input) based on system_is_input.
+    let system_device = them.device_id.clone();
+    let system_is_input = them.is_input_device;
 
     // ── IPolicyConfig: override system default mic BEFORE starting capture ──
     // Web Speech and Windows Speech always use the OS default recording device.
@@ -838,7 +837,7 @@ pub async fn start_capture_per_party(
             "AudioCaptureManager::start_capture mic='{}', system='{}'",
             mic_device, system_device
         );
-        mgr.start_capture(&mic_device, &system_device, tx)?;
+        mgr.start_capture(&mic_device, &system_device, system_is_input, tx)?;
     }
 
     // ── Create STT provider for "You" party (if not web_speech) ──

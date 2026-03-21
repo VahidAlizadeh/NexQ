@@ -22,6 +22,8 @@ interface MeetingCardProps {
   onToggleFavorite?: (meetingId: string) => void;
   /** True only for the singleton active meeting, not stale meetings missing duration */
   isLive?: boolean;
+  /** Index for staggered entrance animation (0-based) */
+  staggerIndex?: number;
 }
 
 export function MeetingCard({
@@ -32,6 +34,7 @@ export function MeetingCard({
   isFavorite = false,
   onToggleFavorite,
   isLive = false,
+  staggerIndex = 0,
 }: MeetingCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(meeting.title);
@@ -132,19 +135,20 @@ export function MeetingCard({
       role="button"
       tabIndex={0}
       aria-label={`Meeting: ${meeting.title}, ${formatRelativeTime(meeting.start_time)}`}
-      className={`group relative cursor-pointer rounded-xl border border-border/15 bg-card/40 px-4 py-3 transition-all duration-150 hover:bg-card/70 hover:border-border/30 border-l-2 ${
+      className={`group meeting-card-enter meeting-card-interactive relative cursor-pointer rounded-xl border border-border/15 bg-card/40 px-4 py-3 border-l-2 ${
         isLive
           ? "border-l-success/50"
           : meeting.has_summary
             ? "border-l-info/30"
             : "border-l-primary/10"
       }`}
+      style={{ animationDelay: `${300 + staggerIndex * 50}ms` }}
     >
       <div className="flex items-center gap-3">
         {/* Favorite star */}
         <button
           onClick={handleFavoriteClick}
-          className={`shrink-0 rounded-md p-0.5 transition-colors ${
+          className={`shrink-0 rounded-md p-0.5 transition-all duration-150 active:scale-125 ${
             isFavorite
               ? "text-warning"
               : "text-muted-foreground/40 opacity-0 group-hover:opacity-100 hover:text-warning/70"
@@ -212,7 +216,7 @@ export function MeetingCard({
             </span>
 
             {isLive ? (
-              <span className="rounded-full bg-success/10 px-2 py-0.5 text-[9px] font-semibold text-success">
+              <span className="live-ring-pulse rounded-full bg-success/10 px-2 py-0.5 text-[9px] font-semibold text-success">
                 LIVE
               </span>
             ) : (

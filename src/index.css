@@ -376,6 +376,125 @@
   );
 }
 
+/* ═══════════════════════════════════════════════════════════
+   OVERDRIVE: Dashboard page-load choreography + interactions
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Staggered entrance: fade-in + slide from direction ── */
+@keyframes dash-enter-down {
+  0% { opacity: 0; transform: translateY(-12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dash-enter-left {
+  0% { opacity: 0; transform: translateX(-20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dash-enter-up {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dash-enter-scale {
+  0% { opacity: 0; transform: scale(0.92); }
+  60% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Page-load sequence — each element animates in with a stagger offset */
+.dash-header {
+  animation: dash-enter-down 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dash-sidebar {
+  animation: dash-enter-left 450ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+}
+
+.dash-main {
+  animation: dash-enter-up 450ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.dash-footer {
+  animation: dash-enter-up 350ms cubic-bezier(0.22, 1, 0.36, 1) 250ms both;
+}
+
+/* ── Start button: entrance + ambient glow pulse ── */
+.dash-start-btn {
+  animation: dash-enter-scale 500ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+}
+
+@keyframes start-btn-glow {
+  0%, 100% { box-shadow: 0 4px 15px -3px hsl(var(--primary) / 0.2), 0 0 0 0 hsl(var(--primary) / 0); }
+  50% { box-shadow: 0 4px 20px -2px hsl(var(--primary) / 0.3), 0 0 0 6px hsl(var(--primary) / 0.04); }
+}
+
+.start-btn-glow {
+  animation: start-btn-glow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 800ms; /* Start after entrance completes */
+}
+
+/* ── Meeting card: staggered entrance ── */
+@keyframes card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.meeting-card-enter {
+  animation: card-enter 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Meeting card: spring hover lift + press ── */
+.meeting-card-interactive {
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 150ms ease-out;
+}
+
+.meeting-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -6px hsl(var(--foreground) / 0.08),
+              0 2px 6px -2px hsl(var(--foreground) / 0.04);
+}
+
+.meeting-card-interactive:active {
+  transform: translateY(0px) scale(0.985);
+  box-shadow: 0 1px 3px -1px hsl(var(--foreground) / 0.06);
+  transition-duration: 80ms;
+}
+
+/* ── LIVE pill: enhanced ring pulse ── */
+@keyframes live-ring-pulse {
+  0% { box-shadow: 0 0 0 0 hsl(var(--success) / 0.25); }
+  70% { box-shadow: 0 0 0 6px hsl(var(--success) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--success) / 0); }
+}
+
+.live-ring-pulse {
+  animation: live-ring-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* ── Empty state: gentle float ── */
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.empty-state-float {
+  animation: gentle-float 3.5s ease-in-out infinite;
+}
+
+/* ── Section label entrance ── */
+.dash-section-enter {
+  animation: dash-enter-up 350ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both;
+}
+
 /* Ensure select/option elements use theme colors */
 select option {
   background: hsl(var(--background));

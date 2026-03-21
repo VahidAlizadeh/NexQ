@@ -215,7 +215,7 @@ export function LauncherView() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* ═══ HEADER ═══ */}
-      <header className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border/15">
+      <header className="dash-header flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border/15">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
             <Mic className="h-3.5 w-3.5 text-white" aria-hidden="true" />
@@ -227,7 +227,7 @@ export function LauncherView() {
         {activeMeeting && (
           <button
             onClick={() => setCurrentView("overlay")}
-            className="group flex items-center gap-2 rounded-full border border-success/25 bg-success/8 pl-3 pr-2 py-1.5 shadow-sm shadow-success/8 transition-all hover:bg-success/15 hover:border-success/35 hover:shadow-md hover:shadow-success/12 cursor-pointer"
+            className="group live-ring-pulse flex items-center gap-2 rounded-full border border-success/25 bg-success/8 pl-3 pr-2 py-1.5 shadow-sm shadow-success/8 transition-all hover:bg-success/15 hover:border-success/35 hover:shadow-md hover:shadow-success/12 cursor-pointer"
           >
             <Radio className="h-3 w-3 text-success animate-pulse" />
             <span className="text-[11px] font-medium text-success max-w-[200px] truncate">
@@ -241,7 +241,7 @@ export function LauncherView() {
 
         <button
           onClick={() => setCurrentView("settings")}
-          className="rounded-lg p-2 text-muted-foreground/50 transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
+          className="rounded-lg p-2 text-muted-foreground/50 transition-all duration-150 hover:bg-secondary hover:text-foreground hover:rotate-45 active:scale-90 cursor-pointer"
           aria-label="Settings (Ctrl+,)"
         >
           <Settings className="h-4 w-4" aria-hidden="true" />
@@ -252,7 +252,7 @@ export function LauncherView() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── LEFT: MEETINGS SIDEBAR ── */}
-        <div className="flex w-[280px] min-w-[220px] shrink flex-col border-r border-border/10 bg-card/20">
+        <div className="dash-sidebar flex w-[280px] min-w-[220px] shrink flex-col border-r border-border/10 bg-card/20">
           {/* Search */}
           <div className="px-3 pt-3 pb-2">
             <div className="relative">
@@ -284,8 +284,8 @@ export function LauncherView() {
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`rounded px-1.5 py-0.5 text-[9px] font-medium transition-colors cursor-pointer ${
-                    filter === key ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:text-muted-foreground"
+                  className={`rounded px-1.5 py-0.5 text-[9px] font-medium transition-all duration-150 active:scale-90 cursor-pointer ${
+                    filter === key ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30"
                   }`}
                 >
                   {key === "favorites" && <Star className="mr-0.5 inline h-2 w-2" />}
@@ -294,7 +294,7 @@ export function LauncherView() {
               ))}
             </div>
             {recentMeetings.length > 0 && (
-              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/50 hover:text-destructive cursor-pointer" aria-label="Delete all meetings">
+              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/50 transition-all duration-150 hover:text-destructive hover:bg-destructive/8 active:scale-90 cursor-pointer" aria-label="Delete all meetings">
                 <Trash2 className="h-3 w-3" aria-hidden="true" />
               </button>
             )}
@@ -322,7 +322,7 @@ export function LauncherView() {
         </div>
 
         {/* ── RIGHT: CONTEXT + START ── */}
-        <div className="flex flex-1 flex-col overflow-y-auto">
+        <div className="dash-main flex flex-1 flex-col overflow-y-auto">
           <div className="mx-auto w-full max-w-lg space-y-4 px-6 py-5">
 
             {/* Start Meeting — innovative compact button */}
@@ -331,7 +331,7 @@ export function LauncherView() {
                 onClick={handleStartMeeting}
                 disabled={isStarting}
                 aria-busy={isStarting}
-                className="group relative flex items-center gap-3.5 rounded-2xl bg-primary pl-5 pr-7 py-4 font-semibold text-white shadow-md shadow-primary/15 transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="group dash-start-btn start-btn-glow relative flex items-center gap-3.5 rounded-2xl bg-primary pl-5 pr-7 py-4 font-semibold text-white shadow-md shadow-primary/15 transition-all duration-150 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0.5 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 cursor-pointer"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
                   {isStarting
@@ -357,7 +357,7 @@ export function LauncherView() {
             </div>
 
             {/* Section label */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="dash-section-enter flex items-center gap-2 pt-1">
               <Database className="h-3 w-3 text-muted-foreground/60" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Meeting Context
@@ -380,7 +380,7 @@ export function LauncherView() {
                   return (
                     <button
                       onClick={handleRagUpdate}
-                      className={`w-full rounded-lg border border-dashed px-3 py-2 text-[11px] font-medium transition-all cursor-pointer ${
+                      className={`w-full rounded-lg border border-dashed px-3 py-2 text-[11px] font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer ${
                         settingsStale
                           ? "border-warning/40 bg-warning/5 text-warning hover:bg-warning/10 hover:border-warning/60"
                           : isFirstBuild
@@ -432,7 +432,7 @@ export function LauncherView() {
                 {(indexStatus?.total_chunks ?? 0) > 0 && ragStatus !== "updating" && (
                   <button
                     onClick={() => setShowTestKB(true)}
-                    className="w-full rounded-lg border border-dashed border-border/30 bg-card/30 px-3 py-2 text-[11px] font-medium text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground hover:border-border/50 cursor-pointer"
+                    className="w-full rounded-lg border border-dashed border-border/30 bg-card/30 px-3 py-2 text-[11px] font-medium text-muted-foreground transition-all duration-150 hover:bg-accent/30 hover:text-foreground hover:border-border/50 active:scale-[0.98] cursor-pointer"
                   >
                     <FlaskConical className="mr-1 inline h-3 w-3" />
                     Test Knowledge Base
@@ -472,7 +472,7 @@ export function LauncherView() {
       </div>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="flex items-center justify-between border-t border-border/15">
+      <footer className="dash-footer flex items-center justify-between border-t border-border/15">
         <ServiceStatusBar />
         <div className="flex items-center gap-2 pr-5 text-[11px] text-muted-foreground/60">
           <span>&copy; {new Date().getFullYear()} {NEXQ_DEVELOPER}</span>
@@ -500,7 +500,7 @@ export function LauncherView() {
                 autoFocus
                 onClick={handleConfirmDeleteAll}
                 disabled={isDeletingAll}
-                className="w-full rounded-xl bg-destructive px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-destructive/90 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full rounded-xl bg-destructive px-4 py-2 text-xs font-medium text-white transition-all duration-150 hover:bg-destructive/90 hover:-translate-y-px active:translate-y-px active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 cursor-pointer"
               >
                 {isDeletingAll ? (
                   <span className="flex items-center justify-center gap-2">
@@ -514,7 +514,7 @@ export function LauncherView() {
               <button
                 onClick={() => setShowDeleteAllConfirm(false)}
                 disabled={isDeletingAll}
-                className="w-full rounded-xl border border-border/40 bg-secondary/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:opacity-60 cursor-pointer"
+                className="w-full rounded-xl border border-border/40 bg-secondary/30 px-4 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:bg-secondary/50 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
               >
                 Cancel
               </button>
@@ -535,10 +535,10 @@ export function LauncherView() {
               &ldquo;{activeMeeting?.title}&rdquo; is still active.
             </p>
             <div className="flex flex-col gap-2">
-              <button autoFocus onClick={handleEndAndStartNew} className="w-full rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer">
+              <button autoFocus onClick={handleEndAndStartNew} className="w-full rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-all duration-150 hover:bg-primary/90 hover:-translate-y-px active:translate-y-px active:scale-[0.98] cursor-pointer">
                 End Current & Start New
               </button>
-              <button onClick={() => { setShowConflictPrompt(false); setCurrentView("overlay"); }} className="w-full rounded-xl border border-border/40 bg-secondary/30 px-4 py-2 text-xs font-medium text-foreground hover:bg-secondary/50 cursor-pointer">
+              <button onClick={() => { setShowConflictPrompt(false); setCurrentView("overlay"); }} className="w-full rounded-xl border border-border/40 bg-secondary/30 px-4 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:bg-secondary/50 active:scale-[0.98] cursor-pointer">
                 Return to Current Meeting
               </button>
               <button onClick={() => setShowConflictPrompt(false)} className="w-full rounded-xl px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer">

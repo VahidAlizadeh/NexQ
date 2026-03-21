@@ -34,7 +34,12 @@ export function QuestionDetector() {
   }, []);
 
   useEffect(() => {
-    const p = onQuestionDetected((event) => addQuestion(event));
+    const p = onQuestionDetected((event) => {
+      // Only show questions from the other party — ignore "User"/"You" questions
+      if (event.source === "Them" || event.source === "Interviewer") {
+        addQuestion(event);
+      }
+    });
     return () => { p.then((u) => u()); };
   }, [addQuestion]);
 

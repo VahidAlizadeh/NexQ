@@ -562,6 +562,9 @@ function PartyPanel({
       const activeModelPerEngine = useConfigStore.getState().activeModelPerEngine;
       const engineModel = activeModelPerEngine[newProvider] ?? activeWhisperModel;
       if (engineModel) updates.local_model_id = engineModel;
+    } else {
+      // Clear local_model_id for non-local providers to prevent cross-engine contamination
+      updates.local_model_id = undefined;
     }
     // Dev log: provider change
     import("../stores/devLogStore").then(({ useDevLogStore }) => {

@@ -298,6 +298,8 @@ struct EncoderStateManager {
     encoder_out_indices: Vec<usize>,
     /// Required number of time frames per encoder call (from model shape).
     required_chunk_frames: usize,
+    /// Feature dimension (number of mel channels): 80 for zipformer, 128 for parakeet.
+    feature_dim: usize,
 }
 
 impl EncoderStateManager {
@@ -310,6 +312,8 @@ impl EncoderStateManager {
 
         // The required time dimension for the audio input (extracted from model shape).
         let mut required_chunk_frames: usize = 0;
+        // Feature dimension (mel channels) from the model's audio input shape.
+        let mut feature_dim: usize = 80;
 
         // Classify inputs
         for input in session.inputs() {
@@ -317,9 +321,12 @@ impl EncoderStateManager {
             input_order.push(name.clone());
 
             if let ort::value::ValueType::Tensor { shape, .. } = input.dtype() {
-                if shape.len() == 3 && shape.last() == Some(&80) {
-                    // Audio features: [batch, time, 80]
+                // Audio features: [batch, time, feature_dim] — detect any 3D tensor
+                // whose last dim is a plausible mel count (64, 80, 128, etc.)
+                let last = shape.last().copied().unwrap_or(0);
+                if shape.len() == 3 && last > 0 && audio_input_name.is_empty() {
                     audio_input_name = name;
+                    feature_dim = last as usize;
                     // Extract the required time dimension (shape[1])
                     let time_dim = shape[1];
                     if time_dim > 0 {
@@ -335,11 +342,11 @@ impl EncoderStateManager {
             }
         }
 
-        // Fallback: if no input matched the [_, _, 80] pattern, use first input
+        // Fallback: if no 3D input found, use first input
         if audio_input_name.is_empty() {
             if let Some(first) = input_order.first() {
                 log::warn!(
-                    "OrtStreamingSTT: No [_, _, 80] input found, using first input '{}' as audio",
+                    "OrtStreamingSTT: No 3D audio input found, using first input '{}' as audio",
                     first
                 );
                 audio_input_name = first.clone();
@@ -406,7 +413,7 @@ impl EncoderStateManager {
         let i64_count = states.values().filter(|s| matches!(s, StateTensor::I64(_))).count();
         let f32_count = states.values().filter(|s| matches!(s, StateTensor::F32(_))).count();
         log::info!(
-            "EncoderState: audio='{}', lens={:?}, {} state pairs ({} f32, {} i64), {} encoder outputs, chunk={}frames",
+            "EncoderState: audio='{}', lens={:?}, {} state pairs ({} f32, {} i64), {} encoder outputs, chunk={}frames, feature_dim={}",
             audio_input_name,
             lens_input_name,
             state_pairs.len(),
@@ -414,6 +421,7 @@ impl EncoderStateManager {
             i64_count,
             encoder_out_indices.len(),
             required_chunk_frames,
+            feature_dim,
         );
 
         Ok(Self {
@@ -425,6 +433,7 @@ impl EncoderStateManager {
             output_order,
             encoder_out_indices,
             required_chunk_frames,
+            feature_dim,
         })
     }
 
@@ -440,9 +449,9 @@ impl EncoderStateManager {
 
         let num_frames = features.len();
 
-        // Build feature tensor [1, num_frames, 80]
+        // Build feature tensor [1, num_frames, feature_dim]
         let flat: Vec<f32> = features.iter().flatten().copied().collect();
-        let feature_arr = ndarray::Array3::from_shape_vec((1, num_frames, 80), flat)
+        let feature_arr = ndarray::Array3::from_shape_vec((1, num_frames, self.feature_dim), flat)
             .map_err(|e| format!("feature shape: {}", e))?;
 
         // Build lens tensor [1]
@@ -624,8 +633,9 @@ fn inference_thread_main(
         ),
     );
 
-    // Initialize Fbank feature extractor
-    let mut fbank = crate::stt::fbank::FbankExtractor::new();
+    // Initialize Fbank feature extractor with the model's expected feature dimension
+    let feature_dim = state_mgr.feature_dim;
+    let mut fbank = crate::stt::fbank::FbankExtractor::with_num_mels(feature_dim);
 
     // Buffer for accumulating Fbank frames until we have enough for one encoder call
     let mut feature_buffer: Vec<Vec<f32>> = Vec::new();
@@ -634,9 +644,10 @@ fn inference_thread_main(
     debug(
         "info",
         &format!(
-            "Encoder requires {} frames per chunk ({:.0}ms)",
+            "Encoder requires {} frames per chunk ({:.0}ms), feature_dim={}",
             chunk_frames,
-            chunk_frames as f64 * 10.0
+            chunk_frames as f64 * 10.0,
+            feature_dim,
         ),
     );
 

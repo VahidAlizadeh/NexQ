@@ -222,6 +222,16 @@ export function useSpeechRecognition() {
       if (shouldRestartRef.current && recognitionRef.current) {
         setTimeout(() => {
           if (shouldRestartRef.current && recognitionRef.current && !isRunning) {
+            // Check fresh config — if no party uses web_speech anymore (provider
+            // switched mid-meeting), don't restart the old recognition instance.
+            const freshCfg = useConfigStore.getState().meetingAudioConfig;
+            const stillUsesWebSpeech =
+              (freshCfg?.you.stt_provider === "web_speech" && freshCfg?.you.is_input_device) ||
+              (freshCfg?.them.stt_provider === "web_speech" && freshCfg?.them.is_input_device);
+            if (!stillUsesWebSpeech) {
+              console.log("[STT] Web Speech onend: config no longer uses web_speech — not restarting");
+              return;
+            }
             try {
               recognitionRef.current.start();
             } catch {

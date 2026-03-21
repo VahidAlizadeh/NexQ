@@ -779,22 +779,10 @@ pub async fn start_capture_per_party(
         "default".to_string()
     };
 
-    {
-        let mut guard = state
-            .audio
-            .lock()
-            .map_err(|_| "Audio state lock poisoned".to_string())?;
-        let mgr = guard.get_or_insert_with(AudioCaptureManager::new);
-        log::info!(
-            "AudioCaptureManager::start_capture mic='{}', system='{}'",
-            mic_device, system_device
-        );
-        mgr.start_capture(&mic_device, &system_device, tx)?;
-    }
-
-    // ── IPolicyConfig: override system default mic if needed ──
+    // ── IPolicyConfig: override system default mic BEFORE starting capture ──
     // Web Speech and Windows Speech always use the OS default recording device.
-    // If the user selected a non-default device, temporarily change the system default.
+    // The override must happen before capture starts so that Web Speech API
+    // picks up the correct device when recognition.start() is called.
     {
         let needs_override = |config: &crate::audio::PartyAudioConfig, role: &str| -> bool {
             let provider = config.stt_provider.as_str();
@@ -838,6 +826,19 @@ pub async fn start_capture_per_party(
                 }
             }
         }
+    }
+
+    {
+        let mut guard = state
+            .audio
+            .lock()
+            .map_err(|_| "Audio state lock poisoned".to_string())?;
+        let mgr = guard.get_or_insert_with(AudioCaptureManager::new);
+        log::info!(
+            "AudioCaptureManager::start_capture mic='{}', system='{}'",
+            mic_device, system_device
+        );
+        mgr.start_capture(&mic_device, &system_device, tx)?;
     }
 
     // ── Create STT provider for "You" party (if not web_speech) ──
@@ -1264,7 +1265,16 @@ async fn create_stt_provider_for_party(
             Ok(Some(Box::new(p)))
         }
         STTProviderType::SherpaOnnx => {
-            let model_id = config.local_model_id.as_deref().unwrap_or("streaming-zipformer-en-20M");
+            // Guard: ignore model_id from a different engine (e.g., parakeet model)
+            let raw_model_id = config.local_model_id.as_deref();
+            let model_id = match raw_model_id {
+                Some(id) if id.contains("parakeet") || id.contains("nemo") => {
+                    log::warn!("SherpaOnnx: ignoring cross-engine model_id '{}', using default", id);
+                    "streaming-zipformer-en-20M"
+                }
+                Some(id) => id,
+                None => "streaming-zipformer-en-20M",
+            };
             let model_result = get_local_model_path(state, "sherpa_onnx", model_id);
             match model_result {
                 Ok(model_dir) => {
@@ -1346,7 +1356,16 @@ async fn create_stt_provider_for_party(
             }
         }
         STTProviderType::ParakeetTdt => {
-            let model_id = config.local_model_id.as_deref().unwrap_or("parakeet-tdt-0.6b-v3-int8");
+            // Guard: ignore model_id from a different engine (e.g., sense-voice-small from sherpa_onnx)
+            let raw_model_id = config.local_model_id.as_deref();
+            let model_id = match raw_model_id {
+                Some(id) if id.contains("parakeet") || id.contains("nemo") => id,
+                Some(id) => {
+                    log::warn!("ParakeetTdt: ignoring cross-engine model_id '{}', using default", id);
+                    "parakeet-tdt-0.6b-v3-int8"
+                }
+                None => "parakeet-tdt-0.6b-v3-int8",
+            };
             crate::stt::emit_stt_debug(app, "info", "stt",
                 &format!("[{}] Parakeet TDT: looking for model '{}' (local_model_id={:?})",
                     party_role, model_id, config.local_model_id));

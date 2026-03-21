@@ -1,8 +1,7 @@
 // Log-mel filterbank feature extractor for streaming ASR models.
 //
-// Extracts 80-dimensional log-mel features from 16kHz PCM audio,
-// matching the training configuration used by sherpa-onnx streaming
-// zipformer models.
+// Extracts N-dimensional log-mel features from 16kHz PCM audio.
+// Default: 80-dim (sherpa-onnx zipformer). Parakeet TDT uses 128-dim.
 
 use rustfft::num_complex::Complex;
 use rustfft::FftPlanner;
@@ -12,7 +11,7 @@ const SAMPLE_RATE: f32 = 16000.0;
 const FRAME_LENGTH_SAMPLES: usize = 400; // 25ms at 16kHz
 const FRAME_SHIFT_SAMPLES: usize = 160; // 10ms at 16kHz
 const FFT_SIZE: usize = 512;
-const NUM_MELS: usize = 80;
+const DEFAULT_NUM_MELS: usize = 80;
 const PRE_EMPHASIS: f32 = 0.97;
 const FLOOR: f32 = 1e-10;
 
@@ -24,15 +23,15 @@ fn mel_to_hz(mel: f32) -> f32 {
     700.0 * (10.0_f32.powf(mel / 2595.0) - 1.0)
 }
 
-/// Build triangular mel filterbank matrix [NUM_MELS x (FFT_SIZE/2 + 1)].
-fn build_mel_filterbank() -> Vec<Vec<f32>> {
+/// Build triangular mel filterbank matrix [num_mels x (FFT_SIZE/2 + 1)].
+fn build_mel_filterbank(num_mels: usize) -> Vec<Vec<f32>> {
     let num_fft_bins = FFT_SIZE / 2 + 1; // 257
     let mel_low = hz_to_mel(0.0);
     let mel_high = hz_to_mel(SAMPLE_RATE / 2.0);
 
-    // NUM_MELS + 2 equally spaced mel points
-    let mel_points: Vec<f32> = (0..NUM_MELS + 2)
-        .map(|i| mel_low + (mel_high - mel_low) * i as f32 / (NUM_MELS + 1) as f32)
+    // num_mels + 2 equally spaced mel points
+    let mel_points: Vec<f32> = (0..num_mels + 2)
+        .map(|i| mel_low + (mel_high - mel_low) * i as f32 / (num_mels + 1) as f32)
         .collect();
     let hz_points: Vec<f32> = mel_points.iter().map(|&m| mel_to_hz(m)).collect();
     let bin_points: Vec<f32> = hz_points
@@ -40,9 +39,9 @@ fn build_mel_filterbank() -> Vec<Vec<f32>> {
         .map(|&hz| hz * FFT_SIZE as f32 / SAMPLE_RATE)
         .collect();
 
-    let mut filterbank = vec![vec![0.0f32; num_fft_bins]; NUM_MELS];
+    let mut filterbank = vec![vec![0.0f32; num_fft_bins]; num_mels];
 
-    for m in 0..NUM_MELS {
+    for m in 0..num_mels {
         let left = bin_points[m];
         let center = bin_points[m + 1];
         let right = bin_points[m + 2];
@@ -63,8 +62,9 @@ fn build_mel_filterbank() -> Vec<Vec<f32>> {
 /// Streaming log-mel filterbank feature extractor.
 ///
 /// Maintains internal state (leftover samples, pre-emphasis continuity)
-/// across calls to `process_chunk`, producing frame-aligned 80-dim features.
+/// across calls to `process_chunk`, producing frame-aligned N-dim features.
 pub struct FbankExtractor {
+    num_mels: usize,
     leftover: Vec<f32>,
     prev_sample: f32,
     window: Vec<f32>,
@@ -73,7 +73,13 @@ pub struct FbankExtractor {
 }
 
 impl FbankExtractor {
+    /// Create a new extractor with the default 80 mel channels.
     pub fn new() -> Self {
+        Self::with_num_mels(DEFAULT_NUM_MELS)
+    }
+
+    /// Create a new extractor with a custom number of mel channels.
+    pub fn with_num_mels(num_mels: usize) -> Self {
         let window: Vec<f32> = (0..FRAME_LENGTH_SAMPLES)
             .map(|i| {
                 0.5 * (1.0
@@ -83,12 +89,13 @@ impl FbankExtractor {
             })
             .collect();
 
-        let mel_filterbank = build_mel_filterbank();
+        let mel_filterbank = build_mel_filterbank(num_mels);
 
         let mut planner = FftPlanner::new();
         let fft = planner.plan_fft_forward(FFT_SIZE);
 
         Self {
+            num_mels,
             leftover: Vec::new(),
             prev_sample: 0.0,
             window,
@@ -98,7 +105,7 @@ impl FbankExtractor {
     }
 
     /// Process a chunk of f32 audio samples (normalized to [-1, 1]).
-    /// Returns a Vec of 80-dimensional log-mel feature vectors.
+    /// Returns a Vec of N-dimensional log-mel feature vectors (N = num_mels).
     pub fn process_chunk(&mut self, audio: &[f32]) -> Vec<Vec<f32>> {
         if audio.is_empty() {
             return Vec::new();
@@ -146,8 +153,8 @@ impl FbankExtractor {
                 .collect();
 
             // Apply mel filterbank + log
-            let mut mel_energies = vec![0.0f32; NUM_MELS];
-            for m in 0..NUM_MELS {
+            let mut mel_energies = vec![0.0f32; self.num_mels];
+            for m in 0..self.num_mels {
                 let mut energy = 0.0f32;
                 for k in 0..num_fft_bins {
                     energy += self.mel_filterbank[m][k] * power[k];

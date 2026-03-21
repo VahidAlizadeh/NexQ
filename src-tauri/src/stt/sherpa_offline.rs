@@ -10,7 +10,7 @@
 use async_trait::async_trait;
 use std::io::Write as IoWrite;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering as AtomicOrdering};
 use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::mpsc;
@@ -61,8 +61,8 @@ pub struct SherpaOfflineSTT {
     audio_tx: Option<std::sync::mpsc::Sender<AudioMessage>>,
     /// Handle to the batch processing thread.
     batch_thread: Option<std::thread::JoinHandle<()>>,
-    /// Segment counter for unique IDs.
-    segment_counter: u64,
+    /// Segment counter for unique IDs (shared with batch thread).
+    segment_counter: Arc<AtomicU64>,
     /// Tauri app handle for debug events.
     app_handle: Option<AppHandle>,
 }
@@ -86,7 +86,7 @@ impl SherpaOfflineSTT {
             stop_flag: Arc::new(AtomicBool::new(false)),
             audio_tx: None,
             batch_thread: None,
-            segment_counter: 0,
+            segment_counter: Arc::new(AtomicU64::new(0)),
             app_handle: None,
         }
     }
@@ -140,7 +140,7 @@ impl STTProvider for SherpaOfflineSTT {
         let model_type = self.model_type;
         let language = self.language.clone();
         let stop_flag = Arc::clone(&self.stop_flag);
-        let seg_start = self.segment_counter;
+        let segment_counter = Arc::clone(&self.segment_counter);
         let app_handle = self.app_handle.clone();
 
         // Working directory for DLL resolution
@@ -152,12 +152,7 @@ impl STTProvider for SherpaOfflineSTT {
         let batch_thread = std::thread::spawn(move || {
             let batch_samples = (BATCH_SECONDS * SAMPLE_RATE as f32) as usize;
             let mut buffer: Vec<i16> = Vec::with_capacity(batch_samples);
-            let mut segment_id = seg_start;
-
-            let process_start_epoch_ms: u64 = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64;
+            let mut segment_id = segment_counter.load(AtomicOrdering::Relaxed);
 
             loop {
                 if stop_flag.load(AtomicOrdering::SeqCst) {
@@ -257,10 +252,10 @@ impl STTProvider for SherpaOfflineSTT {
                             }
 
                             if !text.is_empty() {
-                                let chunk_duration_ms =
-                                    (chunk.len() as u64 * 1000) / SAMPLE_RATE as u64;
-                                let timestamp_ms =
-                                    process_start_epoch_ms + (segment_id * chunk_duration_ms);
+                                let timestamp_ms = std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap_or_default()
+                                    .as_millis() as u64;
 
                                 let result = TranscriptResult {
                                     text: text.clone(),
@@ -290,6 +285,7 @@ impl STTProvider for SherpaOfflineSTT {
                                 }
 
                                 segment_id += 1;
+                                segment_counter.store(segment_id, AtomicOrdering::Relaxed);
                             }
 
                             if !output.status.success() {

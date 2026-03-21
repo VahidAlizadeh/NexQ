@@ -30,6 +30,7 @@ import {
   ChevronDown,
   ChevronUp,
   Settings2,
+  Cpu,
 } from "lucide-react";
 import { LocalModelManager } from "./LocalModelManager";
 
@@ -97,6 +98,15 @@ const PROVIDER_OPTIONS: ProviderOption[] = [
     credentialKey: "",
     requiresModels: "whisper_cpp",
     batchOnly: true,
+  },
+  {
+    value: "parakeet_tdt",
+    label: "Parakeet TDT",
+    description: "Best accuracy, offline, English",
+    requiresApiKey: false,
+    isLocal: true,
+    credentialKey: "",
+    requiresModels: "parakeet_tdt",
   },
   {
     value: "deepgram",
@@ -845,6 +855,8 @@ function ProviderIcon({ value, isSelected }: { value: STTProviderType; isSelecte
       return <HardDrive className={cls} />;
     case "ort_streaming":
       return <Zap className={cls} />;
+    case "parakeet_tdt":
+      return <Cpu className={cls} />;
     case "deepgram":
     case "whisper_api":
     case "azure_speech":

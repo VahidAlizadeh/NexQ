@@ -323,14 +323,14 @@ export function MeetingAudioSettings() {
 
       {/* ── Quick Presets ── */}
       <div className="flex items-center gap-2 rounded-xl border border-border/25 bg-card/40 px-4 py-2.5">
-        <span className="mr-1 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+        <span className="mr-1 shrink-0 text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
           Presets
         </span>
         {BUILT_IN_PRESETS.map((preset) => (
           <button
             key={preset.name}
             onClick={() => handlePresetSelect(preset)}
-            className={`cursor-pointer rounded-lg border px-3 py-1 text-[11px] font-medium transition-all duration-150 active:scale-95 ${
+            className={`cursor-pointer rounded-lg border px-3 py-1 text-xs font-medium transition-all duration-150 active:scale-95 ${
               config.preset_name === preset.name
                 ? "border-primary/50 bg-primary/10 text-primary shadow-sm shadow-primary/10"
                 : "border-border/30 text-muted-foreground/70 hover:border-border/60 hover:bg-accent/40 hover:text-foreground"
@@ -377,7 +377,7 @@ export function MeetingAudioSettings() {
       <div className="flex items-center justify-between rounded-xl border border-border/25 bg-card/40 px-4 py-3">
         <div>
           <p className="text-xs font-medium text-foreground">Record to file</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground/70">Save meeting audio as WAV</p>
+          <p className="mt-0.5 text-meta text-muted-foreground/70">Save meeting audio as WAV</p>
         </div>
         <button
           onClick={() => handleRecordingToggle(!config.recording_enabled)}
@@ -403,7 +403,7 @@ export function MeetingAudioSettings() {
         <div className="flex flex-col rounded-xl border border-border/25 bg-card/40 p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-foreground">Live Monitor</span>
+              <span className="text-xs font-semibold text-foreground">Live Monitor</span>
               <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" title="Monitoring all devices" />
             </div>
             <button
@@ -436,7 +436,7 @@ export function MeetingAudioSettings() {
               />
             ))}
           </div>
-          <p className="mt-2 shrink-0 text-[9px] text-muted-foreground/60">
+          <p className="mt-2 shrink-0 text-meta text-muted-foreground/60">
             All devices streaming live (~60 fps)
           </p>
         </div>
@@ -447,7 +447,7 @@ export function MeetingAudioSettings() {
           {/* Audio Sessions */}
           <div className="flex flex-col rounded-xl border border-border/25 bg-card/40 p-4">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-foreground">Audio Sessions</span>
+              <span className="text-xs font-semibold text-foreground">Audio Sessions</span>
               <button
                 onClick={loadSessions}
                 disabled={loadingSessions}
@@ -457,7 +457,7 @@ export function MeetingAudioSettings() {
               </button>
             </div>
             {sessions.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground/70">
+              <p className="text-xs text-muted-foreground/70">
                 {loadingSessions ? "Scanning audio sessions..." : "No active audio sessions detected"}
               </p>
             ) : (
@@ -475,7 +475,7 @@ export function MeetingAudioSettings() {
                       }`}
                     >
                       <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.is_active ? "bg-success" : "bg-muted-foreground/30"}`} />
-                      <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground">
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                         {s.display_name}
                       </span>
                       <button
@@ -491,7 +491,7 @@ export function MeetingAudioSettings() {
                           }
                         }}
                         disabled={isSelectedDevice}
-                        className={`shrink-0 cursor-pointer rounded px-2 py-0.5 text-[10px] font-medium transition-all ${
+                        className={`shrink-0 cursor-pointer rounded px-2 py-0.5 text-meta font-medium transition-all ${
                           isSelectedDevice
                             ? "bg-primary/10 text-primary cursor-default"
                             : "bg-accent text-foreground hover:bg-primary/10 hover:text-primary"
@@ -594,7 +594,7 @@ function PartyPanel({
         </div>
         <div className="min-w-0 flex-1">
           <p className={`text-xs font-semibold uppercase tracking-wide ${c.iconColor}`}>{label}</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground/60">Audio source & recognition</p>
+          <p className="mt-0.5 text-meta text-muted-foreground/60">Audio source & recognition</p>
         </div>
         {/* Live activity indicator */}
         <div className="flex shrink-0 items-center gap-1.5">
@@ -604,7 +604,7 @@ function PartyPanel({
             )}
             <span className={`relative inline-flex h-2 w-2 rounded-full transition-colors duration-150 ${isActive ? c.dot : "bg-muted-foreground/20"}`} />
           </span>
-          <span className="w-7 text-right text-[10px] tabular-nums font-medium text-muted-foreground/60">
+          <span className="w-7 text-right text-meta tabular-nums font-medium text-muted-foreground/60">
             {barWidth}%
           </span>
         </div>
@@ -615,7 +615,7 @@ function PartyPanel({
 
         {/* Source device */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          <label className="mb-1.5 block text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
             Source
           </label>
           <select
@@ -664,7 +664,7 @@ function PartyPanel({
 
         {/* STT Provider */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          <label className="mb-1.5 block text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
             Speech to Text
           </label>
           <ProviderSelect
@@ -682,7 +682,7 @@ function PartyPanel({
           party.device_id !== "default" && (
           <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-            <p className="text-[10px] leading-relaxed text-amber-200/80">
+            <p className="text-meta leading-relaxed text-amber-200/80">
               <span className="font-semibold text-amber-400">Device override active.</span>{" "}
               {party.stt_provider === "web_speech" ? "Web Speech" : "Windows Speech"} always
               uses the system default mic. During meetings, your system default will be
@@ -788,7 +788,7 @@ function ProviderSelect({
             <div>
               <div className="flex items-center gap-1.5 border-b border-border/20 bg-muted/30 px-3 py-1.5">
                 <HardDrive className="h-2.5 w-2.5 text-emerald-500" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground">
                   Local & Built-in
                 </span>
               </div>
@@ -817,7 +817,7 @@ function ProviderSelect({
             <div className={localOptions.length > 0 ? "border-t border-border/20" : ""}>
               <div className="flex items-center gap-1.5 border-b border-border/20 bg-muted/30 px-3 py-1.5">
                 <Cloud className="h-2.5 w-2.5 text-blue-500" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground">
                   Cloud
                 </span>
               </div>
@@ -843,7 +843,7 @@ function ProviderSelect({
           )}
 
           {!hasAny && (
-            <p className="px-3 py-3 text-[10px] text-muted-foreground">
+            <p className="px-3 py-3 text-meta text-muted-foreground">
               No providers ready — configure in STT Keys tab
             </p>
           )}
@@ -874,7 +874,7 @@ function DeviceLevelRow({
   return (
     <div className="flex items-center gap-2">
       <span className={isSelected ? "text-primary" : "text-muted-foreground/60"}>{icon}</span>
-      <span className={`w-28 truncate text-[10px] ${isSelected ? "font-medium text-foreground" : "text-muted-foreground/60"}`}>
+      <span className={`w-28 truncate text-meta ${isSelected ? "font-medium text-foreground" : "text-muted-foreground/60"}`}>
         {name}
       </span>
       <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted/15">
@@ -889,7 +889,7 @@ function DeviceLevelRow({
           />
         )}
       </div>
-      <span className="w-7 text-right text-[10px] tabular-nums text-muted-foreground/70">
+      <span className="w-7 text-right text-meta tabular-nums text-muted-foreground/70">
         {level > 0.005 ? `${Math.round(scaled * 100)}%` : "\u2014"}
       </span>
     </div>

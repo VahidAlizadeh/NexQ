@@ -70,7 +70,7 @@ function TabButton({
       {icon}
       {label}
       {count !== undefined && count > 0 && (
-        <span className={`rounded-md px-1.5 py-0.5 text-[11px] tabular-nums font-semibold ${
+        <span className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums font-semibold ${
           active ? "bg-primary/10 text-primary/80" : "bg-primary/5 text-muted-foreground/50"
         }`}>
           {count}

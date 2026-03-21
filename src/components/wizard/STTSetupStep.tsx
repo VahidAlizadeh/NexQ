@@ -132,7 +132,7 @@ export function STTSetupStep() {
         {/* YOU STT Selection */}
         <div>
           <label className="mb-3 flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+            <span className="rounded-lg bg-primary/10 px-2 py-1 text-meta font-semibold uppercase tracking-wide text-primary">
               You
             </span>
             STT Provider
@@ -153,7 +153,7 @@ export function STTSetupStep() {
         {/* THEM STT Selection */}
         <div>
           <label className="mb-3 flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-lg bg-muted px-2 py-1 text-meta font-semibold uppercase tracking-wide text-muted-foreground">
               Them
             </span>
             STT Provider
@@ -169,7 +169,7 @@ export function STTSetupStep() {
               />
             ))}
           </div>
-          <p className="mt-1 text-[10px] text-muted-foreground">
+          <p className="mt-1 text-meta text-muted-foreground">
             Web Speech API is not available for "Them" — it only works with the browser's microphone.
           </p>
         </div>
@@ -207,7 +207,7 @@ function ProviderButton({
             {provider.label}
           </span>
           {provider.free && (
-            <span className="rounded-md bg-success/10 px-1.5 py-0.5 text-[9px] font-semibold text-success">
+            <span className="rounded-md bg-success/10 px-1.5 py-0.5 text-meta font-semibold text-success">
               FREE
             </span>
           )}

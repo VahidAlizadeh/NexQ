@@ -211,30 +211,30 @@ export function MeetingCard({
 
           {/* Badges row */}
           <div className="mt-1.5 flex items-center gap-1.5">
-            <span className="text-[10px] tabular-nums text-muted-foreground/70">
+            <span className="text-meta tabular-nums text-muted-foreground/70">
               {formatRelativeTime(meeting.start_time)}
             </span>
 
             {isLive ? (
-              <span className="live-ring-pulse rounded-full bg-success/10 px-2 py-0.5 text-[9px] font-semibold text-success">
+              <span className="live-ring-pulse rounded-full bg-success/10 px-2 py-0.5 text-meta font-semibold text-success">
                 LIVE
               </span>
             ) : (
-              <span className="flex items-center gap-0.5 text-[10px] tabular-nums text-muted-foreground/60">
+              <span className="flex items-center gap-0.5 text-meta tabular-nums text-muted-foreground/60">
                 <Clock className="h-2.5 w-2.5" />
                 {durationDisplay}
               </span>
             )}
 
             {meeting.segment_count > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] tabular-nums text-muted-foreground/60">
+              <span className="flex items-center gap-0.5 text-meta tabular-nums text-muted-foreground/60">
                 <MessageSquare className="h-2.5 w-2.5" />
                 {meeting.segment_count}
               </span>
             )}
 
             {meeting.has_summary && (
-              <span className="flex items-center gap-0.5 text-[10px] text-info">
+              <span className="flex items-center gap-0.5 text-meta text-info">
                 <FileText className="h-2.5 w-2.5" />
               </span>
             )}
@@ -245,7 +245,7 @@ export function MeetingCard({
         <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-1 rounded-lg bg-destructive/10 px-2 py-1">
-              <span className="text-[9px] text-destructive">Delete?</span>
+              <span className="text-meta text-destructive">Delete?</span>
               <button
                 onClick={handleConfirmDelete}
                 className="rounded p-0.5 text-destructive hover:bg-destructive/20"

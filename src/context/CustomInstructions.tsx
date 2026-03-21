@@ -50,7 +50,7 @@ export function CustomInstructions() {
         <label className="text-xs font-semibold text-muted-foreground">
           Custom Instructions
         </label>
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground/70">
+        <div className="flex items-center gap-3 text-meta text-muted-foreground/70">
           <span>{charCount} chars</span>
           <span>~{tokenCount} tokens</span>
         </div>

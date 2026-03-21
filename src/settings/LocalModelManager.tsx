@@ -101,7 +101,7 @@ export function LocalModelManager({ compact, engineFilter }: LocalModelManagerPr
                 <HardDrive className="h-3.5 w-3.5" />
                 {engine.name}
               </h4>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-meta text-muted-foreground mt-0.5">
                 {engine.description}
               </p>
             </div>
@@ -263,14 +263,14 @@ function ModelRow({
               {compact ? model.id : model.name}
             </span>
             {isActive && (
-              <span className="shrink-0 rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+              <span className="shrink-0 rounded bg-primary/15 px-1.5 py-0.5 text-meta font-semibold text-primary">
                 Active
               </span>
             )}
           </div>
           {!compact && (
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-meta text-muted-foreground">
                 {sizeLabel}
               </span>
               <RatingBadge label="Accuracy" value={model.accuracy_rating} max={5} />
@@ -294,7 +294,7 @@ function ModelRow({
               {!isActive && (
                 <button
                   onClick={onSetActive}
-                  className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[10px] font-medium text-foreground hover:bg-primary/10 hover:text-primary"
+                  className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-meta font-medium text-foreground hover:bg-primary/10 hover:text-primary"
                   title="Set as active model"
                 >
                   <CircleDot className="h-3 w-3" />
@@ -315,7 +315,7 @@ function ModelRow({
           ) : (
             <button
               onClick={onDownload}
-              className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary hover:bg-primary/20"
+              className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-meta font-medium text-primary hover:bg-primary/20"
             >
               <Download className="h-3 w-3" />
               {compact ? "" : "Download"}
@@ -333,7 +333,7 @@ function ModelRow({
               style={{ width: `${Math.min(progress.percent, 100)}%` }}
             />
           </div>
-          <div className="mt-0.5 flex items-center justify-between text-[9px] text-muted-foreground">
+          <div className="mt-0.5 flex items-center justify-between text-meta text-muted-foreground">
             <span>
               {progress.status === "extracting"
                 ? "Extracting..."
@@ -351,7 +351,7 @@ function ModelRow({
 
 function RatingBadge({ label, value, max }: { label: string; value: number; max: number }) {
   return (
-    <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">
+    <span className="inline-flex items-center gap-0.5 text-meta text-muted-foreground">
       {label}:
       {Array.from({ length: max }, (_, i) => (
         <Star

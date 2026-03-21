@@ -260,14 +260,14 @@ function TimelineScrubber({
               <span className="text-xs font-bold tabular-nums text-foreground">{hover.timestamp}</span>
               <span className="text-xs text-muted-foreground/60">{hover.speaker}</span>
             </div>
-            <p className="mt-0.5 text-[11px] text-muted-foreground/50 max-w-[250px] truncate">{hover.text}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground/50 max-w-[250px] truncate">{hover.text}</p>
           </div>
         </div>
       )}
 
       {/* Time labels + track */}
       <div className="flex items-center gap-2">
-        <span className="shrink-0 text-[11px] tabular-nums font-medium text-muted-foreground/40 w-8">
+        <span className="shrink-0 text-xs tabular-nums font-medium text-muted-foreground/40 w-8">
           {fmtTime(firstTs - (meetingStartTime || firstTs))}
         </span>
 
@@ -309,14 +309,14 @@ function TimelineScrubber({
           )}
         </div>
 
-        <span className="shrink-0 text-[11px] tabular-nums font-medium text-muted-foreground/40 w-8 text-right">
+        <span className="shrink-0 text-xs tabular-nums font-medium text-muted-foreground/40 w-8 text-right">
           {fmtTime(lastTs - (meetingStartTime || firstTs))}
         </span>
       </div>
 
       {/* Duration badge */}
       <div className="flex justify-center mt-0.5">
-        <span className="text-[10px] text-muted-foreground/30">{durationLabel}</span>
+        <span className="text-meta text-muted-foreground/30">{durationLabel}</span>
       </div>
     </div>
   );

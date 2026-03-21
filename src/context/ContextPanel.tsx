@@ -36,7 +36,7 @@ export function ContextPanel() {
         <FileText className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-semibold text-foreground">Meeting Context</h2>
         {contextStrategy === "local_rag" && (
-          <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
+          <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-meta font-medium text-primary">
             <span>Smart Search Active</span>
           </div>
         )}

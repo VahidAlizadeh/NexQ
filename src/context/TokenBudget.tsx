@@ -90,7 +90,7 @@ export function TokenBudget() {
                 className="h-2 w-2 rounded-full"
                 style={{ backgroundColor: segment.color }}
               />
-              <span className="text-[10px] tabular-nums text-muted-foreground">
+              <span className="text-meta tabular-nums text-muted-foreground">
                 {segment.label}: ~{formatNumber(segment.tokens)}
               </span>
             </div>

@@ -230,10 +230,10 @@ export function LauncherView() {
             className="group live-ring-pulse flex items-center gap-2 rounded-full border border-success/25 bg-success/8 pl-3 pr-2 py-1.5 shadow-sm shadow-success/8 transition-all hover:bg-success/15 hover:border-success/35 hover:shadow-md hover:shadow-success/12 cursor-pointer"
           >
             <Radio className="h-3 w-3 text-success animate-pulse" />
-            <span className="text-[11px] font-medium text-success max-w-[200px] truncate">
+            <span className="text-xs font-medium text-success max-w-[200px] truncate">
               {activeMeeting.title}
             </span>
-            <span className="flex items-center gap-0.5 rounded-full bg-success/15 px-1.5 py-0.5 text-[9px] font-semibold text-success">
+            <span className="flex items-center gap-0.5 rounded-full bg-success/15 px-1.5 py-0.5 text-meta font-semibold text-success">
               RETURN <ArrowRight className="h-2.5 w-2.5" />
             </span>
           </button>
@@ -263,7 +263,7 @@ export function LauncherView() {
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search meetings..."
                 aria-label="Search meetings"
-                className="w-full rounded-lg border border-border/20 bg-background/50 py-1.5 pl-7.5 pr-7 text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:outline-none"
+                className="w-full rounded-lg border border-border/20 bg-background/50 py-1.5 pl-7.5 pr-7 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:outline-none"
               />
               {searchQuery && (
                 <button onClick={() => handleSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground cursor-pointer" aria-label="Clear search">
@@ -284,7 +284,7 @@ export function LauncherView() {
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`rounded px-1.5 py-0.5 text-[9px] font-medium transition-all duration-150 active:scale-90 cursor-pointer ${
+                  className={`rounded px-1.5 py-0.5 text-meta font-medium transition-all duration-150 active:scale-90 cursor-pointer ${
                     filter === key ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30"
                   }`}
                 >
@@ -302,7 +302,7 @@ export function LauncherView() {
 
           {/* Count */}
           <div className="px-3 pb-1.5">
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
               {displayedMeetings.length} meeting{displayedMeetings.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -343,14 +343,14 @@ export function LauncherView() {
                   <div className="text-sm font-bold tracking-tight">
                     {isStarting ? "Starting..." : "Start Meeting"}
                   </div>
-                  <div className="text-[10px] font-normal text-white/50">
+                  <div className="text-meta font-normal text-white/50">
                     Ctrl+M
                   </div>
                 </div>
               </button>
 
               {startError && (
-                <div className="mt-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-1.5 text-[11px] text-destructive">
+                <div className="mt-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-1.5 text-xs text-destructive">
                   {startError}
                 </div>
               )}
@@ -359,7 +359,7 @@ export function LauncherView() {
             {/* Section label */}
             <div className="dash-section-enter flex items-center gap-2 pt-1">
               <Database className="h-3 w-3 text-muted-foreground/60" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Meeting Context
               </span>
               <div className="flex-1 border-t border-border/10" />
@@ -380,7 +380,7 @@ export function LauncherView() {
                   return (
                     <button
                       onClick={handleRagUpdate}
-                      className={`w-full rounded-lg border border-dashed px-3 py-2 text-[11px] font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer ${
+                      className={`w-full rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer ${
                         settingsStale
                           ? "border-warning/40 bg-warning/5 text-warning hover:bg-warning/10 hover:border-warning/60"
                           : isFirstBuild
@@ -408,7 +408,7 @@ export function LauncherView() {
                   );
                 })()}
                 {ragStatus === "updating" && (
-                  <div className="flex items-center justify-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-[11px] text-warning">
+                  <div className="flex items-center justify-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-xs text-warning">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Building knowledge base...
                   </div>
@@ -416,13 +416,13 @@ export function LauncherView() {
 
                 {/* Auto-indexing indicator (triggered by file add/remove) */}
                 {isAutoIndexing && ragStatus === "idle" && (
-                  <div className="flex items-center gap-2 rounded-lg border border-border/20 bg-accent/20 px-3 py-1.5 text-[10px] text-muted-foreground/70">
+                  <div className="flex items-center gap-2 rounded-lg border border-border/20 bg-accent/20 px-3 py-1.5 text-meta text-muted-foreground/70">
                     <Loader2 className="h-2.5 w-2.5 animate-spin" />
                     Indexing file...
                   </div>
                 )}
                 {ragStatus === "done" && (
-                  <div className="flex items-center justify-center gap-2 rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-[11px] text-success">
+                  <div className="flex items-center justify-center gap-2 rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-xs text-success">
                     <CheckCircle2 className="h-3 w-3" />
                     Knowledge base updated
                   </div>
@@ -432,7 +432,7 @@ export function LauncherView() {
                 {(indexStatus?.total_chunks ?? 0) > 0 && ragStatus !== "updating" && (
                   <button
                     onClick={() => setShowTestKB(true)}
-                    className="w-full rounded-lg border border-dashed border-border/30 bg-card/30 px-3 py-2 text-[11px] font-medium text-muted-foreground transition-all duration-150 hover:bg-accent/30 hover:text-foreground hover:border-border/50 active:scale-[0.98] cursor-pointer"
+                    className="w-full rounded-lg border border-dashed border-border/30 bg-card/30 px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-150 hover:bg-accent/30 hover:text-foreground hover:border-border/50 active:scale-[0.98] cursor-pointer"
                   >
                     <FlaskConical className="mr-1 inline h-3 w-3" />
                     Test Knowledge Base
@@ -447,7 +447,7 @@ export function LauncherView() {
             {/* Sources */}
             {resources.length > 0 && (
               <div>
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                <div className="mb-2 text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
                   Sources ({resources.length})
                 </div>
                 <div className="space-y-2">
@@ -474,7 +474,7 @@ export function LauncherView() {
       {/* ═══ FOOTER ═══ */}
       <footer className="dash-footer flex items-center justify-between border-t border-border/15">
         <ServiceStatusBar />
-        <div className="flex items-center gap-2 pr-5 text-[11px] text-muted-foreground/60">
+        <div className="flex items-center gap-2 pr-5 text-xs text-muted-foreground/60">
           <span>&copy; {new Date().getFullYear()} {NEXQ_DEVELOPER}</span>
           <span className="text-muted-foreground/40">|</span>
           <span className="font-medium">NexQ v{NEXQ_VERSION}</span>

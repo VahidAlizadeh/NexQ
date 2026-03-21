@@ -113,7 +113,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
           <h2 className="truncate text-base font-semibold text-foreground">
             {meeting.title}
           </h2>
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground/60">
             <span>{formatRelativeTime(meeting.start_time)}</span>
             <span className="text-muted-foreground/60">&middot;</span>
             <span>{durationDisplay}</span>
@@ -198,7 +198,7 @@ function TabButton({
       {icon}
       {label}
       {count !== undefined && count > 0 && (
-        <span className={`rounded-full px-1.5 text-[10px] ${active ? "bg-primary/10" : "bg-secondary"}`}>
+        <span className={`rounded-full px-1.5 text-meta ${active ? "bg-primary/10" : "bg-secondary"}`}>
           {count}
         </span>
       )}
@@ -222,11 +222,11 @@ function TranscriptView({ segments }: { segments: TranscriptSegment[] }) {
     <div className="space-y-0.5 p-5">
       {segments.map((segment, i) => (
         <div key={segment.id || i} className="flex gap-3 rounded-lg px-3 py-2 hover:bg-secondary/20">
-          <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-muted-foreground/60">
+          <span className="shrink-0 pt-0.5 text-meta tabular-nums text-muted-foreground/60">
             {formatTimestamp(segment.timestamp_ms)}
           </span>
           <span
-            className={`shrink-0 pt-0.5 text-[10px] font-medium ${getSpeakerColor(segment.speaker)}`}
+            className={`shrink-0 pt-0.5 text-meta font-medium ${getSpeakerColor(segment.speaker)}`}
           >
             {getSpeakerLabel(segment.speaker)}
           </span>
@@ -272,7 +272,7 @@ function AIInteractionLog({
               aria-expanded={isExpanded}
             >
               <div className="flex items-center gap-2.5">
-                <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-meta font-medium text-primary">
                   {getModeLabel(interaction.mode)}
                 </span>
                 <span className="text-xs text-foreground/75 truncate max-w-[220px]">
@@ -280,7 +280,7 @@ function AIInteractionLog({
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="text-[10px] tabular-nums text-muted-foreground/60">
+                <span className="text-meta tabular-nums text-muted-foreground/60">
                   {interaction.latency_ms}ms
                 </span>
                 {isExpanded ? (
@@ -292,7 +292,7 @@ function AIInteractionLog({
             </button>
             {isExpanded && (
               <div className="border-t border-border/10 px-4 py-3.5">
-                <div className="mb-2.5 flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
+                <div className="mb-2.5 flex items-center gap-1.5 text-meta text-muted-foreground/50">
                   <span>{interaction.provider}/{interaction.model}</span>
                   <span className="text-muted-foreground/60">&middot;</span>
                   <span>{formatRelativeTime(interaction.timestamp)}</span>

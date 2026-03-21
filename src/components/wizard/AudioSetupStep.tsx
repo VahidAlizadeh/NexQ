@@ -226,7 +226,7 @@ export function AudioSetupStep() {
         {/* Scan Results */}
         {scanResults.length > 0 && (
           <div className="rounded-xl border border-border/40 bg-secondary/15 p-3.5 space-y-1.5">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+            <p className="text-meta font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Scan Results
             </p>
             {scanResults.map((r) => (
@@ -257,7 +257,7 @@ export function AudioSetupStep() {
         {/* YOUR Source */}
         <div className="space-y-2.5">
           <label className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+            <span className="rounded-lg bg-primary/10 px-2 py-1 text-meta font-semibold uppercase tracking-wide text-primary">
               You
             </span>
             Audio Source
@@ -298,7 +298,7 @@ export function AudioSetupStep() {
         {/* THEIR Source */}
         <div className="space-y-2.5">
           <label className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-lg bg-muted px-2 py-1 text-meta font-semibold uppercase tracking-wide text-muted-foreground">
               Them
             </span>
             Audio Source

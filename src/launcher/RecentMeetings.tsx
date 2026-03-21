@@ -61,7 +61,7 @@ export function RecentMeetings({
         <p className="text-xs font-medium text-muted-foreground/50">
           No meetings yet
         </p>
-        <p className="mt-1 text-[10px] text-muted-foreground/60">
+        <p className="mt-1 text-meta text-muted-foreground/60">
           Start a meeting to see it here
         </p>
       </div>
@@ -77,7 +77,7 @@ export function RecentMeetings({
     <div className="space-y-4">
       {Array.from(grouped.entries()).map(([dateGroup, groupMeetings]) => (
         <div key={dateGroup}>
-          <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          <h3 className="mb-2 text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
             {dateGroup}
           </h3>
           <div className="space-y-1.5">

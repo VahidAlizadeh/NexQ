@@ -127,7 +127,7 @@ function SectionHeader({
       </div>
       <div>
         <h3 className="text-sm font-semibold text-primary/80">{title}</h3>
-        <p className="text-[10px] text-muted-foreground">{subtitle}</p>
+        <p className="text-meta text-muted-foreground">{subtitle}</p>
       </div>
     </div>
   );
@@ -169,8 +169,8 @@ function HelpPanel({ id }: { id: string }) {
   if (!content) return null;
   return (
     <div className="mt-2 rounded-lg border border-primary/15 bg-primary/5 px-3.5 py-3 space-y-1">
-      <p className="text-[11px] font-semibold text-primary/80">{content.title}</p>
-      <p className="text-[11px] text-muted-foreground leading-relaxed whitespace-pre-line">
+      <p className="text-xs font-semibold text-primary/80">{content.title}</p>
+      <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
         {content.body}
       </p>
     </div>
@@ -445,10 +445,10 @@ export function AIActionsSettings() {
             {/* Active preset summary */}
             {presetSummary && (
               <div className="rounded-lg border border-primary/10 bg-primary/[0.04] px-3 py-2 flex items-center gap-2">
-                <span className="text-[10px] font-semibold text-primary/80 uppercase tracking-wider shrink-0">
+                <span className="text-meta font-semibold text-primary/80 uppercase tracking-wider shrink-0">
                   Active
                 </span>
-                <span className="text-[11px] text-foreground/80">{presetSummary}</span>
+                <span className="text-xs text-foreground/80">{presetSummary}</span>
               </div>
             )}
 
@@ -461,7 +461,7 @@ export function AIActionsSettings() {
                   Additional Instructions
                   <HelpButton id="instructions" activeId={openHelp} onToggle={toggleHelp} />
                 </label>
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground/70">
+                <div className="flex items-center gap-3 text-meta text-muted-foreground/70">
                   <span>{configs.customInstructions.length} chars</span>
                   <span>~{instructionTokens} tokens</span>
                 </div>
@@ -530,7 +530,7 @@ export function AIActionsSettings() {
                   }
                   className="mt-2 w-full cursor-pointer accent-primary"
                 />
-                <div className="mt-1 flex justify-between text-[10px] text-muted-foreground/70">
+                <div className="mt-1 flex justify-between text-meta text-muted-foreground/70">
                   <span>Precise 0.0</span>
                   <span>Creative 1.0</span>
                 </div>
@@ -573,7 +573,7 @@ export function AIActionsSettings() {
                   }
                   className="mt-2 w-full cursor-pointer accent-primary"
                 />
-                <div className="mt-1 flex justify-between text-[10px] text-muted-foreground/70">
+                <div className="mt-1 flex justify-between text-meta text-muted-foreground/70">
                   <span>1 min</span>
                   <span>30 min</span>
                 </div>
@@ -619,7 +619,7 @@ export function AIActionsSettings() {
 
         {/* Built-in Actions */}
         <div>
-          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+          <h4 className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
             Built-in ({builtInActions.length})
           </h4>
           <div className="rounded-lg border border-border/20 divide-y divide-border/15 overflow-hidden">
@@ -645,7 +645,7 @@ export function AIActionsSettings() {
 
         {/* Custom Actions */}
         <div className="mt-5">
-          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+          <h4 className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
             Custom ({customActions.length})
           </h4>
 
@@ -672,7 +672,7 @@ export function AIActionsSettings() {
           )}
 
           {customActions.length === 0 && !showNewActionForm && (
-            <p className="py-2 text-center text-[10px] text-muted-foreground/60">
+            <p className="py-2 text-center text-meta text-muted-foreground/60">
               No custom actions yet
             </p>
           )}
@@ -794,11 +794,11 @@ function ActionCard({
         <span className="text-xs font-medium text-foreground shrink-0">
           {action.name}
         </span>
-        <span className="text-[10px] text-muted-foreground/60 shrink-0">
+        <span className="text-meta text-muted-foreground/60 shrink-0">
           {action.mode}
         </span>
         {description && (
-          <span className="hidden sm:inline text-[10px] text-muted-foreground/60 truncate">
+          <span className="hidden sm:inline text-meta text-muted-foreground/60 truncate">
             &mdash; {description}
           </span>
         )}
@@ -825,7 +825,7 @@ function ActionCard({
         <div className="border-t border-border/15 bg-secondary/[0.06] px-3.5 py-3.5 space-y-3.5">
           {/* Purpose */}
           {description && (
-            <p className="text-[11px] text-muted-foreground/80 italic">
+            <p className="text-xs text-muted-foreground/80 italic">
               {description}
             </p>
           )}
@@ -840,7 +840,7 @@ function ActionCard({
                 <button
                   onClick={onResetPrompt}
                   disabled={action.isDefaultPrompt}
-                  className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground transition-colors duration-150 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 text-meta font-medium text-muted-foreground transition-colors duration-150 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <RotateCcw className="h-3 w-3" />
                   Reset
@@ -899,10 +899,10 @@ function ActionCard({
                 {/* Transcript Window Override */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[10px] font-medium text-muted-foreground">
+                    <label className="text-meta font-medium text-muted-foreground">
                       Transcript Window
                     </label>
-                    <span className="rounded bg-secondary/50 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-foreground">
+                    <span className="rounded bg-secondary/50 px-1.5 py-0.5 text-meta font-medium tabular-nums text-foreground">
                       {formatWindowDisplay(action.transcriptWindowSeconds)}
                     </span>
                   </div>
@@ -919,7 +919,7 @@ function ActionCard({
                         }
                         className="h-3 w-3 rounded border-border/50 accent-primary"
                       />
-                      <span className="text-[10px] text-muted-foreground">Override</span>
+                      <span className="text-meta text-muted-foreground">Override</span>
                     </label>
                     {action.transcriptWindowSeconds !== null && (
                       <input
@@ -940,7 +940,7 @@ function ActionCard({
                     )}
                   </div>
                   {action.transcriptWindowSeconds !== null && (
-                    <div className="mt-1 flex justify-between text-[9px] text-muted-foreground/60">
+                    <div className="mt-1 flex justify-between text-meta text-muted-foreground/60">
                       <span>All</span>
                       <span>30 min</span>
                     </div>
@@ -949,7 +949,7 @@ function ActionCard({
 
                 {/* RAG Top-K Override */}
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-medium text-muted-foreground">
+                  <label className="text-meta font-medium text-muted-foreground">
                     RAG Top-K
                   </label>
                   <div className="flex items-center gap-2">
@@ -962,7 +962,7 @@ function ActionCard({
                         }
                         className="h-3 w-3 rounded border-border/50 accent-primary"
                       />
-                      <span className="text-[10px] text-muted-foreground">Override</span>
+                      <span className="text-meta text-muted-foreground">Override</span>
                     </label>
                     {action.ragTopK !== null && (
                       <select
@@ -970,7 +970,7 @@ function ActionCard({
                         onChange={(e) =>
                           onOverrideChange("ragTopK", Number(e.target.value))
                         }
-                        className="rounded border border-border/50 bg-secondary/30 px-2 py-1 text-[10px] text-foreground focus:border-primary/50 focus:outline-none"
+                        className="rounded border border-border/50 bg-secondary/30 px-2 py-1 text-meta text-foreground focus:border-primary/50 focus:outline-none"
                       >
                         {RAG_CHUNK_OPTIONS.map((v) => (
                           <option key={v} value={v}>
@@ -985,10 +985,10 @@ function ActionCard({
                 {/* Temperature Override */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[10px] font-medium text-muted-foreground">
+                    <label className="text-meta font-medium text-muted-foreground">
                       Temperature
                     </label>
-                    <span className="rounded bg-secondary/50 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-foreground">
+                    <span className="rounded bg-secondary/50 px-1.5 py-0.5 text-meta font-medium tabular-nums text-foreground">
                       {action.temperature === null
                         ? "Default"
                         : action.temperature.toFixed(1)}
@@ -1004,7 +1004,7 @@ function ActionCard({
                         }
                         className="h-3 w-3 rounded border-border/50 accent-primary"
                       />
-                      <span className="text-[10px] text-muted-foreground">Override</span>
+                      <span className="text-meta text-muted-foreground">Override</span>
                     </label>
                     {action.temperature !== null && (
                       <input

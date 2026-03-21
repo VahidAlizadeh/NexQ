@@ -26,7 +26,7 @@ export function RagIndexBar() {
   return (
     <>
       <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-secondary/20 px-3 py-2">
-        <div className="flex-1 flex items-center gap-3 text-[11px] text-muted-foreground">
+        <div className="flex-1 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium">
             {totalChunks} chunks
           </span>
@@ -36,7 +36,7 @@ export function RagIndexBar() {
           <button
             onClick={() => rebuildIndex()}
             disabled={isIndexing}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             title="Rebuild All"
           >
             {isIndexing ? (
@@ -48,7 +48,7 @@ export function RagIndexBar() {
           </button>
           <button
             onClick={() => setShowSearch(true)}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title="Test Search"
           >
             <Search className="h-3 w-3" />

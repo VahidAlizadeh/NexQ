@@ -65,7 +65,7 @@ export function ResourceCard({ resource, onRemove }: ResourceCardProps) {
             {resource.name}
           </span>
           <span
-            className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase"
+            className="flex-shrink-0 rounded-full px-2 py-0.5 text-meta font-medium uppercase"
             style={{
               backgroundColor: `${typeConfig.color}15`,
               color: typeConfig.color,
@@ -76,7 +76,7 @@ export function ResourceCard({ resource, onRemove }: ResourceCardProps) {
           {/* RAG index badge */}
           {fileIndexStatus && (
             <span
-              className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${fileIndexStatus.className}`}
+              className={`flex-shrink-0 rounded-full px-2 py-0.5 text-meta font-medium ${fileIndexStatus.className}`}
             >
               {fileIndexStatus.label}
             </span>
@@ -84,7 +84,7 @@ export function ResourceCard({ resource, onRemove }: ResourceCardProps) {
         </div>
 
         {/* Meta row */}
-        <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
+        <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
           <span>{formatFileSize(resource.size_bytes)}</span>
           <span className="rounded-full bg-muted/40 px-2 py-0.5">
             ~{formatTokenCount(resource.token_count)} tokens

@@ -137,7 +137,7 @@ export function AIResponsePanel() {
           <div className="space-y-2.5" aria-live="polite" aria-atomic="false">
             <div className="flex items-center gap-2">
               <Loader2 className="h-3 w-3 animate-spin text-primary/50" />
-              <span className="text-[10px] font-medium text-primary">
+              <span className="text-meta font-medium text-primary">
                 {currentMode ? getModeLabel(currentMode) : "Generating"}...
               </span>
             </div>
@@ -155,7 +155,7 @@ export function AIResponsePanel() {
           <div className="space-y-2.5">
             {currentMode && (
               <div className="flex items-center justify-between">
-                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-medium text-primary/80">
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-meta font-medium text-primary/80">
                   {getModeLabel(currentMode)}
                 </span>
                 <div className="flex items-center gap-1">
@@ -199,7 +199,7 @@ export function AIResponsePanel() {
         {activeTab !== "current" && displayContent && displayResponse && (
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-medium text-primary/80">
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-meta font-medium text-primary/80">
                 {getModeLabel(displayResponse.mode)}
               </span>
               <div className="flex items-center gap-1">
@@ -243,7 +243,7 @@ export function AIResponsePanel() {
             <p className="text-xs text-muted-foreground/70">
               Press Space for AI assistance
             </p>
-            <p className="text-[10px] text-muted-foreground/60">
+            <p className="text-meta text-muted-foreground/60">
               or use Ctrl+1-5 for specific modes
             </p>
           </div>
@@ -273,7 +273,7 @@ function TabButton({
       onClick={onClick}
       role="tab"
       aria-selected={active}
-      className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors duration-150 ${
+      className={`shrink-0 rounded-full px-2.5 py-0.5 text-meta font-medium transition-colors duration-150 ${
         active
           ? "bg-primary/15 text-primary"
           : secondary

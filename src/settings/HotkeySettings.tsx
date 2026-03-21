@@ -209,13 +209,13 @@ export function HotkeySettings() {
                               e.stopPropagation();
                               handleCancelEdit();
                             }}
-                            className="rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:bg-accent hover:text-foreground"
+                            className="rounded-lg px-2 py-1 text-meta text-muted-foreground hover:bg-accent hover:text-foreground"
                           >
                             Cancel
                           </button>
                         </span>
                       ) : (
-                        <kbd className="rounded-lg bg-secondary/60 px-2 py-1 font-mono text-[11px] text-foreground">
+                        <kbd className="rounded-lg bg-secondary/60 px-2 py-1 font-mono text-xs text-foreground">
                           {binding}
                         </kbd>
                       )}
@@ -229,7 +229,7 @@ export function HotkeySettings() {
       </div>
 
       {/* Info */}
-      <p className="text-[11px] text-muted-foreground/70">
+      <p className="text-xs text-muted-foreground/70">
         Changes are saved automatically. Global shortcuts require Ctrl or Cmd modifier.
       </p>
     </div>

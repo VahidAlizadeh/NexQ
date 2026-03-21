@@ -301,7 +301,7 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
           <Divider />
           <div className="flex items-center gap-1">
             <Zap className={`h-3 w-3 ${isStreaming ? "text-primary animate-pulse" : "text-muted-foreground/60"}`} />
-            <span className="text-[11px] tabular-nums font-medium text-muted-foreground">
+            <span className="text-xs tabular-nums font-medium text-muted-foreground">
               {isStreaming ? (
                 <span className="text-primary animate-pulse">streaming</span>
               ) : (
@@ -386,13 +386,13 @@ function ServiceChip({
 
       {/* Text */}
       <div className="flex items-center gap-1 min-w-0">
-        <span className={`text-[11px] font-medium truncate max-w-[100px] transition-colors duration-200 ${
+        <span className={`text-xs font-medium truncate max-w-[100px] transition-colors duration-200 ${
           active ? "text-foreground/90" : "text-muted-foreground/70"
         }`}>
           {provider}
         </span>
         {model && (
-          <span className={`text-[10px] truncate max-w-[70px] transition-colors duration-200 ${
+          <span className={`text-meta truncate max-w-[70px] transition-colors duration-200 ${
             active ? "text-foreground/60" : "text-muted-foreground/60"
           }`}>
             {model}
@@ -464,19 +464,19 @@ function STTChip({
       {/* Text */}
       <div className="flex items-center gap-1 min-w-0">
         {label && (
-          <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide transition-colors duration-200 ${
+          <span className={`shrink-0 text-meta font-semibold uppercase tracking-wide transition-colors duration-200 ${
             muted ? "text-destructive/50" : active ? c.active : "text-muted-foreground/60"
           }`}>
             {label}
           </span>
         )}
-        <span className={`text-[11px] font-medium truncate max-w-[100px] transition-colors duration-200 ${
+        <span className={`text-xs font-medium truncate max-w-[100px] transition-colors duration-200 ${
           muted ? "text-destructive/50 line-through" : active ? "text-foreground/90" : "text-muted-foreground/70"
         }`}>
           {provider}
         </span>
         {model && !muted && (
-          <span className={`text-[10px] truncate max-w-[70px] transition-colors duration-200 ${
+          <span className={`text-meta truncate max-w-[70px] transition-colors duration-200 ${
             active ? "text-foreground/60" : "text-muted-foreground/60"
           }`}>
             {model}
@@ -608,14 +608,14 @@ function STTPickerDropdown({
       className="absolute bottom-full left-0 mb-2 min-w-[200px] rounded-xl border border-border/30 bg-popover/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150"
     >
       {loading ? (
-        <div className="px-4 py-3 text-[11px] text-muted-foreground">Loading providers...</div>
+        <div className="px-4 py-3 text-xs text-muted-foreground">Loading providers...</div>
       ) : (
         <>
           {localOpts.length > 0 && (
             <div>
               <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
                 <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Local & Built-in
                 </span>
               </div>
@@ -626,7 +626,7 @@ function STTPickerDropdown({
                   <button
                     key={opt.value}
                     onClick={() => onSelect(opt.value)}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
                       selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
                     }`}
                   >
@@ -643,7 +643,7 @@ function STTPickerDropdown({
             <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
               <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
                 <Cloud className="h-2.5 w-2.5 text-blue-400" />
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
                   Cloud
                 </span>
               </div>
@@ -654,7 +654,7 @@ function STTPickerDropdown({
                   <button
                     key={opt.value}
                     onClick={() => onSelect(opt.value)}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
                       selected ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
                     }`}
                   >
@@ -668,7 +668,7 @@ function STTPickerDropdown({
           )}
 
           {localOpts.length === 0 && cloudOpts.length === 0 && (
-            <p className="px-4 py-3 text-[10px] text-muted-foreground/60">
+            <p className="px-4 py-3 text-meta text-muted-foreground/60">
               No providers available — configure in Settings
             </p>
           )}
@@ -774,7 +774,7 @@ function LLMPickerDropdown({
         <div>
           <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
             <HardDrive className="h-2.5 w-2.5 text-emerald-400" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Local</span>
+            <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">Local</span>
           </div>
           {localOpts.map((opt) => {
             const Icon = opt.IconComponent;
@@ -784,13 +784,13 @@ function LLMPickerDropdown({
               <button
                 key={opt.value}
                 onClick={() => setPendingProvider(opt.value)}
-                className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
                   isPending ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
                 }`}
               >
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-emerald-400"}`} />
                 <span className="flex-1 text-left font-medium">{opt.label}</span>
-                {isActive && <span className="text-[9px] text-primary/80">active</span>}
+                {isActive && <span className="text-meta text-primary/80">active</span>}
               </button>
             );
           })}
@@ -801,7 +801,7 @@ function LLMPickerDropdown({
         <div className={localOpts.length > 0 ? "border-t border-border/10" : ""}>
           <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
             <Cloud className="h-2.5 w-2.5 text-blue-400" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Cloud</span>
+            <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">Cloud</span>
           </div>
           {cloudOpts.map((opt) => {
             const Icon = opt.IconComponent;
@@ -811,13 +811,13 @@ function LLMPickerDropdown({
               <button
                 key={opt.value}
                 onClick={() => setPendingProvider(opt.value)}
-                className={`flex w-full items-center gap-2.5 px-3 py-2 text-[11px] transition-colors cursor-pointer ${
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
                   isPending ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
                 }`}
               >
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${isPending ? "text-primary" : "text-blue-400"}`} />
                 <span className="flex-1 text-left font-medium">{opt.label}</span>
-                {isActive && <span className="text-[9px] text-primary/80">active</span>}
+                {isActive && <span className="text-meta text-primary/80">active</span>}
               </button>
             );
           })}
@@ -825,7 +825,7 @@ function LLMPickerDropdown({
       )}
 
       {available.length === 0 && (
-        <div className="px-4 py-3 text-[10px] text-muted-foreground/60">
+        <div className="px-4 py-3 text-meta text-muted-foreground/60">
           No verified providers — test connection in Settings first
         </div>
       )}
@@ -834,11 +834,11 @@ function LLMPickerDropdown({
       <div className="border-t border-border/10">
         <div className="flex items-center gap-1.5 bg-muted/15 px-3 py-1.5 border-b border-border/10">
           <Brain className="h-2.5 w-2.5 text-violet-400" />
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
             Model — {LLM_LABELS[pendingProvider] || pendingProvider}
           </span>
           {modelsLoading && (
-            <span className="text-[9px] text-muted-foreground/60 animate-pulse ml-auto">loading...</span>
+            <span className="text-meta text-muted-foreground/60 animate-pulse ml-auto">loading...</span>
           )}
         </div>
         {models.length > 0 ? (
@@ -849,7 +849,7 @@ function LLMPickerDropdown({
                 <button
                   key={m.id}
                   onClick={() => onApply(pendingProvider, m.id)}
-                  className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-[11px] transition-colors cursor-pointer ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-xs transition-colors cursor-pointer ${
                     isCurrentModel ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-accent/40"
                   }`}
                 >
@@ -860,7 +860,7 @@ function LLMPickerDropdown({
             })}
           </div>
         ) : !modelsLoading ? (
-          <div className="px-3 py-2 text-[10px] text-muted-foreground/60">
+          <div className="px-3 py-2 text-meta text-muted-foreground/60">
             No models available
           </div>
         ) : null}

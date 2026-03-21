@@ -127,7 +127,7 @@ export function ModeButtons() {
               disabled={isStreaming && !isActive}
               aria-label={shortcut ? `${label} (${shortcut})` : label}
               aria-pressed={isActive || isAskActive}
-              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-all duration-150 cursor-pointer ${
+              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-meta font-medium transition-all duration-150 cursor-pointer ${
                 isActive
                   ? "bg-primary/15 text-primary ring-1 ring-primary/30 shadow-sm shadow-primary/10"
                   : isAskActive

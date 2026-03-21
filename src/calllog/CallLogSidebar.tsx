@@ -132,7 +132,7 @@ export function CallLogSidebar() {
                 AI Call Log
               </span>
               {entries.length > 0 && (
-                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-meta font-medium text-primary">
                   {entries.length}
                 </span>
               )}
@@ -167,7 +167,7 @@ export function CallLogSidebar() {
                 <button
                   key={value}
                   onClick={() => setFilter(value)}
-                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors duration-100 ${
+                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-meta font-medium transition-colors duration-100 ${
                     isActive
                       ? "bg-primary/15 text-primary ring-1 ring-primary/30"
                       : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -254,7 +254,7 @@ function StatTile({
       <span className={`text-xs font-medium tabular-nums ${valueClass}`}>
         {value}
       </span>
-      <span className="text-[9px] text-muted-foreground/70">{label}</span>
+      <span className="text-meta text-muted-foreground/70">{label}</span>
     </div>
   );
 }

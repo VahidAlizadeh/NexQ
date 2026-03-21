@@ -93,11 +93,11 @@ export function QuestionDetector() {
 
         <div className="flex-1 min-w-0">
           {latest ? (
-            <p className="text-[13px] leading-relaxed font-medium text-foreground/90">
+            <p className="text-sm leading-relaxed font-medium text-foreground/90">
               &ldquo;{latest.text}&rdquo;
             </p>
           ) : (
-            <p className="text-[12px] text-muted-foreground/60 italic">
+            <p className="text-xs text-muted-foreground/60 italic">
               Detected questions from &ldquo;Them&rdquo; will appear here
             </p>
           )}
@@ -107,7 +107,7 @@ export function QuestionDetector() {
           <button
             onClick={(e) => { e.stopPropagation(); handleAssist(0); }}
             aria-label={latest.assisted ? "Already answered" : "Get AI assistance for this question"}
-            className={`shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all duration-150 cursor-pointer ${
+            className={`shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer ${
               latest.assisted
                 ? "bg-success/10 border border-success/15 text-success"
                 : "bg-info/10 border border-info/15 text-info hover:bg-info/20"
@@ -158,7 +158,7 @@ export function QuestionDetector() {
                 </div>
 
                 {/* Question text */}
-                <span className={`flex-1 truncate text-[11px] leading-snug transition-colors ${
+                <span className={`flex-1 truncate text-xs leading-snug transition-colors ${
                   q.assisted
                     ? "text-success/70 font-medium"
                     : "text-muted-foreground/60 group-hover/q:text-foreground/80"

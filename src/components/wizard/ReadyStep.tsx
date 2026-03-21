@@ -100,14 +100,14 @@ export function ReadyStep({
                     className="group border-b border-border/10 last:border-0"
                   >
                     <td className="px-3 py-1.5">
-                      <kbd className="inline-flex items-center rounded border border-border/50 bg-background px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+                      <kbd className="inline-flex items-center rounded border border-border/50 bg-background px-1.5 py-0.5 font-mono text-xs text-foreground">
                         {s.keys}
                       </kbd>
                     </td>
                     <td className="px-2 py-1.5 text-xs text-foreground">
                       {s.action}
                     </td>
-                    <td className="px-3 py-1.5 text-right text-[10px] text-muted-foreground/60">
+                    <td className="px-3 py-1.5 text-right text-meta text-muted-foreground/60">
                       {s.context}
                     </td>
                   </tr>

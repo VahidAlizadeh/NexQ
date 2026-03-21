@@ -221,7 +221,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition-colors duration-150 cursor-pointer ${
+                className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap transition-colors duration-150 cursor-pointer ${
                   activeTab === tab.id
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -270,7 +270,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
             <div key={group.label} className={gi > 0 ? "mt-4" : ""}>
               {/* Group label */}
               <div className="mb-1 px-3 flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
                   {group.label}
                 </span>
                 <div className="flex-1 h-px bg-primary/10" />
@@ -286,7 +286,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
                       role="tab"
                       aria-selected={isActive}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 cursor-pointer ${
+                      className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 cursor-pointer ${
                         isActive
                           ? "bg-primary/10 text-primary"
                           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
@@ -314,7 +314,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
         <div className="border-t border-border/20 px-3 py-3">
           <button
             onClick={handleRunWizard}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
             title="Run Setup Wizard"
             aria-label="Run setup wizard"
           >

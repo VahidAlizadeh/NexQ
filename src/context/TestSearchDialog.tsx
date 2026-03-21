@@ -228,7 +228,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-foreground">Test Knowledge Base</h2>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-meta text-muted-foreground">
                 Search documents + get AI answer using your knowledge base
               </p>
             </div>
@@ -243,7 +243,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
         </div>
 
         {/* Config summary bar */}
-        <div className="flex items-center gap-4 border-b border-border/20 bg-accent/10 px-6 py-2 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-4 border-b border-border/20 bg-accent/10 px-6 py-2 text-meta text-muted-foreground">
           <span className="flex items-center gap-1" title="Search model">
             <Sparkles className="h-3 w-3" />
             {ragConfig?.embedding_model ?? "nomic-embed-text"}
@@ -268,13 +268,13 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
 
         {/* Quick templates */}
         <div className="flex items-center gap-1.5 border-b border-border/20 px-6 py-2.5">
-          <span className="text-[10px] font-medium text-muted-foreground/60 mr-1">Try:</span>
+          <span className="text-meta font-medium text-muted-foreground/60 mr-1">Try:</span>
           {QUERY_TEMPLATES.map((t) => (
             <button
               key={t.label}
               onClick={() => handleTemplate(t.query)}
               disabled={isBusy}
-              className="rounded-full border border-border/30 bg-background px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              className="rounded-full border border-border/30 bg-background px-2.5 py-1 text-meta font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
             >
               {t.label}
             </button>
@@ -315,7 +315,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                 <AlertCircle className="h-3.5 w-3.5 text-red-400" />
                 <p className="text-xs font-medium text-red-400">Error</p>
               </div>
-              <p className="text-[11px] text-red-400/70">{aiError || error}</p>
+              <p className="text-xs text-red-400/70">{aiError || error}</p>
             </div>
           )}
 
@@ -349,7 +349,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                       <Loader2 className="h-3 w-3 animate-spin text-primary/60" />
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-3 text-meta text-muted-foreground">
                     {aiModel && (
                       <span className="flex items-center gap-1">
                         <Bot className="h-3 w-3" />
@@ -395,7 +395,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
               <p className="text-xs font-medium text-muted-foreground mb-1">
                 No results found
               </p>
-              <p className="text-[11px] text-muted-foreground/50">
+              <p className="text-xs text-muted-foreground/50">
                 Try a different query or check that your documents are indexed
               </p>
             </div>
@@ -405,7 +405,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
           {testSearchResults.length > 0 && !isSearching && (
             <div className="px-6 py-4 space-y-3">
               {/* Stats bar */}
-              <div className="flex items-center gap-4 rounded-lg bg-accent/20 px-3 py-2 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-4 rounded-lg bg-accent/20 px-3 py-2 text-meta text-muted-foreground">
                 <span className="flex items-center gap-1 font-medium text-foreground">
                   <Search className="h-3 w-3" />
                   {testSearchResults.length} chunk{testSearchResults.length !== 1 ? "s" : ""} retrieved
@@ -436,19 +436,19 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                       className="flex items-center gap-2 px-4 py-2.5 cursor-pointer"
                       onClick={() => setExpandedChunk(isExpanded ? null : result.chunk_id)}
                     >
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                         {idx + 1}
                       </span>
                       <span className="text-xs font-medium text-foreground truncate flex-1">
                         {result.source_file}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/60">
+                      <span className="text-meta text-muted-foreground/60">
                         #{result.chunk_index}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/60">
+                      <span className="text-meta text-muted-foreground/60">
                         ~{estimatedTokens}t
                       </span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      <span className={`rounded-full px-2 py-0.5 text-meta font-medium ${
                         result.score >= 0.7
                           ? "bg-emerald-500/10 text-emerald-500"
                           : result.score >= 0.4

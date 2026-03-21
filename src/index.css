@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Type scale: 4-step hierarchy ──
+   text-meta  = 10px  (labels, badges, timestamps, metadata)
+   text-xs    = 12px  (body text, descriptions, inputs)
+   text-sm    = 14px  (emphasis, nav items, toasts)
+   text-base+ = 16px+ (headings)
+*/
+@layer utilities {
+  .text-meta {
+    font-size: 0.625rem; /* 10px */
+    line-height: 1rem;   /* 16px */
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

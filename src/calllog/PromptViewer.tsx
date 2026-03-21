@@ -39,7 +39,7 @@ export function PromptViewer({ entry }: PromptViewerProps) {
       <div className="flex items-center gap-1 px-3 py-2 border-b border-border/20">
         <button
           onClick={() => setViewMode("structured")}
-          className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+          className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
             viewMode === "structured"
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground/50 hover:bg-accent/50 hover:text-foreground"
@@ -49,7 +49,7 @@ export function PromptViewer({ entry }: PromptViewerProps) {
         </button>
         <button
           onClick={() => setViewMode("raw")}
-          className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+          className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
             viewMode === "raw"
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground/50 hover:bg-accent/50 hover:text-foreground"
@@ -165,14 +165,14 @@ function CollapsibleSection({
 
         {badge && (
           <span
-            className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${badgeClass}`}
+            className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-meta font-medium ${badgeClass}`}
           >
             <Icon className="h-2.5 w-2.5" />
             {badge.label}
           </span>
         )}
 
-        <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+        <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
           {title}
         </span>
 
@@ -185,8 +185,8 @@ function CollapsibleSection({
           <div
             className={`max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 ${
               isResponse
-                ? "text-[13px] leading-relaxed text-foreground/90"
-                : "font-mono text-[12px] leading-relaxed text-foreground/80"
+                ? "text-sm leading-relaxed text-foreground/90"
+                : "font-mono text-xs leading-relaxed text-foreground/80"
             } whitespace-pre-wrap break-words`}
           >
             {content || (
@@ -199,7 +199,7 @@ function CollapsibleSection({
       ) : content ? (
         /* Collapsed preview: 3-line fade */
         <div className="relative px-3 pb-2">
-          <p className="line-clamp-3 font-mono text-[11px] text-muted-foreground/50 break-words">
+          <p className="line-clamp-3 font-mono text-xs text-muted-foreground/50 break-words">
             {content}
           </p>
           <div className="absolute bottom-0 left-3 right-3 h-6 bg-gradient-to-t from-card to-transparent pointer-events-none" />
@@ -217,12 +217,12 @@ function RawView({ entry }: { entry: LogEntry }) {
       {/* System message */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             System Message
           </span>
           <SectionCopyButton text={entry.actualSystemPrompt} />
         </div>
-        <pre className="max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-[12px] leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
+        <pre className="max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
           {entry.actualSystemPrompt || "(empty)"}
         </pre>
       </div>
@@ -230,12 +230,12 @@ function RawView({ entry }: { entry: LogEntry }) {
       {/* User message */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             User Message
           </span>
           <SectionCopyButton text={entry.actualUserPrompt} />
         </div>
-        <pre className="max-h-80 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-[12px] leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
+        <pre className="max-h-80 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
           {entry.actualUserPrompt || "(empty)"}
         </pre>
       </div>
@@ -244,7 +244,7 @@ function RawView({ entry }: { entry: LogEntry }) {
       {entry.responseContentClean && (
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
               Response
               {entry.status === "streaming" && (
                 <span className="ml-1.5 animate-pulse text-primary/60">
@@ -254,7 +254,7 @@ function RawView({ entry }: { entry: LogEntry }) {
             </span>
             <SectionCopyButton text={entry.responseContentClean} />
           </div>
-          <pre className="max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-[13px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
+          <pre className="max-h-60 overflow-y-auto rounded-md border border-border/10 bg-secondary/20 p-2.5 font-mono text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
             {entry.responseContentClean}
           </pre>
         </div>

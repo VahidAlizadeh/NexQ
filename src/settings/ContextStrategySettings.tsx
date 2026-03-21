@@ -314,8 +314,8 @@ function HelpPanel({ id }: { id: string }) {
   if (!content) return null;
   return (
     <div className="mt-2 rounded-lg border border-primary/15 bg-primary/5 px-3.5 py-3 space-y-1">
-      <p className="text-[11px] font-semibold text-primary/80">{content.title}</p>
-      <p className="text-[11px] text-muted-foreground leading-relaxed whitespace-pre-line">
+      <p className="text-xs font-semibold text-primary/80">{content.title}</p>
+      <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
         {content.body}
       </p>
     </div>
@@ -333,7 +333,7 @@ function SectionHelp({ id, activeId, onToggle }: { id: string; activeId: string 
 function RebuildBadge({ show }: { show: boolean }) {
   if (!show) return null;
   return (
-    <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-500">
+    <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-meta font-medium text-amber-500">
       rebuild
     </span>
   );
@@ -512,14 +512,14 @@ export function ContextStrategySettings() {
             <Database className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-foreground">Local RAG</span>
           </div>
-          <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+          <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
             Embed documents locally via Ollama, hybrid semantic+keyword search
           </p>
         </button>
 
         <div className="relative flex flex-col items-start rounded-xl border border-border/30 bg-accent/10 p-4 text-left opacity-60 cursor-not-allowed">
           <div className="absolute -top-1.5 right-2">
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-meta font-medium text-muted-foreground">
               Coming Soon
             </span>
           </div>
@@ -527,7 +527,7 @@ export function ContextStrategySettings() {
             <Cloud className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">Gemini Context Cache</span>
           </div>
-          <p className="mt-1.5 text-[11px] text-muted-foreground/70 leading-relaxed">
+          <p className="mt-1.5 text-xs text-muted-foreground/70 leading-relaxed">
             Cache documents in Gemini for fast repeated queries
           </p>
         </div>
@@ -539,7 +539,7 @@ export function ContextStrategySettings() {
           <div className="rounded-xl border border-border/30 bg-card/50 p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-primary/80">Quick Presets</h3>
-              <p className="text-[10px] text-muted-foreground/60">
+              <p className="text-meta text-muted-foreground/60">
                 Expected search latency per query
               </p>
             </div>
@@ -557,10 +557,10 @@ export function ContextStrategySettings() {
                         : "border-border/30 bg-background hover:border-border/60 hover:bg-accent/40"
                     }`}
                   >
-                    <span className={`text-[11px] font-semibold ${isActive ? "text-primary" : "text-foreground"}`}>
+                    <span className={`text-xs font-semibold ${isActive ? "text-primary" : "text-foreground"}`}>
                       {preset.label}
                     </span>
-                    <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium font-mono ${
+                    <span className={`rounded-full px-1.5 py-0.5 text-meta font-medium font-mono ${
                       isActive ? "bg-primary/20 text-primary" : "bg-muted/50 text-muted-foreground"
                     }`}>
                       {preset.ms}
@@ -569,7 +569,7 @@ export function ContextStrategySettings() {
                 );
               })}
             </div>
-            <p className="mt-2.5 text-[10px] text-muted-foreground/70 leading-relaxed">
+            <p className="mt-2.5 text-meta text-muted-foreground/70 leading-relaxed">
               Latency = query embedding + chunk search. Fastest uses keyword-only (no embedding).
               Accurate presets produce smaller chunks and retrieve more — requires index rebuild.
             </p>
@@ -588,7 +588,7 @@ export function ContextStrategySettings() {
                     <div className="h-2.5 w-2.5 rounded-full bg-success" />
                     <Wifi className="h-3.5 w-3.5 text-success" />
                     <span className="text-xs text-success">Ollama Connected</span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-meta text-muted-foreground">
                       ({ollamaStatus.models.length} model{ollamaStatus.models.length !== 1 ? "s" : ""})
                     </span>
                   </>
@@ -597,7 +597,7 @@ export function ContextStrategySettings() {
                     <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
                     <WifiOff className="h-3.5 w-3.5 text-red-500" />
                     <span className="text-xs text-red-500">Ollama Disconnected</span>
-                    <span className="text-[10px] text-muted-foreground/60">— start Ollama to use embedding</span>
+                    <span className="text-meta text-muted-foreground/60">— start Ollama to use embedding</span>
                   </>
                 )}
               </div>
@@ -744,7 +744,7 @@ export function ContextStrategySettings() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-primary/80">Index Status</h3>
               {indexStale && (
-                <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium text-amber-500">
+                <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-meta font-medium text-amber-500">
                   <AlertTriangle className="h-3 w-3" />
                   Settings Changed — Rebuild Required
                 </div>
@@ -860,7 +860,7 @@ export function ContextStrategySettings() {
                     onMouseUp={handleFieldBlur} onTouchEnd={handleFieldBlur}
                     className="w-full accent-primary mt-1.5"
                   />
-                  <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                  <div className="flex justify-between text-meta text-muted-foreground/60">
                     <span>128 — precise</span><span>2048 — broad</span>
                   </div>
                 </div>
@@ -883,7 +883,7 @@ export function ContextStrategySettings() {
                     onMouseUp={handleFieldBlur} onTouchEnd={handleFieldBlur}
                     className="w-full accent-primary mt-1.5"
                   />
-                  <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                  <div className="flex justify-between text-meta text-muted-foreground/60">
                     <span>0 — no overlap</span><span>512 — max continuity</span>
                   </div>
                 </div>
@@ -895,7 +895,7 @@ export function ContextStrategySettings() {
                       Similarity Threshold
                       <HelpButton id="similarity_threshold" activeId={openHelp} onToggle={toggleHelp} />
                       {localConfig.search_mode !== "semantic" && (
-                        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] text-muted-foreground/60">
+                        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-meta text-muted-foreground/60">
                           semantic only
                         </span>
                       )}
@@ -910,7 +910,7 @@ export function ContextStrategySettings() {
                     onMouseUp={handleFieldBlur} onTouchEnd={handleFieldBlur}
                     className="w-full accent-primary mt-1.5"
                   />
-                  <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                  <div className="flex justify-between text-meta text-muted-foreground/60">
                     <span>0.0 — include all</span><span>0.9 — strict</span>
                   </div>
                 </div>
@@ -922,7 +922,7 @@ export function ContextStrategySettings() {
                       Semantic Weight
                       <HelpButton id="semantic_weight" activeId={openHelp} onToggle={toggleHelp} />
                       {localConfig.search_mode !== "hybrid" && (
-                        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] text-muted-foreground/60">
+                        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-meta text-muted-foreground/60">
                           hybrid only
                         </span>
                       )}
@@ -939,7 +939,7 @@ export function ContextStrategySettings() {
                     onMouseUp={handleFieldBlur} onTouchEnd={handleFieldBlur}
                     className="w-full accent-primary mt-1.5"
                   />
-                  <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                  <div className="flex justify-between text-meta text-muted-foreground/60">
                     <span>0.0 — keyword</span><span>1.0 — semantic</span>
                   </div>
                 </div>
@@ -991,7 +991,7 @@ export function ContextStrategySettings() {
 
           {/* ── How it works during meetings ── */}
           <div className="rounded-xl border border-border/20 bg-accent/10 px-4 py-3">
-            <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+            <p className="text-xs text-muted-foreground/70 leading-relaxed">
               <span className="font-semibold text-foreground/70">During meetings: </span>
               The live transcript is sent as a rolling context window (configured in General settings),
               not stored in the RAG index. RAG retrieves the top-{localConfig.top_k} relevant chunks

@@ -155,11 +155,11 @@ export function TranscriptPanel() {
           placeholder="Search transcript..."
           aria-label="Search transcript"
           maxLength={200}
-          className="flex-1 bg-transparent text-[11px] text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
+          className="flex-1 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
         />
         {searchQuery && (
           <>
-            <span className="text-[10px] text-muted-foreground/60">
+            <span className="text-meta text-muted-foreground/60">
               {matchCount} match{matchCount !== 1 ? "es" : ""}
             </span>
             <button
@@ -224,7 +224,7 @@ export function TranscriptPanel() {
             setAutoScroll(true);
             scrollToBottom();
           }}
-          className="mx-auto mb-1.5 rounded-full bg-primary/10 px-4 py-1 text-[10px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 fade-in-up"
+          className="mx-auto mb-1.5 rounded-full bg-primary/10 px-4 py-1 text-meta font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 fade-in-up"
         >
           Scroll to latest
         </button>
@@ -281,7 +281,7 @@ function AudioActivityBar({
         {muted ? mutedIcon : icon}
       </button>
 
-      <span className={`shrink-0 text-[11px] font-semibold transition-colors duration-150 w-8 ${
+      <span className={`shrink-0 text-xs font-semibold transition-colors duration-150 w-8 ${
         muted ? "text-destructive/60" : isActive ? textClass : "text-muted-foreground/60"
       }`}>
         {label}
@@ -306,7 +306,7 @@ function AudioActivityBar({
         />
       </div>
 
-      <span className={`shrink-0 w-10 text-right text-[10px] font-medium tabular-nums transition-colors duration-150 ${
+      <span className={`shrink-0 w-10 text-right text-meta font-medium tabular-nums transition-colors duration-150 ${
         muted ? "text-destructive/40" : isActive ? textClass : "text-muted-foreground/60"
       }`}>
         {muted ? "Muted" : `${barWidth}%`}

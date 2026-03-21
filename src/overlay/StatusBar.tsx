@@ -77,7 +77,7 @@ export function StatusBar() {
   return (
     <div className="flex flex-col gap-1">
       {/* Row 1: Service indicators */}
-      <div className="flex flex-wrap items-center justify-between gap-y-1 text-[10px] text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-y-1 text-meta text-muted-foreground">
         <div className="flex flex-wrap items-center gap-2">
           {/* LLM indicator */}
           <ServiceIndicator

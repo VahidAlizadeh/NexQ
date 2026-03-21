@@ -29,10 +29,10 @@ export function AboutSettings() {
               AI Meeting Assistant &amp; Real-Time Interview Copilot
             </p>
             <div className="mt-3 flex items-center gap-3">
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-3 py-1 text-[10px] font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-3 py-1 text-meta font-medium text-muted-foreground">
                 Built with Tauri v2
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-3 py-1 text-[10px] font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-3 py-1 text-meta font-medium text-muted-foreground">
                 React + Rust
               </span>
             </div>
@@ -71,7 +71,7 @@ export function AboutSettings() {
                   }
                 >
                   <td className="px-4 py-2.5">
-                    <kbd className="rounded-lg bg-secondary/60 px-2 py-1 font-mono text-[11px] text-foreground">
+                    <kbd className="rounded-lg bg-secondary/60 px-2 py-1 font-mono text-xs text-foreground">
                       {shortcut.keys}
                     </kbd>
                   </td>

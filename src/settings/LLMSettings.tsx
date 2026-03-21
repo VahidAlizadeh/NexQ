@@ -322,11 +322,11 @@ export function LLMSettings() {
                   )}
                   <span className="text-xs font-medium truncate">{display.label}</span>
                 </div>
-                <span className="mt-0.5 text-[10px] text-muted-foreground line-clamp-1">
+                <span className="mt-0.5 text-meta text-muted-foreground line-clamp-1">
                   {display.description}
                 </span>
                 {/* Badge label */}
-                <span className={`mt-1.5 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-medium ${BADGE_STYLES[badge.variant]}`}>
+                <span className={`mt-1.5 inline-flex items-center rounded-full border px-1.5 py-0.5 text-meta font-medium ${BADGE_STYLES[badge.variant]}`}>
                   {badge.text}
                 </span>
               </button>
@@ -361,7 +361,7 @@ export function LLMSettings() {
               </button>
             </div>
           </div>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             Stored securely in your system keychain
           </p>
         </div>

@@ -199,7 +199,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
       <span className="text-muted-foreground/50">{icon}</span>
       <div className="flex items-baseline gap-1">
         <span className="text-xs font-semibold tabular-nums text-foreground/80">{value}</span>
-        <span className="text-[10px] text-muted-foreground/40">{label}</span>
+        <span className="text-meta text-muted-foreground/40">{label}</span>
       </div>
     </div>
   );

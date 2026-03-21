@@ -79,7 +79,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => vo
       </div>
 
       {/* Message */}
-      <p className="flex-1 min-w-0 pt-[3px] text-[13px] font-medium leading-snug text-foreground/90">
+      <p className="flex-1 min-w-0 pt-[3px] text-sm font-medium leading-snug text-foreground/90">
         {toast.message}
       </p>
 

@@ -108,16 +108,16 @@ export function OverlayView() {
       >
         <div className="flex items-center gap-2.5" data-tauri-drag-region>
           <GripHorizontal className="h-3 w-3 text-muted-foreground/40" />
-          <span className="text-[12px] font-semibold text-foreground/90 truncate max-w-[160px]" title={meetingTitle}>
+          <span className="text-xs font-semibold text-foreground/90 truncate max-w-[160px]" title={meetingTitle}>
             {meetingTitle}
           </span>
           {isRecording && (
             <div className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-0.5 ring-1 ring-destructive/10" role="status" aria-label="Recording in progress">
               <span className="relative flex h-2.5 w-2.5" aria-hidden="true"><span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-destructive opacity-50" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive" /></span>
-              <span className="text-[10px] font-semibold text-destructive tracking-wide">REC</span>
+              <span className="text-meta font-semibold text-destructive tracking-wide">REC</span>
             </div>
           )}
-          <span className="text-[11px] text-muted-foreground/60 tabular-nums font-medium">
+          <span className="text-xs text-muted-foreground/60 tabular-nums font-medium">
             {elapsedMs > 0 ? formatDuration(elapsedMs) : "00:00"}
           </span>
         </div>
@@ -129,7 +129,7 @@ export function OverlayView() {
           <HeaderBtn icon={<Minus className="h-3.5 w-3.5" />} onClick={() => setCurrentView("launcher")} tooltip="Minimize to Dashboard" />
           <button
             onClick={handleEndMeeting}
-            className="ml-1.5 flex items-center gap-1.5 rounded-lg bg-destructive/12 border border-destructive/20 px-3 py-1.5 text-[11px] font-semibold text-destructive transition-all duration-150 hover:bg-destructive/25 hover:border-destructive/35 hover:shadow-sm hover:shadow-destructive/10 cursor-pointer"
+            className="ml-1.5 flex items-center gap-1.5 rounded-lg bg-destructive/12 border border-destructive/20 px-3 py-1.5 text-xs font-semibold text-destructive transition-all duration-150 hover:bg-destructive/25 hover:border-destructive/35 hover:shadow-sm hover:shadow-destructive/10 cursor-pointer"
             aria-label="End meeting"
           >
             <Square className="h-3 w-3 fill-current" aria-hidden="true" />
@@ -216,7 +216,7 @@ function HeaderBtn({ icon, active, onClick, tooltip }: { icon: React.ReactNode; 
 function PanelHeader({ label, fmt }: { label: string; fmt: ReturnType<typeof useTextFormat> }) {
   return (
     <div className="flex items-center justify-between border-b border-border/8 px-3 py-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{label}</span>
+      <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">{label}</span>
       <FormatToolbar {...fmt} />
     </div>
   );
@@ -236,7 +236,7 @@ function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isMod
       </button>
 
       {/* Zoom label */}
-      <span className="w-8 text-center text-[9px] tabular-nums text-muted-foreground/60 select-none" aria-hidden="true">{zoomPct}%</span>
+      <span className="w-8 text-center text-meta tabular-nums text-muted-foreground/60 select-none" aria-hidden="true">{zoomPct}%</span>
 
       {/* Zoom in */}
       <button onClick={zoomIn} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer" aria-label={`Zoom in (${zoomPct}%)`}>
@@ -266,7 +266,7 @@ function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isMod
           aria-expanded={showFontMenu}
           aria-haspopup="listbox"
         >
-          <span className="text-[9px] font-medium">{currentFontLabel}</span>
+          <span className="text-meta font-medium">{currentFontLabel}</span>
           <ChevronDown className="h-2.5 w-2.5" />
         </button>
         {showFontMenu && (
@@ -275,7 +275,7 @@ function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isMod
               <button
                 key={f.value}
                 onClick={() => { setFont(f.value); setShowFontMenu(false); }}
-                className={`w-full px-3 py-1.5 text-left text-[10px] transition-colors cursor-pointer ${
+                className={`w-full px-3 py-1.5 text-left text-meta transition-colors cursor-pointer ${
                   fmt.fontFamily === f.value ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent"
                 }`}
                 style={{ fontFamily: f.value === "inherit" ? undefined : f.value }}

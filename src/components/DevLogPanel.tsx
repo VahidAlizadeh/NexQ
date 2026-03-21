@@ -149,11 +149,11 @@ function DevLogContent({
     <>
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-border/15 px-3 py-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+        <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/70">
           Dev Log
         </span>
         <div className="flex items-center gap-1">
-          <span className="text-[9px] tabular-nums text-muted-foreground/60">
+          <span className="text-meta tabular-nums text-muted-foreground/60">
             {entries.length} entries
           </span>
           <button
@@ -195,7 +195,7 @@ function DevLogContent({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-1.5 font-mono text-[10px] leading-relaxed"
+        className="flex-1 overflow-y-auto p-1.5 font-mono text-meta leading-relaxed"
       >
         {entries.length === 0 ? (
           <div className="flex h-full min-h-[60px] items-center justify-center text-muted-foreground/60">

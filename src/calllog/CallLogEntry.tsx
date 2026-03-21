@@ -74,7 +74,7 @@ export function CallLogEntry({ entry, isSelected }: Props) {
 
       {/* Mode badge */}
       <span
-        className={`shrink-0 max-w-[100px] truncate rounded px-1.5 py-0.5 text-[11px] font-semibold ${colors.badge}`}
+        className={`shrink-0 max-w-[100px] truncate rounded px-1.5 py-0.5 text-xs font-semibold ${colors.badge}`}
         title={getModeLabel(entry.mode)}
       >
         {getModeLabel(entry.mode)}
@@ -86,7 +86,7 @@ export function CallLogEntry({ entry, isSelected }: Props) {
           entry[key] ? (
             <span
               key={key}
-              className={`rounded px-1 py-px text-[9px] font-bold ${color}`}
+              className={`rounded px-1 py-px text-meta font-bold ${color}`}
               title={title}
             >
               {label}
@@ -97,7 +97,7 @@ export function CallLogEntry({ entry, isSelected }: Props) {
 
       {/* Provider/Model */}
       <span
-        className="min-w-0 flex-1 max-w-[80px] truncate text-[11px] text-muted-foreground"
+        className="min-w-0 flex-1 max-w-[80px] truncate text-xs text-muted-foreground"
         title={`${entry.provider}/${entry.model.split(":")[0].split("/").pop()}`}
       >
         {entry.provider}/{entry.model.split(":")[0].split("/").pop()}
@@ -105,13 +105,13 @@ export function CallLogEntry({ entry, isSelected }: Props) {
 
       {/* Latency */}
       {entry.latencyMs != null && (
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/70">
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground/70">
           {entry.latencyMs}ms
         </span>
       )}
 
       {/* Timestamp */}
-      <span className="shrink-0 text-[10px] text-muted-foreground/60">
+      <span className="shrink-0 text-meta text-muted-foreground/60">
         {timeStr}
       </span>
     </button>

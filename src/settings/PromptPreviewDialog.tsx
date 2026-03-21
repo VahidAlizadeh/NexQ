@@ -169,7 +169,7 @@ export function PromptPreviewDialog({
                 {systemPrompt || "(empty)"}
               </pre>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1.5">
+            <p className="text-meta text-muted-foreground mt-1.5">
               ~{systemTokens.toLocaleString()} tokens
               {actionConfig.isDefaultPrompt && (
                 <span className="ml-2 text-muted-foreground/70">
@@ -189,7 +189,7 @@ export function PromptPreviewDialog({
                 {userMessage}
               </pre>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1.5">
+            <p className="text-meta text-muted-foreground mt-1.5">
               ~{userTokens.toLocaleString()} tokens
             </p>
           </div>
@@ -249,7 +249,7 @@ export function PromptPreviewDialog({
               </h3>
               <div className="flex gap-3">
                 <div className="rounded-md border border-border/30 bg-muted/20 px-3 py-1.5">
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-meta text-muted-foreground">
                     Temperature
                   </span>
                   <p className="text-xs font-medium text-foreground">
@@ -284,7 +284,7 @@ function SectionBadge({
     >
       {label}
       {active && detail && (
-        <span className="ml-1.5 text-[10px] text-muted-foreground">
+        <span className="ml-1.5 text-meta text-muted-foreground">
           ({detail})
         </span>
       )}

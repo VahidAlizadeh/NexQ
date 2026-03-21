@@ -132,7 +132,7 @@ export function HotkeySettings() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Keyboard className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="text-sm font-semibold text-primary/80">
               Keyboard Shortcuts
             </h3>
           </div>

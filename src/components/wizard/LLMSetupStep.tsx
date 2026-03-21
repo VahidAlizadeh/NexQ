@@ -202,10 +202,10 @@ export function LLMSetupStep({
       <div className="w-full max-w-lg space-y-6">
         {/* Local LLM Detection Banner */}
         {hasLocalLLM && (
-          <div className="rounded-xl border border-green-500/25 bg-green-500/5 px-5 py-4">
+          <div className="rounded-xl border border-success/25 bg-success/5 px-5 py-4">
             <div className="flex items-center gap-2">
-              <Server className="h-4 w-4 text-green-500" />
-              <p className="text-sm font-medium text-green-400">
+              <Server className="h-4 w-4 text-success" />
+              <p className="text-sm font-medium text-success">
                 Local LLM Detected
               </p>
             </div>
@@ -222,7 +222,7 @@ export function LLMSetupStep({
         {/* Local Provider Cards */}
         {hasLocalLLM && (
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Local Providers
             </p>
             <div className="grid gap-2">
@@ -251,7 +251,7 @@ export function LLMSetupStep({
 
         {/* Cloud Provider Cards */}
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Cloud Providers
           </p>
           <div className="grid gap-2">
@@ -282,10 +282,13 @@ export function LLMSetupStep({
                 onChange={(e) => setApiKeyValue(e.target.value)}
                 onBlur={handleSaveApiKey}
                 placeholder={`Enter your ${selectedProvider === "anthropic" ? "Anthropic" : selectedProvider === "openai" ? "OpenAI" : "Groq"} API key`}
+                aria-label="API key"
                 className="w-full rounded-xl border border-border/40 bg-background px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
               />
               <button
                 onClick={() => setShowApiKey(!showApiKey)}
+                aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                aria-pressed={showApiKey}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
               >
                 {showApiKey ? (
@@ -331,13 +334,13 @@ export function LLMSetupStep({
             Load Models
           </button>
           {connectionStatus === "success" && (
-            <span className="flex items-center gap-1 text-xs text-green-500">
+            <span className="flex items-center gap-1 text-xs text-success">
               <CheckCircle className="h-3 w-3" />
               {connectionMessage}
             </span>
           )}
           {connectionStatus === "error" && (
-            <span className="flex items-center gap-1 text-xs text-red-500">
+            <span className="flex items-center gap-1 text-xs text-destructive">
               <XCircle className="h-3 w-3" />
               {connectionMessage}
             </span>

@@ -25,7 +25,7 @@ export function ResourceCard({ resource, onRemove }: ResourceCardProps) {
       useRagStore.getState().refreshIndexStatus();
     } catch (e) {
       console.error("Failed to re-index:", e);
-      showToast("Failed to re-index file", "error");
+      showToast("Couldn't re-index file — try removing and re-adding it", "error");
     } finally {
       setIsReindexing(false);
     }
@@ -147,7 +147,7 @@ function getFileIndexBadge(
     // No index built yet
     return {
       label: "New",
-      className: "bg-blue-500/10 text-blue-500",
+      className: "bg-info/10 text-info",
     };
   }
 
@@ -155,28 +155,28 @@ function getFileIndexBadge(
     // All files indexed — every resource is covered
     return {
       label: "Indexed",
-      className: "bg-emerald-500/10 text-emerald-500",
+      className: "bg-success/10 text-success",
     };
   }
 
   // Index exists but not all files covered
   return {
     label: "Not Indexed",
-    className: "bg-amber-500/10 text-amber-500",
+    className: "bg-warning/10 text-warning",
   };
 }
 
 function getTypeConfig(fileType: string): { color: string } {
   switch (fileType) {
     case "pdf":
-      return { color: "#ef4444" };
+      return { color: "hsl(var(--destructive))" };
     case "md":
-      return { color: "#3b82f6" };
+      return { color: "hsl(var(--info))" };
     case "docx":
-      return { color: "#2563eb" };
+      return { color: "hsl(var(--primary))" };
     case "txt":
     default:
-      return { color: "#6b7280" };
+      return { color: "hsl(var(--muted-foreground))" };
   }
 }
 

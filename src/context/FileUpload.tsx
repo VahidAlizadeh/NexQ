@@ -100,6 +100,16 @@ export function FileUpload() {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onClick={handleBrowse}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleBrowse();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Drop files here or click to browse"
         className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 ${
           isDragOver
             ? "border-primary/60 bg-primary/5 scale-[1.01]"
@@ -117,7 +127,7 @@ export function FileUpload() {
           <>
             <CloudUpload
               className={`mb-2 h-8 w-8 transition-colors duration-200 ${
-                isDragOver ? "text-primary" : "text-muted-foreground/60"
+                isDragOver ? "text-primary" : "text-primary/30"
               }`}
             />
             <p className="text-sm font-medium text-muted-foreground">

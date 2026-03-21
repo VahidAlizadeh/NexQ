@@ -103,7 +103,7 @@ export function AIResponsePanel() {
     <div className="flex h-full flex-col">
       {/* Tabs row */}
       {hasTabs && (
-        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto pb-1.5">
+        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto pb-1.5" role="tablist" aria-label="AI response tabs">
           <TabButton
             label="Current"
             active={activeTab === "current"}
@@ -131,10 +131,10 @@ export function AIResponsePanel() {
       )}
 
       {/* Content area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto" role="tabpanel" aria-label="AI response content">
         {/* Active streaming state */}
         {activeTab === "current" && isStreaming && (
-          <div className="space-y-2.5">
+          <div className="space-y-2.5" aria-live="polite" aria-atomic="false">
             <div className="flex items-center gap-2">
               <Loader2 className="h-3 w-3 animate-spin text-primary/50" />
               <span className="text-[10px] font-medium text-primary">
@@ -237,8 +237,8 @@ export function AIResponsePanel() {
         {/* Empty state */}
         {activeTab === "current" && !isStreaming && !currentContent && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/30">
-              <Sparkles className="h-5 w-5 text-muted-foreground/50" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/8">
+              <Sparkles className="h-5 w-5 text-primary/40" />
             </div>
             <p className="text-xs text-muted-foreground/70">
               Press Space for AI assistance
@@ -271,17 +271,19 @@ function TabButton({
   return (
     <button
       onClick={onClick}
+      role="tab"
+      aria-selected={active}
       className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors duration-150 ${
         active
           ? "bg-primary/15 text-primary"
           : secondary
             ? "text-muted-foreground/70 hover:bg-muted/30 hover:text-muted-foreground"
             : pinned
-              ? "text-amber-400/70 hover:bg-amber-400/10 hover:text-amber-400"
+              ? "text-warning/70 hover:bg-warning/10 hover:text-warning"
               : "text-muted-foreground/70 hover:bg-muted/30 hover:text-muted-foreground"
       }`}
     >
-      {pinned && <Pin className="mr-0.5 inline-block h-2.5 w-2.5" />}
+      {pinned && <Pin className="mr-0.5 inline-block h-2.5 w-2.5" aria-hidden="true" />}
       {label}
     </button>
   );
@@ -303,12 +305,12 @@ function ActionButton({
       onClick={onClick}
       className={`rounded-lg p-1.5 transition-colors duration-150 ${
         active
-          ? "text-green-400"
+          ? "text-success"
           : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent"
       }`}
-      title={title}
+      aria-label={title}
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   );
 }

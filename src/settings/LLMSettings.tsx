@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useConfigStore } from "../stores/configStore";
+import { showToast } from "../stores/toastStore";
 import {
   getLLMProviders,
   setLLMProvider,
@@ -95,18 +96,18 @@ function getBadgeState(
 }
 
 const BADGE_STYLES: Record<BadgeVariant, string> = {
-  "ready": "bg-green-500/10 text-green-500 border-green-500/20",
-  "has-key": "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  "no-key": "bg-red-500/10 text-red-400 border-red-500/20",
-  "local": "bg-sky-500/10 text-sky-400 border-sky-500/20",
+  "ready": "bg-success/10 text-success border-success/20",
+  "has-key": "bg-info/10 text-info border-info/20",
+  "no-key": "bg-destructive/10 text-destructive border-destructive/20",
+  "local": "bg-info/10 text-info border-info/20",
   "not-configured": "bg-muted text-muted-foreground border-border/30",
 };
 
 const DOT_STYLES: Record<BadgeVariant, string> = {
-  "ready": "bg-green-500",
-  "has-key": "bg-blue-400",
-  "no-key": "bg-red-400",
-  "local": "bg-sky-400",
+  "ready": "bg-success",
+  "has-key": "bg-info",
+  "no-key": "bg-destructive",
+  "local": "bg-info",
   "not-configured": "bg-muted-foreground/30",
 };
 
@@ -193,7 +194,9 @@ export function LLMSettings() {
     try {
       await storeApiKey(selectedProvider, apiKey);
       setKeyStatusMap((prev) => ({ ...prev, [selectedProvider]: true }));
-    } catch {}
+    } catch {
+      showToast("Failed to save API key", "error");
+    }
   };
 
   // Test connection — on success, add to verifiedCloudProviders
@@ -281,7 +284,7 @@ export function LLMSettings() {
 
       {/* Provider Selection */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Provider</h3>
+        <h3 className="mb-3 text-sm font-semibold text-primary/80">Provider</h3>
         <div className="grid grid-cols-4 gap-2.5">
           {ALL_PROVIDERS.map((pType) => {
             const display = PROVIDER_DISPLAY[pType];
@@ -292,6 +295,7 @@ export function LLMSettings() {
               <button
                 key={pType}
                 onClick={() => handleProviderChange(pType)}
+                aria-pressed={isSelected}
                 className={`relative flex flex-col items-start rounded-xl border p-3 text-left transition-all duration-150 cursor-pointer ${
                   isSelected
                     ? "border-primary bg-primary/5 ring-1 ring-primary/20"
@@ -305,6 +309,7 @@ export function LLMSettings() {
                       isActive && badge.variant === "ready" ? DOT_STYLES["ready"] : DOT_STYLES[badge.variant]
                     }`}
                     title={isActive ? `Active — ${badge.text}` : badge.text}
+                    aria-hidden="true"
                   />
                 </div>
                 <div className="flex w-full items-center gap-1.5">
@@ -333,7 +338,7 @@ export function LLMSettings() {
       {/* API Key Input (for cloud providers) */}
       {requiresApiKey && (
         <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">API Key</h3>
+          <h3 className="mb-3 text-sm font-semibold text-primary/80">API Key</h3>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input
@@ -342,12 +347,15 @@ export function LLMSettings() {
                 onChange={(e) => setApiKeyValue(e.target.value)}
                 onBlur={handleSaveApiKey}
                 placeholder={`Enter ${PROVIDER_DISPLAY[selectedProvider]?.label || selectedProvider} API key`}
+                maxLength={256}
                 className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
               />
               <button
                 onClick={() => setShowApiKey(!showApiKey)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground cursor-pointer"
                 title={showApiKey ? "Hide" : "Show"}
+                aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                aria-pressed={showApiKey}
               >
                 {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
@@ -362,7 +370,7 @@ export function LLMSettings() {
       {/* Custom Provider Config */}
       {isCustom && (
         <div className="space-y-4 rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="text-sm font-semibold text-foreground">Custom Provider</h3>
+          <h3 className="text-sm font-semibold text-primary/80">Custom Provider</h3>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-foreground">Base URL</label>
             <input
@@ -370,6 +378,7 @@ export function LLMSettings() {
               value={customBaseUrl}
               onChange={(e) => setCustomBaseUrl(e.target.value)}
               placeholder="http://localhost:8080/v1"
+              maxLength={512}
               className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
             />
           </div>
@@ -396,6 +405,7 @@ export function LLMSettings() {
                   value={customAuthValue}
                   onChange={(e) => setCustomAuthValue(e.target.value)}
                   placeholder={customAuthType === "bearer" ? "Bearer token..." : "API key..."}
+                  maxLength={256}
                   className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
                 />
               </div>
@@ -418,7 +428,7 @@ export function LLMSettings() {
 
       {/* Connection Test & Model Loading */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Connection</h3>
+        <h3 className="mb-3 text-sm font-semibold text-primary/80">Connection</h3>
         <div className="flex items-center gap-2">
           <button
             onClick={handleTestConnection}
@@ -437,13 +447,13 @@ export function LLMSettings() {
             Load Models
           </button>
           {connectionStatus === "success" && (
-            <div className="flex items-center gap-1 text-green-500">
+            <div className="flex items-center gap-1 text-success">
               <CheckCircle className="h-3.5 w-3.5" />
               <span className="text-xs">{connectionMessage}</span>
             </div>
           )}
           {connectionStatus === "error" && (
-            <div className="flex items-center gap-1 text-red-500">
+            <div className="flex items-center gap-1 text-destructive">
               <XCircle className="h-3.5 w-3.5" />
               <span className="text-xs truncate max-w-[200px]">{connectionMessage}</span>
             </div>
@@ -453,7 +463,7 @@ export function LLMSettings() {
 
       {/* Model Selection */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Model</h3>
+        <h3 className="mb-3 text-sm font-semibold text-primary/80">Model</h3>
         {models.length > 0 ? (
           <select
             value={selectedModel}

@@ -20,9 +20,9 @@ export function TokenBudget() {
   );
 
   const borderClass = isCritical
-    ? "border-red-500/60"
+    ? "border-destructive/60"
     : isWarning
-      ? "border-yellow-500/60"
+      ? "border-warning/60"
       : "border-border/50";
 
   return (
@@ -38,19 +38,26 @@ export function TokenBudget() {
           {(isWarning || isCritical) && (
             <AlertTriangle
               className={`h-3.5 w-3.5 ${
-                isCritical ? "text-red-500" : "text-yellow-500"
+                isCritical ? "text-destructive" : "text-warning"
               }`}
             />
           )}
         </div>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs tabular-nums text-muted-foreground">
           {formatNumber(usedTokens)} / {formatNumber(limit)} tokens used (
           {usagePercent.toFixed(0)}%)
         </span>
       </div>
 
       {/* Stacked bar */}
-      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/40">
+      <div
+        className="h-2.5 w-full overflow-hidden rounded-full bg-muted/40"
+        role="meter"
+        aria-label="Token budget usage"
+        aria-valuenow={usedTokens}
+        aria-valuemin={0}
+        aria-valuemax={limit}
+      >
         <div className="flex h-full">
           {visibleSegments.map((segment, i) => {
             const widthPercent = (segment.tokens / limit) * 100;
@@ -83,7 +90,7 @@ export function TokenBudget() {
                 className="h-2 w-2 rounded-full"
                 style={{ backgroundColor: segment.color }}
               />
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[10px] tabular-nums text-muted-foreground">
                 {segment.label}: ~{formatNumber(segment.tokens)}
               </span>
             </div>

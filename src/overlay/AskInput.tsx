@@ -61,8 +61,10 @@ export function AskInput({ visible, onClose }: AskInputProps) {
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask a question..."
+        placeholder="Ask about the meeting..."
+        aria-label="Ask a question"
         disabled={isStreaming}
+        maxLength={2000}
         className="flex-1 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
       />
       <button

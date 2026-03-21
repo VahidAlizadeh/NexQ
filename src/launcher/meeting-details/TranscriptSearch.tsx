@@ -34,6 +34,7 @@ export function TranscriptSearch({ search }: TranscriptSearchProps) {
         onChange={(e) => search.setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Search transcript..."
+        maxLength={200}
         className="w-[200px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 outline-none"
       />
       {search.totalMatches > 0 && (

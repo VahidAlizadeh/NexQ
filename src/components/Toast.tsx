@@ -10,17 +10,17 @@ const iconMap = {
 
 const colorMap = {
   success:
-    "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300",
+    "border-success/30 bg-success/10 text-success",
   error:
-    "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300",
+    "border-destructive/30 bg-destructive/10 text-destructive",
   info:
-    "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300",
+    "border-info/30 bg-info/10 text-info",
 };
 
 const iconColorMap = {
-  success: "text-green-500 dark:text-green-400",
-  error: "text-red-500 dark:text-red-400",
-  info: "text-blue-500 dark:text-blue-400",
+  success: "text-success",
+  error: "text-destructive",
+  info: "text-info",
 };
 
 function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => void }) {
@@ -30,7 +30,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => vo
     <div
       role="alert"
       aria-live="polite"
-      className={`flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 shadow-lg backdrop-blur-sm transition-all duration-300 animate-in slide-in-from-right ${colorMap[toast.type]}`}
+      className={`flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 shadow-lg transition-all duration-300 animate-in slide-in-from-right ${colorMap[toast.type]}`}
       style={{ maxWidth: 360 }}
     >
       <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${iconColorMap[toast.type]}`} />
@@ -60,6 +60,7 @@ export function ToastContainer() {
     <div
       className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"
       aria-label="Notifications"
+      aria-atomic="true"
     >
       {toasts.map((toast) => (
         <ToastItem

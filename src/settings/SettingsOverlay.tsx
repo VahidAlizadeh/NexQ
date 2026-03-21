@@ -180,6 +180,9 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
         }`}
       >
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Settings"
           className={`w-[640px] max-h-[520px] flex flex-col rounded-xl border border-border/50 bg-card shadow-2xl transition-all duration-150 ${
             isVisible
               ? "opacity-100 scale-100 translate-y-0"
@@ -210,10 +213,12 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
           </div>
 
           {/* Tab Navigation (horizontal, uses flat list) */}
-          <div className="flex border-b border-border/30 px-2 overflow-x-auto">
+          <div className="flex border-b border-border/30 px-2 overflow-x-auto" role="tablist" aria-label="Settings navigation">
             {ALL_TABS.map((tab) => (
               <button
                 key={tab.id}
+                role="tab"
+                aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition-all duration-150 cursor-pointer ${
                   activeTab === tab.id
@@ -228,7 +233,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto p-5">{renderTabContent()}</div>
+          <div className="flex-1 overflow-y-auto p-5" role="tabpanel">{renderTabContent()}</div>
         </div>
       </div>
     );
@@ -253,15 +258,15 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
         </div>
 
         {/* Grouped Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-1">
+        <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-1" role="tablist" aria-label="Settings navigation">
           {TAB_GROUPS.map((group, gi) => (
             <div key={group.label} className={gi > 0 ? "mt-4" : ""}>
               {/* Group label */}
               <div className="mb-1 px-3 flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                   {group.label}
                 </span>
-                <div className="flex-1 h-px bg-border/20" />
+                <div className="flex-1 h-px bg-primary/10" />
               </div>
 
               {/* Group items */}
@@ -271,6 +276,8 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
                   return (
                     <button
                       key={tab.id}
+                      role="tab"
+                      aria-selected={isActive}
                       onClick={() => setActiveTab(tab.id)}
                       className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 cursor-pointer ${
                         isActive
@@ -311,7 +318,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
       </aside>
 
       {/* Content Area */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto" role="tabpanel">
         <div className={`mx-auto ${contentMaxW} px-8 py-8`}>
           {/* Section Heading */}
           <div className="mb-8">

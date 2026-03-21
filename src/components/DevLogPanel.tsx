@@ -74,7 +74,8 @@ export function DevLogPanel({
       <div
         onMouseDown={onMouseDown}
         className="h-1.5 shrink-0 cursor-ns-resize hover:bg-primary/20 transition-colors flex items-center justify-center"
-        title="Drag to resize"
+        role="separator"
+        aria-label="Resize dev log panel"
       >
         <div className="h-0.5 w-8 rounded-full bg-border/30" />
       </div>
@@ -148,7 +149,7 @@ function DevLogContent({
     <>
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-border/15 px-3 py-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
           Dev Log
         </span>
         <div className="flex items-center gap-1">
@@ -158,14 +159,14 @@ function DevLogContent({
           <button
             onClick={handleCopyAll}
             className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
-            title="Copy all"
+            aria-label="Copy all"
           >
             <Copy className="h-3 w-3" />
           </button>
           <button
             onClick={clear}
             className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
-            title="Clear"
+            aria-label="Clear"
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -173,7 +174,7 @@ function DevLogContent({
             <button
               onClick={onDetach}
               className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
-              title="Open in separate window"
+              aria-label="Open in separate window"
             >
               <ExternalLink className="h-3 w-3" />
             </button>
@@ -182,7 +183,7 @@ function DevLogContent({
             <button
               onClick={onClose}
               className="rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
-              title="Close (Esc)"
+              aria-label="Close (Esc)"
             >
               <X className="h-3 w-3" />
             </button>
@@ -198,7 +199,7 @@ function DevLogContent({
       >
         {entries.length === 0 ? (
           <div className="flex h-full min-h-[60px] items-center justify-center text-muted-foreground/60">
-            Waiting for STT events...
+            Waiting for speech events...
           </div>
         ) : (
           entries.map((entry) => (
@@ -212,13 +213,13 @@ function DevLogContent({
               <span
                 className={`shrink-0 font-semibold uppercase ${
                   entry.level === "error"
-                    ? "text-red-400"
+                    ? "text-destructive"
                     : entry.level === "warn"
-                      ? "text-amber-400"
-                      : "text-blue-400"
+                      ? "text-warning"
+                      : "text-info"
                 }`}
               >
-                {entry.level.substring(0, 3)}
+                {entry.level}
               </span>
               <span className="shrink-0 text-muted-foreground/60">
                 [{entry.source}]

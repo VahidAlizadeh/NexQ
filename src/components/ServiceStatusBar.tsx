@@ -190,7 +190,7 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
   }, [meetingAudioConfig, setMeetingAudioConfig]);
 
   return (
-    <div className={`flex items-center gap-2.5 ${compact ? "px-3 py-2" : "px-5 py-2.5"}`}>
+    <div className={`flex flex-wrap items-center gap-2.5 ${compact ? "px-3 py-2" : "px-5 py-2.5"}`}>
       {/* LLM — always interactive */}
       <div className="relative">
         <STTChip
@@ -319,25 +319,25 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
 
 const COLOR_MAP = {
   blue: {
-    active: "text-blue-400",
-    dot: "bg-blue-400",
-    bg: "bg-blue-500/8",
-    border: "border-blue-500/15",
-    glow: "shadow-blue-500/20",
+    active: "text-info",
+    dot: "bg-info",
+    bg: "bg-info/8",
+    border: "border-info/15",
+    glow: "shadow-info/20",
   },
   sky: {
-    active: "text-sky-400",
-    dot: "bg-sky-400",
-    bg: "bg-sky-500/8",
-    border: "border-sky-500/15",
-    glow: "shadow-sky-500/20",
+    active: "text-info",
+    dot: "bg-info",
+    bg: "bg-info/8",
+    border: "border-info/15",
+    glow: "shadow-info/20",
   },
   amber: {
-    active: "text-amber-400",
-    dot: "bg-amber-400",
-    bg: "bg-amber-500/8",
-    border: "border-amber-500/15",
-    glow: "shadow-amber-500/20",
+    active: "text-warning",
+    dot: "bg-warning",
+    bg: "bg-warning/8",
+    border: "border-warning/15",
+    glow: "shadow-warning/20",
   },
 } as const;
 
@@ -372,7 +372,7 @@ function ServiceChip({
       {/* Status dot */}
       <span className="relative flex h-2 w-2 shrink-0">
         {active && (
-          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${c.dot} opacity-50`} />
+          <span className={`absolute inline-flex h-full w-full animate-pulse rounded-full ${c.dot} opacity-40`} />
         )}
         <span className={`relative inline-flex h-2 w-2 rounded-full transition-colors duration-200 ${
           active ? c.dot : "bg-muted-foreground/30"
@@ -436,7 +436,7 @@ function STTChip({
     <div
       className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-all duration-200 ${
         muted
-          ? "bg-red-500/[0.04] border border-red-500/12"
+          ? "bg-destructive/[0.04] border border-destructive/12"
           : active
             ? `${c.bg} border ${c.border} shadow-sm ${c.glow}`
             : "bg-secondary/30 border border-transparent"
@@ -447,16 +447,16 @@ function STTChip({
       {/* Status dot */}
       <span className="relative flex h-2 w-2 shrink-0">
         {active && !muted && (
-          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${c.dot} opacity-50`} />
+          <span className={`absolute inline-flex h-full w-full animate-pulse rounded-full ${c.dot} opacity-40`} />
         )}
         <span className={`relative inline-flex h-2 w-2 rounded-full transition-colors duration-200 ${
-          muted ? "bg-red-400/50" : active ? c.dot : "bg-muted-foreground/30"
+          muted ? "bg-destructive/50" : active ? c.dot : "bg-muted-foreground/30"
         }`} />
       </span>
 
       {/* Icon */}
       <span className={`shrink-0 transition-colors duration-200 ${
-        muted ? "text-red-400/60" : active ? c.active : "text-muted-foreground/60"
+        muted ? "text-destructive/60" : active ? c.active : "text-muted-foreground/60"
       }`}>
         {icon}
       </span>
@@ -465,13 +465,13 @@ function STTChip({
       <div className="flex items-center gap-1 min-w-0">
         {label && (
           <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide transition-colors duration-200 ${
-            muted ? "text-red-400/50" : active ? c.active : "text-muted-foreground/60"
+            muted ? "text-destructive/50" : active ? c.active : "text-muted-foreground/60"
           }`}>
             {label}
           </span>
         )}
         <span className={`text-[11px] font-medium truncate max-w-[100px] transition-colors duration-200 ${
-          muted ? "text-red-400/50 line-through" : active ? "text-foreground/90" : "text-muted-foreground/70"
+          muted ? "text-destructive/50 line-through" : active ? "text-foreground/90" : "text-muted-foreground/70"
         }`}>
           {provider}
         </span>

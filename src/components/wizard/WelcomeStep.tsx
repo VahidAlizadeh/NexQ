@@ -143,10 +143,10 @@ export function WelcomeStep({ onDetectionComplete }: WelcomeStepProps) {
     <div className="flex flex-col items-center text-center">
       {/* Welcome header */}
       <div className="mb-10">
-        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 shadow-lg shadow-primary/10">
-          <Sparkles className="h-10 w-10 text-primary" />
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/8">
+          <Sparkles className="h-8 w-8 text-primary" />
         </div>
-        <h2 className="text-3xl font-bold text-foreground">
+        <h2 className="text-2xl font-semibold text-foreground">
           Welcome to NexQ
         </h2>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
@@ -225,7 +225,7 @@ export function WelcomeStep({ onDetectionComplete }: WelcomeStepProps) {
           <div className="rounded-xl border border-border/40 bg-secondary/20 px-5 py-4">
             <p className="text-sm text-muted-foreground leading-relaxed">
               {result.ollamaRunning || result.lmStudioRunning ? (
-                <span className="text-green-400">
+                <span className="text-success">
                   Local LLM detected! You can use AI features without an
                   internet connection.
                 </span>
@@ -284,7 +284,7 @@ function DetectionRow({
         )}
         {status === "done" &&
           (found ? (
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-success" />
           ) : (
             <XCircle className="h-4 w-4 text-muted-foreground/50" />
           ))}

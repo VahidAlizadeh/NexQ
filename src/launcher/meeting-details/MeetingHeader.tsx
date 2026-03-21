@@ -41,6 +41,7 @@ export function MeetingHeader({
 }: MeetingHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(meeting.title);
+  const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const activeMeetingId = useMeetingStore((s) => s.activeMeeting?.id);
   const loadRecentMeetings = useMeetingStore((s) => s.loadRecentMeetings);
@@ -58,20 +59,26 @@ export function MeetingHeader({
   }, [meeting.title]);
 
   const handleSaveEdit = useCallback(async () => {
-    const trimmed = editTitle.trim();
-    if (trimmed && trimmed !== meeting.title) {
-      try {
-        await renameMeeting(meeting.id, trimmed);
-        onTitleChanged(trimmed);
-        if (meeting.id === activeMeetingId) {
-          const active = useMeetingStore.getState().activeMeeting;
-          if (active) useMeetingStore.getState().setActiveMeeting({ ...active, title: trimmed });
-        }
-        await loadRecentMeetings();
-      } catch (err) { console.error("[MeetingHeader] Rename failed:", err); }
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const trimmed = editTitle.trim();
+      if (trimmed && trimmed !== meeting.title) {
+        try {
+          await renameMeeting(meeting.id, trimmed);
+          onTitleChanged(trimmed);
+          if (meeting.id === activeMeetingId) {
+            const active = useMeetingStore.getState().activeMeeting;
+            if (active) useMeetingStore.getState().setActiveMeeting({ ...active, title: trimmed });
+          }
+          await loadRecentMeetings();
+        } catch (err) { console.error("[MeetingHeader] Rename failed:", err); }
+      }
+    } finally {
+      setIsSaving(false);
+      setIsEditing(false);
     }
-    setIsEditing(false);
-  }, [editTitle, meeting.id, meeting.title, activeMeetingId, onTitleChanged, loadRecentMeetings]);
+  }, [editTitle, meeting.id, meeting.title, activeMeetingId, onTitleChanged, loadRecentMeetings, isSaving]);
 
   const handleCancelEdit = useCallback(() => {
     setEditTitle(meeting.title);
@@ -97,8 +104,9 @@ export function MeetingHeader({
         <button
           onClick={onBack}
           className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
+          aria-label="Go back"
         >
-          <ArrowLeft className="h-4.5 w-4.5" />
+          <ArrowLeft className="h-4.5 w-4.5" aria-hidden="true" />
         </button>
 
         <div className="group min-w-0 flex-1">
@@ -111,13 +119,15 @@ export function MeetingHeader({
                 onChange={(e) => setEditTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleSaveEdit}
+                disabled={isSaving}
+                maxLength={200}
                 className="flex-1 rounded-lg border border-primary/30 bg-background px-3 py-1 text-sm font-semibold text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
-              <button onClick={handleSaveEdit} className="rounded-md p-1.5 text-green-400 hover:bg-green-400/10 cursor-pointer">
-                <Check className="h-4 w-4" />
+              <button onClick={handleSaveEdit} disabled={isSaving} className="rounded-md p-1.5 text-success hover:bg-success/10 disabled:opacity-50 cursor-pointer" aria-label="Save title">
+                <Check className="h-4 w-4" aria-hidden="true" />
               </button>
-              <button onClick={handleCancelEdit} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary cursor-pointer">
-                <X className="h-4 w-4" />
+              <button onClick={handleCancelEdit} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary cursor-pointer" aria-label="Cancel editing">
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           ) : (
@@ -142,18 +152,20 @@ export function MeetingHeader({
             className={`rounded-md p-1.5 transition-colors cursor-pointer ${
               layoutMode === "single" ? "bg-primary/15 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
             }`}
-            title="Single column"
+            aria-label="Single column layout"
+            aria-pressed={layoutMode === "single"}
           >
-            <Rows3 className="h-4 w-4" />
+            <Rows3 className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             onClick={() => onLayoutChange("split")}
             className={`rounded-md p-1.5 transition-colors cursor-pointer ${
               layoutMode === "split" ? "bg-primary/15 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
             }`}
-            title="Two columns"
+            aria-label="Two column layout"
+            aria-pressed={layoutMode === "split"}
           >
-            <Columns2 className="h-4 w-4" />
+            <Columns2 className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </div>

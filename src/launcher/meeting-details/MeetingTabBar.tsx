@@ -11,7 +11,7 @@ interface MeetingTabBarProps {
 
 export function MeetingTabBar({ activeTab, setActiveTab, meeting }: MeetingTabBarProps) {
   return (
-    <div className="flex items-center gap-1 border-b border-border/15 px-5 py-1.5">
+    <div className="flex items-center gap-1 border-b border-border/15 px-5 py-1.5" role="tablist">
       <TabButton
         active={activeTab === "transcript"}
         onClick={() => setActiveTab("transcript")}
@@ -55,23 +55,29 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer ${
+      role="tab"
+      aria-selected={active}
+      className={`relative flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer ${
         active
           ? "bg-primary/12 text-primary"
           : "text-muted-foreground/50 hover:bg-secondary/30 hover:text-muted-foreground"
       }`}
     >
+      {/* Active indicator bar */}
+      <span className={`absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-all duration-200 ${
+        active ? "bg-primary scale-x-100" : "bg-transparent scale-x-0"
+      }`} />
       {icon}
       {label}
       {count !== undefined && count > 0 && (
         <span className={`rounded-md px-1.5 py-0.5 text-[11px] tabular-nums font-semibold ${
-          active ? "bg-primary/10 text-primary/80" : "bg-secondary/50 text-muted-foreground/40"
+          active ? "bg-primary/10 text-primary/80" : "bg-primary/5 text-muted-foreground/50"
         }`}>
           {count}
         </span>
       )}
       {indicator && (
-        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+        <span className="h-2 w-2 rounded-full bg-success" />
       )}
     </button>
   );

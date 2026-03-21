@@ -91,7 +91,7 @@ export function ModeButtons() {
   const handleClick = useCallback(
     (mode: string) => {
       if (isStreaming) {
-        if (currentMode === mode) cancelGeneration().catch(() => showToast("Failed to cancel", "error"));
+        if (currentMode === mode) cancelGeneration().catch(() => showToast("Couldn't cancel generation", "error"));
         return;
       }
       // AskQuestion mode: toggle ask input instead of direct generation
@@ -99,7 +99,7 @@ export function ModeButtons() {
         setAskInputVisible((v) => !v);
         return;
       }
-      generateAssist(mode).catch((err) => showToast(err instanceof Error ? err.message : "Failed", "error"));
+      generateAssist(mode).catch((err) => showToast(err instanceof Error ? err.message : "Couldn't generate AI response", "error"));
     },
     [isStreaming, currentMode]
   );
@@ -108,7 +108,7 @@ export function ModeButtons() {
     const text = askInputText.trim();
     if (!text || isStreaming) return;
     generateAssist("AskQuestion", text).catch((err) =>
-      showToast(err instanceof Error ? err.message : "Failed", "error")
+      showToast(err instanceof Error ? err.message : "Couldn't send question", "error")
     );
     setAskInputText("");
     setAskInputVisible(false);
@@ -116,7 +116,7 @@ export function ModeButtons() {
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-0.5">
+      <div className="flex flex-wrap items-center gap-0.5">
         {visibleModes.map(({ mode, label, shortcut, icon: Icon, isCustom }) => {
           const isActive = currentMode === mode && isStreaming;
           const isAskActive = mode === "AskQuestion" && askInputVisible && !isStreaming;
@@ -125,18 +125,19 @@ export function ModeButtons() {
               key={mode}
               onClick={() => handleClick(mode)}
               disabled={isStreaming && !isActive}
-              title={shortcut ? `${label} (${shortcut})` : label}
+              aria-label={shortcut ? `${label} (${shortcut})` : label}
+              aria-pressed={isActive || isAskActive}
               className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-all duration-150 cursor-pointer ${
                 isActive
-                  ? "bg-primary/15 text-primary ring-1 ring-primary/20"
+                  ? "bg-primary/15 text-primary ring-1 ring-primary/30 shadow-sm shadow-primary/10"
                   : isAskActive
-                    ? "bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20"
+                    ? "bg-info/12 text-info ring-1 ring-info/25 shadow-sm shadow-info/10"
                     : isCustom
-                      ? "text-amber-400/60 hover:bg-amber-500/10 hover:text-amber-400 border border-amber-500/10"
+                      ? "text-warning/60 hover:bg-warning/10 hover:text-warning border border-warning/10"
                       : "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
               } ${isStreaming && !isActive ? "opacity-20 cursor-not-allowed" : ""}`}
             >
-              {isActive ? <Loader2 className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}
+              {isActive ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : <Icon className="h-3 w-3" aria-hidden="true" />}
               <span>{label}</span>
             </button>
           );
@@ -145,7 +146,7 @@ export function ModeButtons() {
 
       {/* Inline Ask input */}
       {askInputVisible && !isStreaming && (
-        <div className="flex items-center gap-1.5 rounded-lg border border-blue-500/15 bg-blue-500/[0.04] px-2 py-1">
+        <div className="flex items-center gap-1.5 rounded-lg border border-info/15 bg-info/[0.04] px-2 py-1 slide-down-enter">
           <input
             type="text"
             value={askInputText}
@@ -155,24 +156,26 @@ export function ModeButtons() {
               if (e.key === "Enter") { e.preventDefault(); handleAskSubmit(); }
               if (e.key === "Escape") { e.preventDefault(); setAskInputVisible(false); }
             }}
-            placeholder="Type your question..."
+            placeholder="Ask about the meeting..."
+            aria-label="Ask a question"
             autoFocus
+            maxLength={2000}
             className="flex-1 min-w-0 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
           />
           <button
             onClick={handleAskSubmit}
             disabled={!askInputText.trim()}
-            className="rounded-md p-1 text-blue-400/60 hover:bg-blue-500/10 hover:text-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Send (Enter)"
+            className="rounded-md p-1 text-info/60 hover:bg-info/10 hover:text-info disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            aria-label="Send question"
           >
-            <Send className="h-3 w-3" />
+            <Send className="h-3 w-3" aria-hidden="true" />
           </button>
           <button
             onClick={() => setAskInputVisible(false)}
             className="rounded-md p-1 text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground transition-colors"
-            title="Close (Esc)"
+            aria-label="Close question input"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3" aria-hidden="true" />
           </button>
         </div>
       )}

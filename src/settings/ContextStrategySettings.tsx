@@ -538,7 +538,7 @@ export function ContextStrategySettings() {
           {/* ── Quick Presets ── */}
           <div className="rounded-xl border border-border/30 bg-card/50 p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">Quick Presets</h3>
+              <h3 className="text-sm font-semibold text-primary/80">Quick Presets</h3>
               <p className="text-[10px] text-muted-foreground/60">
                 Expected search latency per query
               </p>
@@ -578,16 +578,16 @@ export function ContextStrategySettings() {
           {/* ── Connection ── */}
           <div className="rounded-xl border border-border/30 bg-card/50 p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">Connection</h3>
+              <h3 className="text-sm font-semibold text-primary/80">Connection</h3>
             </div>
             <div className="space-y-4">
               {/* Ollama status */}
               <div className="flex items-center gap-3">
                 {ollamaStatus?.connected ? (
                   <>
-                    <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                    <Wifi className="h-3.5 w-3.5 text-green-500" />
-                    <span className="text-xs text-green-500">Ollama Connected</span>
+                    <div className="h-2.5 w-2.5 rounded-full bg-success" />
+                    <Wifi className="h-3.5 w-3.5 text-success" />
+                    <span className="text-xs text-success">Ollama Connected</span>
                     <span className="text-[10px] text-muted-foreground">
                       ({ollamaStatus.models.length} model{ollamaStatus.models.length !== 1 ? "s" : ""})
                     </span>
@@ -606,8 +606,8 @@ export function ContextStrategySettings() {
                 <div className="flex items-center gap-2 text-xs">
                   {selectedModelAvailable ? (
                     <>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                      <span className="text-green-500">{localConfig.embedding_model} available</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                      <span className="text-success">{localConfig.embedding_model} available</span>
                     </>
                   ) : (
                     <>
@@ -692,7 +692,7 @@ export function ContextStrategySettings() {
 
           {/* ── Search Settings ── */}
           <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Search Settings</h3>
+            <h3 className="mb-3 text-sm font-semibold text-primary/80">Search Settings</h3>
             <div className="grid grid-cols-2 gap-4">
               {/* top-K */}
               <div>
@@ -742,7 +742,7 @@ export function ContextStrategySettings() {
             indexStale ? "border-amber-500/40 ring-1 ring-amber-500/10" : "border-border/30"
           }`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">Index Status</h3>
+              <h3 className="text-sm font-semibold text-primary/80">Index Status</h3>
               {indexStale && (
                 <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium text-amber-500">
                   <AlertTriangle className="h-3 w-3" />
@@ -830,7 +830,7 @@ export function ContextStrategySettings() {
           <div className="rounded-xl border border-border/30 bg-card/50">
             <button
               onClick={() => setAdvancedOpen(!advancedOpen)}
-              className="flex w-full items-center justify-between px-5 py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent/20"
+              className="flex w-full items-center justify-between px-5 py-3.5 text-sm font-semibold text-primary/80 transition-colors hover:bg-accent/20"
             >
               <span>Advanced Settings</span>
               {advancedOpen

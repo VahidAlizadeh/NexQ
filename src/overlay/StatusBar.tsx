@@ -77,14 +77,14 @@ export function StatusBar() {
   return (
     <div className="flex flex-col gap-1">
       {/* Row 1: Service indicators */}
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-y-1 text-[10px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2">
           {/* LLM indicator */}
           <ServiceIndicator
             icon={<Brain className="h-2.5 w-2.5" />}
             label={`${displayProvider}/${displayModel.split("/").pop()?.split(":")[0] || displayModel}`}
             active={isStreaming}
-            activeColor="text-blue-400"
+            activeColor="text-info"
             title={`LLM: ${displayProvider} / ${displayModel}`}
           />
 
@@ -144,9 +144,10 @@ export function StatusBar() {
           </button>
           <button
             onClick={handleEndMeeting}
-            className="flex items-center gap-1 rounded-lg bg-red-500/8 px-2.5 py-1 font-medium text-red-400/70 transition-colors duration-150 hover:bg-destructive/15 hover:text-red-400"
+            className="flex items-center gap-1 rounded-lg bg-destructive/8 px-2.5 py-1 font-medium text-destructive/70 transition-colors duration-150 hover:bg-destructive/15 hover:text-destructive"
+            aria-label="End meeting"
           >
-            <Square className="h-2.5 w-2.5 fill-current" />
+            <Square className="h-2.5 w-2.5 fill-current" aria-hidden="true" />
             End
           </button>
         </div>
@@ -176,11 +177,13 @@ function ServiceIndicator({
         active ? activeColor : "text-muted-foreground/60"
       }`}
       title={title}
+      role="status"
+      aria-label={`${label}: ${active ? "active" : "inactive"}`}
     >
       {/* Activity dot */}
-      <span className="relative flex h-1.5 w-1.5 shrink-0">
+      <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
         {active && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75" />
+          <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-current opacity-40" />
         )}
         <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${active ? "bg-current" : "bg-muted-foreground/30"}`} />
       </span>

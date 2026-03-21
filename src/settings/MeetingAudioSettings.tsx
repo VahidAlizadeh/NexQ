@@ -323,7 +323,7 @@ export function MeetingAudioSettings() {
 
       {/* ── Quick Presets ── */}
       <div className="flex items-center gap-2 rounded-xl border border-border/25 bg-card/40 px-4 py-2.5">
-        <span className="mr-1 shrink-0 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+        <span className="mr-1 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
           Presets
         </span>
         {BUILT_IN_PRESETS.map((preset) => (
@@ -404,7 +404,7 @@ export function MeetingAudioSettings() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold text-foreground">Live Monitor</span>
-              <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" title="Monitoring all devices" />
+              <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" title="Monitoring all devices" />
             </div>
             <button
               onClick={loadDevices}
@@ -458,7 +458,7 @@ export function MeetingAudioSettings() {
             </div>
             {sessions.length === 0 ? (
               <p className="text-[11px] text-muted-foreground/70">
-                {loadingSessions ? "Loading..." : "No active audio sessions detected"}
+                {loadingSessions ? "Scanning audio sessions..." : "No active audio sessions detected"}
               </p>
             ) : (
               <div className="space-y-1">
@@ -474,7 +474,7 @@ export function MeetingAudioSettings() {
                         isSelectedDevice ? "bg-primary/5 border border-primary/20" : "hover:bg-accent/30"
                       }`}
                     >
-                      <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.is_active ? "bg-green-500" : "bg-muted-foreground/30"}`} />
+                      <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.is_active ? "bg-success" : "bg-muted-foreground/30"}`} />
                       <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground">
                         {s.display_name}
                       </span>
@@ -593,14 +593,14 @@ function PartyPanel({
           <span className={c.iconColor}>{icon}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className={`text-xs font-bold uppercase tracking-wider ${c.iconColor}`}>{label}</p>
+          <p className={`text-xs font-semibold uppercase tracking-wide ${c.iconColor}`}>{label}</p>
           <p className="mt-0.5 text-[10px] text-muted-foreground/60">Audio source & recognition</p>
         </div>
         {/* Live activity indicator */}
         <div className="flex shrink-0 items-center gap-1.5">
           <span className="relative flex h-2 w-2">
             {isActive && (
-              <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${c.ping} opacity-60`} />
+              <span className={`absolute inline-flex h-full w-full animate-pulse rounded-full ${c.ping} opacity-40`} />
             )}
             <span className={`relative inline-flex h-2 w-2 rounded-full transition-colors duration-150 ${isActive ? c.dot : "bg-muted-foreground/20"}`} />
           </span>
@@ -615,7 +615,7 @@ function PartyPanel({
 
         {/* Source device */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
             Source
           </label>
           <select
@@ -649,14 +649,14 @@ function PartyPanel({
         </div>
 
         {/* Level bar */}
-        <div className="relative h-3 overflow-hidden rounded-full bg-muted/50">
+        <div className="relative h-3 overflow-hidden rounded-full bg-success/8">
           <div
             className={`absolute inset-y-0 left-0 rounded-full transition-all duration-75 ${
               scaledLv > 0.9
-                ? "bg-red-500"
+                ? "bg-destructive"
                 : scaledLv > 0.7
-                  ? "bg-yellow-500"
-                  : "bg-green-500"
+                  ? "bg-warning"
+                  : "bg-success"
             }`}
             style={{ width: `${scaledLv * 100}%` }}
           />
@@ -670,7 +670,7 @@ function PartyPanel({
 
         {/* STT Provider */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
             Speech to Text
           </label>
           <ProviderSelect
@@ -883,15 +883,15 @@ function DeviceLevelRow({
       <span className={`w-28 truncate text-[10px] ${isSelected ? "font-medium text-foreground" : "text-muted-foreground/60"}`}>
         {name}
       </span>
-      <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted/50">
+      <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-success/8">
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all duration-75 ${
             scaled > 0.9
-              ? "bg-red-500"
+              ? "bg-destructive"
               : scaled > 0.7
-                ? "bg-yellow-500"
+                ? "bg-warning"
                 : level > 0
-                  ? "bg-green-500"
+                  ? "bg-success"
                   : "bg-transparent"
           }`}
           style={{ width: `${scaled * 100}%` }}

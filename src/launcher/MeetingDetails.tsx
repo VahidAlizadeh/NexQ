@@ -83,7 +83,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   if (error || !meeting) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
-        <p className="text-sm text-red-400">{error || "Meeting not found"}</p>
+        <p className="text-sm text-destructive">{error || "Meeting not found"}</p>
         <button
           onClick={onBack}
           className="text-sm text-primary hover:underline"
@@ -105,8 +105,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         <button
           onClick={onBack}
           className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          aria-label="Go back"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-base font-semibold text-foreground">
@@ -123,7 +124,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1.5 border-b border-border/10 px-6 py-2.5">
+      <div className="flex gap-1.5 border-b border-border/10 px-6 py-2.5" role="tablist">
         <TabButton
           active={activeTab === "transcript"}
           onClick={() => setActiveTab("transcript")}
@@ -147,7 +148,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" role="tabpanel">
         {activeTab === "transcript" && (
           <TranscriptView segments={meeting.transcript} />
         )}
@@ -186,6 +187,8 @@ function TabButton({
   return (
     <button
       onClick={onClick}
+      role="tab"
+      aria-selected={active}
       className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors duration-150 ${
         active
           ? "bg-primary/10 text-primary"
@@ -266,6 +269,7 @@ function AIInteractionLog({
             <button
               onClick={() => onToggle(interaction.id)}
               className="flex w-full items-center justify-between px-4 py-3 text-left"
+              aria-expanded={isExpanded}
             >
               <div className="flex items-center gap-2.5">
                 <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">

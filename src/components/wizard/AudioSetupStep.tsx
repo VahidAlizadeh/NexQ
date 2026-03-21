@@ -226,7 +226,7 @@ export function AudioSetupStep() {
         {/* Scan Results */}
         {scanResults.length > 0 && (
           <div className="rounded-xl border border-border/40 bg-secondary/15 p-3.5 space-y-1.5">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Scan Results
             </p>
             {scanResults.map((r) => (
@@ -243,7 +243,7 @@ export function AudioSetupStep() {
                   {r.device.name}
                 </span>
                 {r.hasAudio ? (
-                  <span className="flex items-center gap-1 text-green-500">
+                  <span className="flex items-center gap-1 text-success">
                     <CheckCircle className="h-3 w-3" /> Active
                   </span>
                 ) : (
@@ -257,7 +257,7 @@ export function AudioSetupStep() {
         {/* YOUR Source */}
         <div className="space-y-2.5">
           <label className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-primary">
+            <span className="rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
               You
             </span>
             Audio Source
@@ -272,7 +272,7 @@ export function AudioSetupStep() {
             className="w-full rounded-xl border border-border/40 bg-background px-4 py-3 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
           >
             <option value="default">
-              {loadingDevices ? "Loading..." : "Default microphone"}
+              {loadingDevices ? "Detecting devices..." : "Default microphone"}
             </option>
             {devices.inputs.length > 0 && (
               <optgroup label="Microphones">
@@ -298,7 +298,7 @@ export function AudioSetupStep() {
         {/* THEIR Source */}
         <div className="space-y-2.5">
           <label className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-lg bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Them
             </span>
             Audio Source
@@ -313,7 +313,7 @@ export function AudioSetupStep() {
             className="w-full rounded-xl border border-border/40 bg-background px-4 py-3 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
           >
             <option value="default">
-              {loadingDevices ? "Loading..." : "Default output (loopback)"}
+              {loadingDevices ? "Detecting devices..." : "Default output (loopback)"}
             </option>
             {devices.outputs.length > 0 && (
               <optgroup label="Speakers / Output">
@@ -357,13 +357,13 @@ export function AudioSetupStep() {
               disabled={!config.you.device_id}
               className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                 isTestingAudio
-                  ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                  ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
                   : "bg-primary/10 text-primary hover:bg-primary/20"
               } disabled:cursor-not-allowed disabled:opacity-50`}
             >
               {isTestingAudio ? (
                 <>
-                  <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-destructive" />
                   Stop ({testCountdown}s)
                 </>
               ) : (
@@ -376,14 +376,21 @@ export function AudioSetupStep() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-8 text-xs text-muted-foreground">Mic</span>
-              <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="relative h-4 flex-1 overflow-hidden rounded-full bg-muted"
+                role="meter"
+                aria-label="Microphone audio level"
+                aria-valuenow={Math.round(micLevel * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
                 <div
                   className={`absolute inset-y-0 left-0 rounded-full transition-all duration-75 ${
                     micLevel > 0.8
-                      ? "bg-red-500"
+                      ? "bg-destructive"
                       : micLevel > 0.5
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
+                        ? "bg-warning"
+                        : "bg-success"
                   }`}
                   style={{ width: `${Math.min(micLevel, 1) * 100}%` }}
                 />

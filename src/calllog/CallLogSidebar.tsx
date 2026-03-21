@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useCallLogStore } from "../stores/callLogStore";
 import { useMeetingStore } from "../stores/meetingStore";
 import { CallLogEntry } from "./CallLogEntry";
@@ -33,6 +33,7 @@ export function CallLogSidebar() {
   const setFilter = useCallLogStore((s) => s.setFilter);
   const clearAll = useCallLogStore((s) => s.clearAll);
   const [isVisible, setIsVisible] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Animate in/out driven by isOpen state
   useEffect(() => {
@@ -42,6 +43,13 @@ export function CallLogSidebar() {
       setIsVisible(false);
     }
   }, [isOpen]);
+
+  // Focus close button when sidebar opens
+  useEffect(() => {
+    if (isVisible) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isVisible]);
 
   // Close with animation
   const handleClose = useCallback(() => {
@@ -111,7 +119,7 @@ export function CallLogSidebar() {
 
       {/* Panel */}
       <div
-        className={`fixed right-0 top-0 z-[90] flex h-full w-80 flex-col border-l border-border/40 bg-card shadow-2xl transition-transform duration-200 ease-out ${
+        className={`fixed right-0 top-0 z-[90] flex h-full w-80 flex-col border-l border-border/40 bg-card shadow-xl transition-transform duration-200 ease-out ${
           isVisible ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -140,6 +148,7 @@ export function CallLogSidebar() {
                 </button>
               )}
               <button
+                ref={closeButtonRef}
                 onClick={handleClose}
                 className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
                 title="Close (Esc)"
@@ -199,7 +208,7 @@ export function CallLogSidebar() {
               <StatTile
                 label="Errors"
                 value={`${stats.errorCount}`}
-                valueClass="text-red-400"
+                valueClass="text-destructive"
               />
             )}
           </div>

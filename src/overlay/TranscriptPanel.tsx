@@ -25,14 +25,45 @@ export function TranscriptPanel() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAnimRef = useRef<number>(0);
   const isSearchVisible = searchQuery.length > 0;
+
+  // Momentum-based smooth scroll — exponential deceleration for a buttery feel
+  const scrollToBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    cancelAnimationFrame(scrollAnimRef.current);
+
+    const target = el.scrollHeight - el.clientHeight;
+    const start = el.scrollTop;
+    const distance = target - start;
+    if (Math.abs(distance) < 2) return;
+
+    const duration = Math.min(400, Math.max(150, Math.abs(distance) * 0.8));
+    const startTime = performance.now();
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Exponential ease-out: fast start, gentle deceleration
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.scrollTop = start + distance * eased;
+      if (progress < 1) scrollAnimRef.current = requestAnimationFrame(step);
+    };
+    scrollAnimRef.current = requestAnimationFrame(step);
+  }, []);
+
+  // Cancel scroll animation on unmount
+  useEffect(() => {
+    return () => cancelAnimationFrame(scrollAnimRef.current);
+  }, []);
 
   // Auto-scroll to bottom when new segments arrive (if autoScroll is on)
   useEffect(() => {
-    if (autoScroll && bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (autoScroll && segments.length > 0) {
+      scrollToBottom();
     }
-  }, [segments, autoScroll]);
+  }, [segments, autoScroll, scrollToBottom]);
 
   // Detect manual scroll: if user scrolls up, pause auto-scroll.
   // If they scroll back to the bottom, resume it.
@@ -90,6 +121,7 @@ export function TranscriptPanel() {
               label="You"
               level={micLevel}
               colorClass="bg-speaker-user"
+              trackClass="bg-speaker-user/10"
               textClass="text-speaker-user"
               muted={mutedYou}
               onToggleMute={toggleMuteYou}
@@ -100,6 +132,7 @@ export function TranscriptPanel() {
               label="Them"
               level={systemLevel}
               colorClass="bg-speaker-interviewer"
+              trackClass="bg-speaker-interviewer/10"
               textClass="text-speaker-interviewer"
               muted={mutedThem}
               onToggleMute={toggleMuteThem}
@@ -120,6 +153,8 @@ export function TranscriptPanel() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search transcript..."
+          aria-label="Search transcript"
+          maxLength={200}
           className="flex-1 bg-transparent text-[11px] text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
         />
         {searchQuery && (
@@ -130,8 +165,9 @@ export function TranscriptPanel() {
             <button
               onClick={() => setSearchQuery("")}
               className="rounded-full p-0.5 text-muted-foreground/60 hover:text-foreground/70 hover:bg-accent/50"
+              aria-label="Clear search"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3 w-3" aria-hidden="true" />
             </button>
           </>
         )}
@@ -162,6 +198,7 @@ export function TranscriptPanel() {
             label="You"
             level={micLevel}
             colorClass="bg-speaker-user"
+            trackClass="bg-speaker-user/10"
             textClass="text-speaker-user"
             muted={mutedYou}
             onToggleMute={toggleMuteYou}
@@ -172,6 +209,7 @@ export function TranscriptPanel() {
             label="Them"
             level={systemLevel}
             colorClass="bg-speaker-interviewer"
+            trackClass="bg-speaker-interviewer/10"
             textClass="text-speaker-interviewer"
             muted={mutedThem}
             onToggleMute={toggleMuteThem}
@@ -184,9 +222,9 @@ export function TranscriptPanel() {
         <button
           onClick={() => {
             setAutoScroll(true);
-            bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+            scrollToBottom();
           }}
-          className="mx-auto mb-1.5 rounded-full bg-primary/10 px-4 py-1 text-[10px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20"
+          className="mx-auto mb-1.5 rounded-full bg-primary/10 px-4 py-1 text-[10px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 fade-in-up"
         >
           Scroll to latest
         </button>
@@ -203,6 +241,7 @@ function AudioActivityBar({
   label,
   level,
   colorClass,
+  trackClass,
   textClass,
   muted,
   onToggleMute,
@@ -212,6 +251,7 @@ function AudioActivityBar({
   label: string;
   level: number;
   colorClass: string;
+  trackClass: string;
   textClass: string;
   muted: boolean;
   onToggleMute: () => void;
@@ -225,30 +265,38 @@ function AudioActivityBar({
 
   return (
     <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors duration-200 ${
-      muted ? "bg-red-500/[0.03]" : "bg-muted/15"
+      muted ? "bg-destructive/[0.03]" : "bg-muted/15"
     }`}>
       {/* Mute toggle */}
       <button
         onClick={onToggleMute}
         className={`shrink-0 rounded-md p-1 transition-all duration-150 cursor-pointer ${
           muted
-            ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+            ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
             : `hover:bg-accent/50 ${isActive ? textClass : "text-muted-foreground/60"}`
         }`}
-        title={muted ? `Unmute ${label}` : `Mute ${label}`}
+        aria-label={muted ? `Unmute ${label}` : `Mute ${label}`}
+        aria-pressed={muted}
       >
         {muted ? mutedIcon : icon}
       </button>
 
       <span className={`shrink-0 text-[11px] font-semibold transition-colors duration-150 w-8 ${
-        muted ? "text-red-400/60" : isActive ? textClass : "text-muted-foreground/60"
+        muted ? "text-destructive/60" : isActive ? textClass : "text-muted-foreground/60"
       }`}>
         {label}
       </span>
 
-      <div className="flex-1 h-2.5 rounded-full bg-muted/30 overflow-hidden">
+      <div
+        className={`flex-1 h-2.5 rounded-full overflow-hidden ${muted ? "bg-muted/30" : trackClass}`}
+        role="meter"
+        aria-label={`${label} audio level`}
+        aria-valuenow={muted ? 0 : barWidth}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
         <div
-          className={`h-full rounded-full transition-all duration-100 ease-out ${
+          className={`h-full rounded-full audio-bar-spring ${
             muted ? "bg-muted-foreground/8" : colorClass
           }`}
           style={{
@@ -259,19 +307,19 @@ function AudioActivityBar({
       </div>
 
       <span className={`shrink-0 w-10 text-right text-[10px] font-medium tabular-nums transition-colors duration-150 ${
-        muted ? "text-red-400/40" : isActive ? textClass : "text-muted-foreground/60"
+        muted ? "text-destructive/40" : isActive ? textClass : "text-muted-foreground/60"
       }`}>
         {muted ? "Muted" : `${barWidth}%`}
       </span>
 
       {isActive && (
-        <span className="relative flex h-2 w-2 shrink-0">
-          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${colorClass} opacity-60`} />
+        <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+          <span className={`absolute inline-flex h-full w-full animate-pulse rounded-full ${colorClass} opacity-40`} />
           <span className={`relative inline-flex h-2 w-2 rounded-full ${colorClass}`} />
         </span>
       )}
       {muted && (
-        <span className="flex h-2 w-2 shrink-0 rounded-full bg-red-400/30" />
+        <span className="flex h-2 w-2 shrink-0 rounded-full bg-destructive/30" aria-hidden="true" />
       )}
     </div>
   );

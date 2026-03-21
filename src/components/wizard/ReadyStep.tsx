@@ -44,10 +44,10 @@ export function ReadyStep({
     <div className="flex flex-col items-center">
       {/* Success header */}
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-green-500/10 shadow-lg shadow-green-500/10">
-          <CheckCircle className="h-10 w-10 text-green-500" />
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/8">
+          <CheckCircle className="h-8 w-8 text-success" />
         </div>
-        <h2 className="text-3xl font-bold text-foreground">
+        <h2 className="text-2xl font-semibold text-foreground">
           You're All Set!
         </h2>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
@@ -122,7 +122,7 @@ export function ReadyStep({
           {/* Primary: Start Meeting */}
           <button
             onClick={onStartMeeting}
-            className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary to-primary/85 px-6 py-4 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]"
+            className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-primary px-6 py-4 text-base font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-all duration-200 hover:shadow-lg hover:shadow-primary/15"
           >
             <Mic className="h-5 w-5" />
             Start Meeting

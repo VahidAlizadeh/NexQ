@@ -94,7 +94,7 @@ function App() {
           <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
             <div className="h-3 w-3 rounded-full bg-primary/40 animate-pulse" />
           </div>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">Starting NexQ...</div>
         </div>
       </div>
     );

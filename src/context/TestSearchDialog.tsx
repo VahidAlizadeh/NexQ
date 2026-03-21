@@ -229,7 +229,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
             <div>
               <h2 className="text-sm font-semibold text-foreground">Test Knowledge Base</h2>
               <p className="text-[10px] text-muted-foreground">
-                Search documents + get AI answer using your RAG pipeline
+                Search documents + get AI answer using your knowledge base
               </p>
             </div>
           </div>
@@ -244,7 +244,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
 
         {/* Config summary bar */}
         <div className="flex items-center gap-4 border-b border-border/20 bg-accent/10 px-6 py-2 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1" title="Embedding model">
+          <span className="flex items-center gap-1" title="Search model">
             <Sparkles className="h-3 w-3" />
             {ragConfig?.embedding_model ?? "nomic-embed-text"}
           </span>
@@ -372,7 +372,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                         title="Copy response"
                       >
                         {copiedId === "ai-response" ? (
-                          <Check className="h-3 w-3 text-green-500" />
+                          <Check className="h-3 w-3 text-success" />
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}
@@ -466,7 +466,7 @@ export function TestSearchDialog({ isOpen, onClose }: TestSearchDialogProps) {
                         title="Copy chunk"
                       >
                         {copiedId === result.chunk_id ? (
-                          <Check className="h-3 w-3 text-green-500" />
+                          <Check className="h-3 w-3 text-success" />
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}

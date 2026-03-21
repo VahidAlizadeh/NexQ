@@ -61,6 +61,7 @@ export function AudioSettings() {
       }
     } catch (err) {
       console.error("Failed to load audio devices:", err);
+      showToast("Couldn't detect audio devices — check your connections", "error");
     } finally {
       setLoadingDevices(false);
     }
@@ -97,7 +98,7 @@ export function AudioSettings() {
       );
     } catch (err) {
       console.error("Failed to set recording:", err);
-      showToast("Failed to toggle recording", "error");
+      showToast("Couldn't toggle recording — audio device may be in use", "error");
     }
   }
 
@@ -111,10 +112,11 @@ export function AudioSettings() {
             value={micDeviceId || ""}
             onChange={(e) => setMicDeviceId(e.target.value || null)}
             disabled={loadingDevices}
+            aria-label="Microphone device"
             className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
           >
             <option value="">
-              {loadingDevices ? "Loading..." : "Select microphone"}
+              {loadingDevices ? "Detecting microphones..." : "Select microphone"}
             </option>
             {devices.inputs.map((device) => (
               <option key={device.id} value={device.id}>
@@ -126,6 +128,7 @@ export function AudioSettings() {
           <button
             onClick={() => micDeviceId && handleTestDevice(micDeviceId, true)}
             disabled={!micDeviceId || testingDevice !== null}
+            aria-label="Test microphone"
             className="rounded-md border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
           >
             {testingDevice === micDeviceId ? "Testing..." : "Test"}
@@ -140,13 +143,13 @@ export function AudioSettings() {
         />
 
         {testingDevice === micDeviceId && (
-          <p className="text-xs text-blue-400">
+          <p className="text-xs text-info">
             Speak into your microphone...
           </p>
         )}
         {testResult && testResult.deviceId === micDeviceId && !testingDevice && (
           <p
-            className={`text-xs ${testResult.success ? "text-green-500" : "text-yellow-500"}`}
+            className={`text-xs ${testResult.success ? "text-success" : "text-warning"}`}
           >
             {testResult.success
               ? "Audio detected — device is working"
@@ -163,10 +166,11 @@ export function AudioSettings() {
             value={systemDeviceId || ""}
             onChange={(e) => setSystemDeviceId(e.target.value || null)}
             disabled={loadingDevices}
+            aria-label="System audio device"
             className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
           >
             <option value="">
-              {loadingDevices ? "Loading..." : "Select output device"}
+              {loadingDevices ? "Detecting outputs..." : "Select output device"}
             </option>
             {devices.outputs.map((device) => (
               <option key={device.id} value={device.id}>
@@ -180,6 +184,7 @@ export function AudioSettings() {
               systemDeviceId && handleTestDevice(systemDeviceId, false)
             }
             disabled={!systemDeviceId || testingDevice !== null}
+            aria-label="Test system audio"
             className="rounded-md border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
           >
             {testingDevice === systemDeviceId ? "Testing..." : "Test"}
@@ -194,13 +199,13 @@ export function AudioSettings() {
         />
 
         {testingDevice === systemDeviceId && (
-          <p className="text-xs text-blue-400">
+          <p className="text-xs text-info">
             Play some audio on your computer...
           </p>
         )}
         {testResult && testResult.deviceId === systemDeviceId && !testingDevice && (
           <p
-            className={`text-xs ${testResult.success ? "text-green-500" : "text-yellow-500"}`}
+            className={`text-xs ${testResult.success ? "text-success" : "text-warning"}`}
           >
             {testResult.success
               ? "Audio detected — device is working"
@@ -258,15 +263,22 @@ function AudioLevelMeter({
 
   // Determine color based on level
   const getBarColor = () => {
-    if (clampedLevel > 0.8) return "bg-red-500";
-    if (clampedLevel > 0.5) return "bg-yellow-500";
-    return "bg-green-500";
+    if (clampedLevel > 0.8) return "bg-destructive";
+    if (clampedLevel > 0.5) return "bg-warning";
+    return "bg-success";
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-2"
+      role="meter"
+      aria-label={`${label} audio level`}
+      aria-valuenow={Math.round(clampedLevel * 100)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
       <span className="w-12 text-xs text-muted-foreground">{label}</span>
-      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted">
+      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-success/8">
         {/* Level bar */}
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all duration-75 ${getBarColor()}`}

@@ -42,7 +42,7 @@ export function AboutSettings() {
 
       {/* Keyboard Shortcuts */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h4 className="mb-4 text-sm font-semibold text-foreground">
+        <h4 className="mb-4 text-sm font-semibold text-primary/80">
           Keyboard Shortcuts
         </h4>
         <div className="overflow-hidden rounded-xl border border-border/30">

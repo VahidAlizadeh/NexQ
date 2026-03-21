@@ -127,6 +127,9 @@ export function PromptPreviewDialog({
       }`}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Prompt preview"
         className={`w-full max-w-[600px] max-h-[80vh] flex flex-col rounded-xl border border-border/50 bg-card shadow-2xl transition-all duration-150 ${
           isVisible
             ? "opacity-100 scale-100 translate-y-0"
@@ -144,6 +147,7 @@ export function PromptPreviewDialog({
             </p>
           </div>
           <button
+            autoFocus
             onClick={handleClose}
             className="rounded-lg p-1.5 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
             title="Close (Esc)"

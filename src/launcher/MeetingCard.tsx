@@ -35,6 +35,7 @@ export function MeetingCard({
 }: MeetingCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(meeting.title);
+  const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -54,13 +55,19 @@ export function MeetingCard({
     [meeting.title]
   );
 
-  const handleSaveEdit = useCallback(() => {
-    const trimmed = editTitle.trim();
-    if (trimmed && trimmed !== meeting.title) {
-      onRename(meeting.id, trimmed);
+  const handleSaveEdit = useCallback(async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const trimmed = editTitle.trim();
+      if (trimmed && trimmed !== meeting.title) {
+        await onRename(meeting.id, trimmed);
+      }
+    } finally {
+      setIsSaving(false);
+      setIsEditing(false);
     }
-    setIsEditing(false);
-  }, [editTitle, meeting.id, meeting.title, onRename]);
+  }, [editTitle, meeting.id, meeting.title, onRename, isSaving]);
 
   const handleCancelEdit = useCallback(() => {
     setEditTitle(meeting.title);
@@ -108,10 +115,30 @@ export function MeetingCard({
       ? "In progress"
       : "—";
 
+  const handleCardKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.key === "Enter" || e.key === " ") && !isEditing) {
+        e.preventDefault();
+        onSelect(meeting.id);
+      }
+    },
+    [isEditing, onSelect, meeting.id]
+  );
+
   return (
     <div
       onClick={() => !isEditing && onSelect(meeting.id)}
-      className="group relative cursor-pointer rounded-xl border border-border/15 bg-card/40 px-4 py-3 transition-all duration-150 hover:bg-card/70 hover:border-border/30"
+      onKeyDown={handleCardKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`Meeting: ${meeting.title}, ${formatRelativeTime(meeting.start_time)}`}
+      className={`group relative cursor-pointer rounded-xl border border-border/15 bg-card/40 px-4 py-3 transition-all duration-150 hover:bg-card/70 hover:border-border/30 border-l-2 ${
+        isLive
+          ? "border-l-success/50"
+          : meeting.has_summary
+            ? "border-l-info/30"
+            : "border-l-primary/10"
+      }`}
     >
       <div className="flex items-center gap-3">
         {/* Favorite star */}
@@ -119,14 +146,16 @@ export function MeetingCard({
           onClick={handleFavoriteClick}
           className={`shrink-0 rounded-md p-0.5 transition-colors ${
             isFavorite
-              ? "text-amber-400"
-              : "text-muted-foreground/40 opacity-0 group-hover:opacity-100 hover:text-amber-400/70"
+              ? "text-warning"
+              : "text-muted-foreground/40 opacity-0 group-hover:opacity-100 hover:text-warning/70"
           }`}
-          title={isFavorite ? "Unstar" : "Star"}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-pressed={isFavorite}
         >
           <Star
             className="h-3.5 w-3.5"
             fill={isFavorite ? "currentColor" : "none"}
+            aria-hidden="true"
           />
         </button>
 
@@ -144,6 +173,8 @@ export function MeetingCard({
                 onChange={(e) => setEditTitle(e.target.value)}
                 onKeyDown={handleEditKeyDown}
                 onBlur={handleSaveEdit}
+                disabled={isSaving}
+                maxLength={200}
                 className="w-full rounded-lg border border-primary/30 bg-background px-2.5 py-1 text-xs text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
               <button
@@ -151,9 +182,11 @@ export function MeetingCard({
                   e.stopPropagation();
                   handleSaveEdit();
                 }}
-                className="rounded-md p-1 text-green-400 hover:bg-green-400/10"
+                disabled={isSaving}
+                className="rounded-md p-1 text-success hover:bg-success/10 disabled:opacity-50"
+                aria-label="Save title"
               >
-                <Check className="h-3 w-3" />
+                <Check className="h-3 w-3" aria-hidden="true" />
               </button>
               <button
                 onClick={(e) => {
@@ -161,8 +194,9 @@ export function MeetingCard({
                   handleCancelEdit();
                 }}
                 className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+                aria-label="Cancel editing"
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </div>
           ) : (
@@ -173,30 +207,30 @@ export function MeetingCard({
 
           {/* Badges row */}
           <div className="mt-1.5 flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground/70">
+            <span className="text-[10px] tabular-nums text-muted-foreground/70">
               {formatRelativeTime(meeting.start_time)}
             </span>
 
             {isLive ? (
-              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[9px] font-semibold text-green-400">
+              <span className="rounded-full bg-success/10 px-2 py-0.5 text-[9px] font-semibold text-success">
                 LIVE
               </span>
             ) : (
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+              <span className="flex items-center gap-0.5 text-[10px] tabular-nums text-muted-foreground/60">
                 <Clock className="h-2.5 w-2.5" />
                 {durationDisplay}
               </span>
             )}
 
             {meeting.segment_count > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+              <span className="flex items-center gap-0.5 text-[10px] tabular-nums text-muted-foreground/60">
                 <MessageSquare className="h-2.5 w-2.5" />
                 {meeting.segment_count}
               </span>
             )}
 
             {meeting.has_summary && (
-              <span className="flex items-center gap-0.5 text-[10px] text-indigo-400">
+              <span className="flex items-center gap-0.5 text-[10px] text-info">
                 <FileText className="h-2.5 w-2.5" />
               </span>
             )}
@@ -207,18 +241,20 @@ export function MeetingCard({
         <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-1 rounded-lg bg-destructive/10 px-2 py-1">
-              <span className="text-[9px] text-red-400">Delete?</span>
+              <span className="text-[9px] text-destructive">Delete?</span>
               <button
                 onClick={handleConfirmDelete}
-                className="rounded p-0.5 text-red-400 hover:bg-red-400/20"
+                className="rounded p-0.5 text-destructive hover:bg-destructive/20"
+                aria-label="Confirm delete"
               >
-                <Check className="h-3 w-3" />
+                <Check className="h-3 w-3" aria-hidden="true" />
               </button>
               <button
                 onClick={handleCancelDelete}
                 className="rounded p-0.5 text-muted-foreground hover:bg-secondary"
+                aria-label="Cancel delete"
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </div>
           ) : (
@@ -226,16 +262,16 @@ export function MeetingCard({
               <button
                 onClick={handleStartEdit}
                 className="rounded-md p-1 text-muted-foreground/60 hover:bg-secondary hover:text-foreground"
-                title="Rename"
+                aria-label="Rename meeting"
               >
-                <Pencil className="h-3 w-3" />
+                <Pencil className="h-3 w-3" aria-hidden="true" />
               </button>
               <button
                 onClick={handleDeleteClick}
-                className="rounded-md p-1 text-muted-foreground/60 hover:bg-destructive/10 hover:text-red-400"
-                title="Delete"
+                className="rounded-md p-1 text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive"
+                aria-label="Delete meeting"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3 w-3" aria-hidden="true" />
               </button>
             </>
           )}

@@ -17,10 +17,10 @@ interface TranscriptViewProps {
 
 // Speaker colors for timeline blocks
 const TIMELINE_COLORS: Record<string, string> = {
-  User: "#3b82f6",
-  Interviewer: "#a855f7",
-  Them: "#10b981",
-  Unknown: "#6b7280",
+  User: "hsl(var(--info))",
+  Interviewer: "hsl(var(--primary))",
+  Them: "hsl(var(--success))",
+  Unknown: "hsl(var(--muted-foreground))",
 };
 
 export function TranscriptView({ segments, search, meetingStartTime }: TranscriptViewProps) {
@@ -95,11 +95,13 @@ export function TranscriptView({ segments, search, meetingStartTime }: Transcrip
                 key={segment.id || i}
                 ref={(el) => { segmentRefs.current[i] = el; }}
                 onClick={() => handleSegmentClick(i)}
-                className={`flex items-start gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all duration-100 ${
+                className={`flex items-start gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all duration-100 border-l-2 ${
+                  segment.speaker === "User" ? "border-l-speaker-user/25" : "border-l-speaker-interviewer/25"
+                } ${
                   isSelected
                     ? "bg-primary/8 ring-1 ring-primary/20"
                     : isSearchMatch
-                      ? "bg-yellow-500/10 ring-1 ring-yellow-500/20"
+                      ? "bg-highlight/10 ring-1 ring-highlight/20"
                       : "hover:bg-secondary/20"
                 }`}
               >
@@ -143,7 +145,7 @@ function highlightText(text: string, query: string, offsets: number[], isActive:
   for (const offset of sorted) {
     if (offset > lastEnd) parts.push(text.slice(lastEnd, offset));
     parts.push(
-      <mark key={offset} className={`rounded px-0.5 ${isActive ? "bg-yellow-400/40 text-yellow-100" : "bg-yellow-400/20 text-yellow-200"}`}>
+      <mark key={offset} className={`rounded px-0.5 ${isActive ? "bg-highlight/40 text-highlight" : "bg-highlight/20 text-highlight/70"}`}>
         {text.slice(offset, offset + needle.length)}
       </mark>
     );

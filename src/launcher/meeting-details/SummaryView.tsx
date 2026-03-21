@@ -19,8 +19,8 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
     if (text) {
       try {
         await navigator.clipboard.writeText(text);
-        showToast("Copied", "success");
-      } catch { showToast("Failed to copy", "error"); }
+        showToast("Copied to clipboard", "success");
+      } catch { showToast("Couldn't copy to clipboard", "error"); }
     }
   }, [meeting.summary, generation.streamedContent]);
 
@@ -55,14 +55,14 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
   if (generation.error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16">
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-sm text-red-400">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">
           {generation.error}
         </div>
         <button
           onClick={generation.generate}
           className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20 cursor-pointer"
         >
-          Try Again
+          Regenerate Summary
         </button>
       </div>
     );
@@ -112,13 +112,13 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
   // Empty state
   return (
     <div className="flex flex-col items-center justify-center py-16">
-      <Sparkles className="mb-4 h-8 w-8 text-muted-foreground/30" />
+      <Sparkles className="mb-4 h-8 w-8 text-primary/25" />
       <p className="mb-1 text-sm font-semibold text-muted-foreground/50">No summary yet</p>
-      <p className="mb-5 text-xs text-muted-foreground/30">Generate an AI summary of this meeting</p>
+      <p className="mb-5 text-xs text-muted-foreground/40">Generate an AI summary from the transcript</p>
       <button
         onClick={generation.generate}
         disabled={isOtherStreaming || meeting.transcript.length === 0}
-        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-all duration-200 hover:shadow-lg hover:shadow-primary/15 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
       >
         <Sparkles className="h-4 w-4" />
         Generate Summary

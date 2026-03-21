@@ -126,7 +126,7 @@ function SectionHeader({
         <Icon className="h-3.5 w-3.5 text-primary" />
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        <h3 className="text-sm font-semibold text-primary/80">{title}</h3>
         <p className="text-[10px] text-muted-foreground">{subtitle}</p>
       </div>
     </div>
@@ -445,7 +445,7 @@ export function AIActionsSettings() {
             {/* Active preset summary */}
             {presetSummary && (
               <div className="rounded-lg border border-primary/10 bg-primary/[0.04] px-3 py-2 flex items-center gap-2">
-                <span className="text-[10px] font-medium text-primary/80 uppercase tracking-wider shrink-0">
+                <span className="text-[10px] font-semibold text-primary/80 uppercase tracking-wider shrink-0">
                   Active
                 </span>
                 <span className="text-[11px] text-foreground/80">{presetSummary}</span>

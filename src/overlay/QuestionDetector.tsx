@@ -65,23 +65,27 @@ export function QuestionDetector() {
   const previousQuestions = questions.slice(1, 6);
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2.5" role="region" aria-label="Detected questions">
       {/* Latest question — prominent card */}
       <div
         className={`group flex items-start gap-3 rounded-lg transition-all duration-200 ${
           latest
-            ? "cursor-pointer hover:bg-blue-500/[0.06]"
+            ? "cursor-pointer hover:bg-info/[0.06] question-card-enter"
             : ""
         }`}
         onClick={() => latest && handleAssist(0)}
+        onKeyDown={(e) => { if (latest && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleAssist(0); } }}
+        role={latest ? "button" : undefined}
+        tabIndex={latest ? 0 : undefined}
+        aria-label={latest ? `Question: ${latest.text}. ${latest.assisted ? "Answered" : "Click to assist"}` : undefined}
       >
-        <div className="relative mt-0.5 shrink-0">
-          <HelpCircle className={`h-5 w-5 transition-colors ${latest ? "text-blue-400" : "text-muted-foreground/50"}`} />
+        <div className="relative mt-0.5 shrink-0" aria-hidden="true">
+          <HelpCircle className={`h-5 w-5 transition-colors ${latest ? "text-info" : "text-muted-foreground/50"}`} />
           {latest && !latest.assisted && (
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-info animate-pulse" />
           )}
           {latest?.assisted && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500">
+            <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-success">
               <Check className="h-2 w-2 text-white" />
             </span>
           )}
@@ -102,20 +106,21 @@ export function QuestionDetector() {
         {latest && (
           <button
             onClick={(e) => { e.stopPropagation(); handleAssist(0); }}
+            aria-label={latest.assisted ? "Already answered" : "Get AI assistance for this question"}
             className={`shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all duration-150 cursor-pointer ${
               latest.assisted
-                ? "bg-emerald-500/10 border border-emerald-500/15 text-emerald-400"
-                : "bg-blue-500/10 border border-blue-500/15 text-blue-400 hover:bg-blue-500/20"
+                ? "bg-success/10 border border-success/15 text-success"
+                : "bg-info/10 border border-info/15 text-info hover:bg-info/20"
             }`}
           >
             {latest.assisted ? (
               <>
-                <Check className="h-3.5 w-3.5" />
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 Answered
               </>
             ) : (
               <>
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                 Assist
               </>
             )}
@@ -132,9 +137,9 @@ export function QuestionDetector() {
               <button
                 key={`q-${realIdx}-${q.timestamp_ms}`}
                 onClick={() => handleAssist(realIdx)}
-                className={`group/q flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 cursor-pointer ${
+                className={`group/q flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 cursor-pointer question-card-enter ${
                   q.assisted
-                    ? "bg-emerald-500/[0.05] border border-emerald-500/10"
+                    ? "bg-success/[0.05] border border-success/10"
                     : "bg-card/20 border border-border/10 hover:bg-card/40 hover:border-border/20"
                 }`}
                 title={q.text}
@@ -142,8 +147,8 @@ export function QuestionDetector() {
                 {/* Status indicator */}
                 <div className="shrink-0">
                   {q.assisted ? (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15">
-                      <Check className="h-2.5 w-2.5 text-emerald-400" />
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-success/15">
+                      <Check className="h-2.5 w-2.5 text-success" />
                     </div>
                   ) : (
                     <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/30">
@@ -155,7 +160,7 @@ export function QuestionDetector() {
                 {/* Question text */}
                 <span className={`flex-1 truncate text-[11px] leading-snug transition-colors ${
                   q.assisted
-                    ? "text-emerald-300/70 font-medium"
+                    ? "text-success/70 font-medium"
                     : "text-muted-foreground/60 group-hover/q:text-foreground/80"
                 }`}>
                   {q.text}
@@ -163,7 +168,7 @@ export function QuestionDetector() {
 
                 {/* Assist action for unanswered */}
                 {!q.assisted && (
-                  <Sparkles className="h-3 w-3 shrink-0 text-blue-400/0 group-hover/q:text-blue-400/60 transition-colors" />
+                  <Sparkles className="h-3 w-3 shrink-0 text-info/0 group-hover/q:text-info/60 transition-colors" />
                 )}
               </button>
             );

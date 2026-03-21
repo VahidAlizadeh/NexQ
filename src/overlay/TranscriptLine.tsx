@@ -67,7 +67,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
       parts.push(
         <span
           key={`m-${matchIndex}`}
-          className="rounded-sm bg-yellow-400/30 px-0.5 text-yellow-200"
+          className="rounded-sm bg-highlight/30 px-0.5 text-highlight"
         >
           {text.slice(matchIndex, matchIndex + query.length)}
         </span>
@@ -86,7 +86,9 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
 
   return (
     <div
-      className="group flex items-start gap-2 rounded-lg px-1.5 py-1 transition-colors duration-100 hover:bg-accent/30"
+      className={`group flex items-start gap-2 rounded-lg px-1.5 py-1 transition-colors duration-100 hover:bg-accent/30 border-l-2 transcript-line-enter ${
+        segment.speaker === "User" ? "border-l-speaker-user/25" : "border-l-speaker-interviewer/25"
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

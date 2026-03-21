@@ -15,28 +15,28 @@ const MODE_COLORS: Record<
   IntelligenceMode,
   { badge: string; dot: string }
 > = {
-  Assist: { badge: "bg-blue-500/15 text-blue-400", dot: "bg-blue-500" },
+  Assist: { badge: "bg-info/15 text-info", dot: "bg-info" },
   WhatToSay: {
-    badge: "bg-violet-500/15 text-violet-400",
-    dot: "bg-violet-500",
+    badge: "bg-primary/15 text-primary",
+    dot: "bg-primary",
   },
-  Shorten: { badge: "bg-amber-500/15 text-amber-400", dot: "bg-amber-500" },
-  FollowUp: { badge: "bg-teal-500/15 text-teal-400", dot: "bg-teal-500" },
+  Shorten: { badge: "bg-warning/15 text-warning", dot: "bg-warning" },
+  FollowUp: { badge: "bg-info/15 text-info", dot: "bg-info" },
   Recap: {
-    badge: "bg-emerald-500/15 text-emerald-400",
-    dot: "bg-emerald-500",
+    badge: "bg-success/15 text-success",
+    dot: "bg-success",
   },
-  AskQuestion: { badge: "bg-rose-500/15 text-rose-400", dot: "bg-rose-500" },
-  MeetingSummary: { badge: "bg-indigo-500/15 text-indigo-400", dot: "bg-indigo-500" },
+  AskQuestion: { badge: "bg-destructive/15 text-destructive", dot: "bg-destructive" },
+  MeetingSummary: { badge: "bg-primary/15 text-primary", dot: "bg-primary" },
 };
 
 // -- Context source badges ---------------------------------------------------
 
 const SOURCE_BADGES = [
-  { key: "includeTranscript" as const, label: "T", color: "text-emerald-500/70 bg-emerald-500/10", title: "Transcript" },
-  { key: "includeRag" as const, label: "R", color: "text-blue-500/70 bg-blue-500/10", title: "RAG Chunks" },
-  { key: "includeInstructions" as const, label: "I", color: "text-amber-500/70 bg-amber-500/10", title: "Instructions" },
-  { key: "includeQuestion" as const, label: "Q", color: "text-rose-500/70 bg-rose-500/10", title: "Question" },
+  { key: "includeTranscript" as const, label: "T", color: "text-success/70 bg-success/10", title: "Transcript" },
+  { key: "includeRag" as const, label: "R", color: "text-info/70 bg-info/10", title: "Document Excerpts" },
+  { key: "includeInstructions" as const, label: "I", color: "text-warning/70 bg-warning/10", title: "Instructions" },
+  { key: "includeQuestion" as const, label: "Q", color: "text-destructive/70 bg-destructive/10", title: "Question" },
 ];
 
 // -- Compact entry row -------------------------------------------------------
@@ -74,7 +74,8 @@ export function CallLogEntry({ entry, isSelected }: Props) {
 
       {/* Mode badge */}
       <span
-        className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold ${colors.badge}`}
+        className={`shrink-0 max-w-[100px] truncate rounded px-1.5 py-0.5 text-[11px] font-semibold ${colors.badge}`}
+        title={getModeLabel(entry.mode)}
       >
         {getModeLabel(entry.mode)}
       </span>
@@ -95,7 +96,10 @@ export function CallLogEntry({ entry, isSelected }: Props) {
       </div>
 
       {/* Provider/Model */}
-      <span className="flex-1 truncate text-[11px] text-muted-foreground">
+      <span
+        className="min-w-0 flex-1 max-w-[80px] truncate text-[11px] text-muted-foreground"
+        title={`${entry.provider}/${entry.model.split(":")[0].split("/").pop()}`}
+      >
         {entry.provider}/{entry.model.split(":")[0].split("/").pop()}
       </span>
 
@@ -132,7 +136,7 @@ function StatusDot({
     return (
       <span className="relative flex h-3 w-3 shrink-0">
         <span
-          className={`absolute inline-flex h-full w-full animate-ping rounded-full ${dotColor} opacity-75`}
+          className={`absolute inline-flex h-full w-full animate-pulse rounded-full ${dotColor} opacity-40`}
         />
         <span
           className={`relative inline-flex h-3 w-3 rounded-full ${dotColor}`}
@@ -142,11 +146,11 @@ function StatusDot({
   }
   if (status === "complete") {
     return (
-      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500/70" />
+      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success/70" />
     );
   }
   if (status === "error") {
-    return <AlertCircle className="h-3.5 w-3.5 shrink-0 text-red-500/70" />;
+    return <AlertCircle className="h-3.5 w-3.5 shrink-0 text-destructive/70" />;
   }
   // cancelled
   return <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />;

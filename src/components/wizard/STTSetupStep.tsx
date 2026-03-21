@@ -122,8 +122,8 @@ export function STTSetupStep() {
 
       <div className="w-full max-w-lg space-y-6">
         {/* Recommended free setup banner */}
-        <div className="rounded-xl border border-green-500/25 bg-green-500/5 px-4 py-3">
-          <p className="text-xs text-green-600 leading-relaxed">
+        <div className="rounded-xl border border-success/25 bg-success/5 px-4 py-3">
+          <p className="text-xs text-success leading-relaxed">
             <strong>Recommended (Free):</strong> Web Speech for You + Windows
             Native for Them. No API keys needed!
           </p>
@@ -132,7 +132,7 @@ export function STTSetupStep() {
         {/* YOU STT Selection */}
         <div>
           <label className="mb-3 flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-primary">
+            <span className="rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
               You
             </span>
             STT Provider
@@ -153,7 +153,7 @@ export function STTSetupStep() {
         {/* THEM STT Selection */}
         <div>
           <label className="mb-3 flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <span className="rounded-lg bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-lg bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Them
             </span>
             STT Provider
@@ -207,12 +207,12 @@ function ProviderButton({
             {provider.label}
           </span>
           {provider.free && (
-            <span className="rounded-md bg-green-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-green-600">
+            <span className="rounded-md bg-success/10 px-1.5 py-0.5 text-[9px] font-semibold text-success">
               FREE
             </span>
           )}
           {provider.requiresKey && hasKey && (
-            <CheckCircle className="h-3 w-3 text-green-500" />
+            <CheckCircle className="h-3 w-3 text-success" />
           )}
           {provider.requiresKey && !hasKey && (
             <AlertCircle className="h-3 w-3 text-yellow-500" />

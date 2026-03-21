@@ -118,7 +118,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
       }
     } catch (err) {
       console.error("[MeetingDetails] Export failed:", err);
-      showToast("Export failed", "error");
+      showToast("Couldn't export transcript — check disk space", "error");
     }
   }, [meeting]);
 
@@ -130,7 +130,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        <p className="text-xs text-muted-foreground">Loading...</p>
+        <p className="text-xs text-muted-foreground">Loading meeting data...</p>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
               setActiveTab={setActiveTab}
               meeting={meeting}
             />
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto" role="tabpanel">
               {activeTab === "transcript" && (
                 <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
               )}
@@ -215,7 +215,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
       <MeetingTabBar activeTab={activeTab} setActiveTab={setActiveTab} meeting={meeting} />
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" role="tabpanel">
         {activeTab === "transcript" && (
           <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
         )}

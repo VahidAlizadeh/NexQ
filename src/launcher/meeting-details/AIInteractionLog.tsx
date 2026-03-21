@@ -11,9 +11,9 @@ interface AIInteractionLogProps {
 export function AIInteractionLog({ interactions, expandedId, onToggle }: AIInteractionLogProps) {
   if (interactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/40">
-        <MessageSquare className="mb-3 h-8 w-8" />
-        <p className="text-sm font-medium">No AI interactions</p>
+      <div className="flex flex-col items-center justify-center py-16">
+        <MessageSquare className="mb-3 h-8 w-8 text-primary/25" />
+        <p className="text-sm font-medium text-muted-foreground/40">No AI interactions</p>
       </div>
     );
   }
@@ -23,10 +23,11 @@ export function AIInteractionLog({ interactions, expandedId, onToggle }: AIInter
       {interactions.map((interaction) => {
         const isExpanded = expandedId === interaction.id;
         return (
-          <div key={interaction.id} className="rounded-xl border border-border/15 bg-card/30">
+          <div key={interaction.id} className="rounded-xl border border-border/15 bg-card/30 border-l-2 border-l-primary/15">
             <button
               onClick={() => onToggle(interaction.id)}
               className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
+              aria-expanded={isExpanded}
             >
               <div className="flex items-center gap-2.5">
                 <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">

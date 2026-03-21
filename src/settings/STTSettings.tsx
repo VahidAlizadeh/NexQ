@@ -535,8 +535,8 @@ export function STTSettings() {
         {/* Local Providers */}
         <div className="px-5 pt-4 pb-3 border-b border-border/20 bg-muted/10">
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/10">
-              <HardDrive className="h-3 w-3 text-emerald-500" />
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-success/10">
+              <HardDrive className="h-3 w-3 text-success" />
             </div>
             <span className="text-xs font-semibold text-foreground">Local & Built-in</span>
             <span className="ml-auto text-[9px] text-muted-foreground/60 font-medium uppercase tracking-wider">Free · No API Key</span>
@@ -558,8 +558,8 @@ export function STTSettings() {
         {/* Cloud Providers */}
         <div className="px-5 pt-4 pb-4">
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500/10">
-              <Cloud className="h-3 w-3 text-blue-500" />
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-info/10">
+              <Cloud className="h-3 w-3 text-info" />
             </div>
             <span className="text-xs font-semibold text-foreground">Cloud</span>
             <span className="ml-auto text-[9px] text-muted-foreground/60 font-medium uppercase tracking-wider">Requires API Key</span>
@@ -582,11 +582,11 @@ export function STTSettings() {
       {/* Inline Model Panel — shown when the selected provider needs models */}
       {showModelPanel && modelEngineId && (
         <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="mb-1 text-sm font-semibold text-foreground flex items-center gap-1.5">
+          <h3 className="mb-1 text-sm font-semibold text-primary/80 flex items-center gap-1.5">
             <HardDrive className="h-4 w-4" />
             {currentProviderOption?.label} Models
             {currentProviderOption?.batchOnly && (
-              <span className="ml-1 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-500 uppercase tracking-wide">
+              <span className="ml-1 rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[9px] font-semibold text-warning uppercase tracking-wide">
                 Batch
               </span>
             )}
@@ -609,7 +609,7 @@ export function STTSettings() {
       {/* API Key — cloud providers only. Save & Test flow: test first, persist only on success. */}
       {currentProviderOption?.requiresApiKey && (
         <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">API Key</h3>
+          <h3 className="mb-3 text-sm font-semibold text-primary/80">API Key</h3>
 
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -633,6 +633,8 @@ export function STTSettings() {
                 onClick={() => setShowApiKey(!showApiKey)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
                 type="button"
+                aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                aria-pressed={showApiKey}
               >
                 {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
@@ -658,7 +660,7 @@ export function STTSettings() {
             {hasStoredKey && !keyDirty && (
               <button
                 onClick={handleClearApiKey}
-                className="flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-500/10"
+                className="flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-2 text-xs text-destructive transition-colors hover:bg-destructive/10"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Clear
@@ -669,19 +671,19 @@ export function STTSettings() {
           {/* Status feedback */}
           <div className="mt-2 min-h-[18px]">
             {connectionStatus === "success" && (
-              <div className="flex items-center gap-1.5 text-[11px] text-green-500">
+              <div className="flex items-center gap-1.5 text-[11px] text-success">
                 <CheckCircle className="h-3 w-3" />
                 {statusMessage}
               </div>
             )}
             {connectionStatus === "error" && (
-              <div className="flex items-center gap-1.5 text-[11px] text-red-400">
+              <div className="flex items-center gap-1.5 text-[11px] text-destructive">
                 <XCircle className="h-3 w-3" />
                 {statusMessage}
               </div>
             )}
             {connectionStatus === "idle" && hasStoredKey && !keyDirty && (
-              <p className="text-[11px] text-green-500/70">
+              <p className="text-[11px] text-success/70">
                 API key verified and stored securely
               </p>
             )}
@@ -697,7 +699,7 @@ export function STTSettings() {
       {/* Azure Region Input */}
       {currentProviderOption?.needsRegion && (
         <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">
+          <h3 className="mb-3 text-sm font-semibold text-primary/80">
             Azure Region
           </h3>
           <input
@@ -728,12 +730,13 @@ export function STTSettings() {
 
       {/* Language Selection */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">
+        <h3 className="mb-3 text-sm font-semibold text-primary/80">
           Language
         </h3>
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
+          aria-label="STT language"
           className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
         >
           {LANGUAGES.map((lang) => (
@@ -747,7 +750,7 @@ export function STTSettings() {
       {/* Test Connection — only for local/always-ready providers; cloud uses Save & Test in the key section */}
       {!currentProviderOption?.requiresApiKey && (
         <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Connection</h3>
+          <h3 className="mb-3 text-sm font-semibold text-primary/80">Connection</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={handleTestConnection}
@@ -763,13 +766,13 @@ export function STTSettings() {
             </button>
 
             {connectionStatus === "success" && (
-              <div className="flex items-center gap-1 text-green-500">
+              <div className="flex items-center gap-1 text-success">
                 <CheckCircle className="h-3.5 w-3.5" />
                 <span className="text-xs">{statusMessage}</span>
               </div>
             )}
             {connectionStatus === "error" && (
-              <div className="flex items-center gap-1 text-red-500">
+              <div className="flex items-center gap-1 text-destructive">
                 <XCircle className="h-3.5 w-3.5" />
                 <span className="text-xs truncate max-w-[200px]">{statusMessage}</span>
               </div>
@@ -799,6 +802,7 @@ function ProviderCard({
   return (
     <button
       onClick={onClick}
+      aria-pressed={isSelected}
       className={`relative flex flex-col items-start rounded-xl border p-3 text-left transition-all duration-150 ${
         isSelected
           ? "border-primary bg-primary/8 ring-1 ring-primary/25 shadow-sm"
@@ -828,9 +832,9 @@ function ProviderCard({
 
 function ProviderBadge({ text, variant }: { text: string; variant: BadgeVariant }) {
   const styles: Record<BadgeVariant, string> = {
-    ready: "bg-green-500/15 text-green-500 border-green-500/25",
-    warning: "bg-amber-500/15 text-amber-500 border-amber-500/25",
-    error: "bg-red-500/15 text-red-400 border-red-500/25",
+    ready: "bg-success/15 text-success border-success/25",
+    warning: "bg-warning/15 text-warning border-warning/25",
+    error: "bg-destructive/15 text-destructive border-destructive/25",
   };
   return (
     <span
@@ -876,7 +880,7 @@ function PauseThresholdSetting() {
 
   return (
     <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-      <h3 className="mb-1 text-sm font-semibold text-foreground">
+      <h3 className="mb-1 text-sm font-semibold text-primary/80">
         New Line Pause Duration
       </h3>
       <p className="mb-3 text-[11px] text-muted-foreground">
@@ -954,7 +958,7 @@ function DeepgramAdvancedSettings() {
             </span>
           )}
           {activePresetId === "custom" && (
-            <span className="ml-1 rounded border border-amber-500/30 bg-amber-500/8 px-1.5 py-0.5 text-[9px] font-semibold text-amber-500 uppercase tracking-wide">
+            <span className="ml-1 rounded border border-warning/30 bg-warning/8 px-1.5 py-0.5 text-[9px] font-semibold text-warning uppercase tracking-wide">
               Custom
             </span>
           )}
@@ -993,9 +997,9 @@ function DeepgramAdvancedSettings() {
         <div className="grid grid-cols-2 gap-1.5">
           {DEEPGRAM_MODELS.map((model) => {
             const tierColors: Record<string, string> = {
-              latest: "text-emerald-500",
-              standard: "text-blue-400",
-              economy: "text-amber-500",
+              latest: "text-success",
+              standard: "text-info",
+              economy: "text-warning",
               whisper: "text-purple-400",
             };
             return (
@@ -1014,7 +1018,7 @@ function DeepgramAdvancedSettings() {
                       {model.label}
                     </span>
                     {model.tier === "latest" && (
-                      <span className="rounded bg-emerald-500/10 px-1 py-0.5 text-[8px] font-bold text-emerald-500">NEW</span>
+                      <span className="rounded bg-success/10 px-1 py-0.5 text-[8px] font-bold text-success">NEW</span>
                     )}
                   </div>
                   <p className="text-[9px] text-muted-foreground/70 leading-tight mt-0.5">{model.description}</p>
@@ -1187,7 +1191,7 @@ function DeepgramAdvancedSettings() {
                     {term}
                     <button
                       onClick={() => removeKeyterm(term)}
-                      className="text-muted-foreground hover:text-red-400 transition-colors"
+                      className="text-muted-foreground hover:text-destructive transition-colors"
                     >
                       ×
                     </button>
@@ -1383,7 +1387,7 @@ function GroqAdvancedSettings() {
             </span>
           )}
           {activePresetId === "custom" && (
-            <span className="ml-1 rounded border border-amber-500/30 bg-amber-500/8 px-1.5 py-0.5 text-[9px] font-semibold text-amber-500 uppercase tracking-wide">
+            <span className="ml-1 rounded border border-warning/30 bg-warning/8 px-1.5 py-0.5 text-[9px] font-semibold text-warning uppercase tracking-wide">
               Custom
             </span>
           )}
@@ -1440,15 +1444,15 @@ function GroqAdvancedSettings() {
                     {model.label}
                   </span>
                   {model.id === "whisper-large-v3-turbo" && (
-                    <span className="rounded bg-emerald-500/10 px-1 py-0.5 text-[8px] font-bold text-emerald-500">FAST</span>
+                    <span className="rounded bg-success/10 px-1 py-0.5 text-[8px] font-bold text-success">FAST</span>
                   )}
                   {model.id === "whisper-large-v3" && (
-                    <span className="rounded bg-blue-500/10 px-1 py-0.5 text-[8px] font-bold text-blue-500">BEST</span>
+                    <span className="rounded bg-info/10 px-1 py-0.5 text-[8px] font-bold text-info">BEST</span>
                   )}
                 </div>
                 <p className="text-[9px] text-muted-foreground/70 leading-tight mt-0.5">{model.description}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[9px] font-mono text-emerald-500">${model.costPerHour.toFixed(3)}/hr</span>
+                  <span className="text-[9px] font-mono text-success">${model.costPerHour.toFixed(3)}/hr</span>
                   <span className="text-[9px] text-muted-foreground/70">{model.speedFactor}</span>
                 </div>
               </div>
@@ -1628,7 +1632,7 @@ function DualPassSettings() {
 
   return (
     <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-      <h3 className="mb-1 text-sm font-semibold text-foreground">
+      <h3 className="mb-1 text-sm font-semibold text-primary/80">
         Transcription Tuning
       </h3>
       <p className="mb-4 text-[10px] text-muted-foreground">

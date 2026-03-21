@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { showToast } from "../stores/toastStore";
 import type { LogEntry } from "../lib/types";
 import {
   ChevronDown,
@@ -137,12 +138,12 @@ function CollapsibleSection({
   if (!content && !isResponse) return null;
 
   const badgeColors: Record<string, string> = {
-    amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    green: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    rose: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+    amber: "bg-warning/10 text-warning border-warning/15",
+    blue: "bg-info/10 text-info border-info/15",
+    green: "bg-success/10 text-success border-success/15",
+    rose: "bg-destructive/10 text-destructive border-destructive/15",
     gray: "bg-secondary/60 text-muted-foreground/70 border-border/20",
-    emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    emerald: "bg-success/10 text-success border-success/15",
   };
 
   const badgeClass = badge ? badgeColors[badge.color] || badgeColors.gray : "";
@@ -153,6 +154,7 @@ function CollapsibleSection({
       {/* Header */}
       <button
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
         className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent/20 transition-colors"
       >
         {expanded ? (
@@ -356,7 +358,7 @@ function buildSection(title: string, content: string): PromptSection {
       content,
       type: "context",
       badge: {
-        label: chunkCount > 0 ? `${chunkCount} chunks` : "RAG",
+        label: chunkCount > 0 ? `${chunkCount} chunks` : "Document Context",
         color: "blue",
         icon: FileText,
       },
@@ -425,7 +427,7 @@ function SectionCopyButton({ text }: { text: string }) {
       navigator.clipboard.writeText(text).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
-      });
+      }).catch(() => showToast("Couldn't copy — try selecting the text manually", "error"));
     },
     [text]
   );
@@ -436,10 +438,10 @@ function SectionCopyButton({ text }: { text: string }) {
     <button
       onClick={handleCopy}
       className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
-      title="Copy"
+      aria-label="Copy section"
     >
       {copied ? (
-        <Check className="h-3 w-3 text-emerald-500" />
+        <Check className="h-3 w-3 text-success" />
       ) : (
         <Copy className="h-3 w-3" />
       )}

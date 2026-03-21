@@ -66,7 +66,7 @@ export function GeneralSettings() {
 
       {/* Toggle Options */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-5 space-y-5">
-        <h3 className="text-sm font-semibold text-foreground">Behavior</h3>
+        <h3 className="text-sm font-semibold text-primary/80">Behavior</h3>
 
         {/* Auto-Summary Toggle */}
         <div className="flex items-center justify-between">
@@ -126,9 +126,9 @@ export function GeneralSettings() {
       </div>
 
       {/* Moved notice */}
-      <div className="rounded-xl border border-border/20 bg-accent/10 px-5 py-3">
-        <p className="text-xs text-muted-foreground">
-          Context Window, Auto-Trigger, and AI instructions have moved to the <strong>AI Actions</strong> tab.
+      <div className="rounded-xl border border-info/15 bg-info/[0.04] px-5 py-3">
+        <p className="text-xs text-info/80">
+          Context Window, Auto-Trigger, and AI instructions have moved to the <strong className="text-info">AI Actions</strong> tab.
         </p>
       </div>
 

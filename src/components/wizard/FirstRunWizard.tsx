@@ -137,7 +137,8 @@ export function FirstRunWizard() {
                 }
               }}
               className="group flex items-center gap-1"
-              title={STEP_LABELS[i]}
+              aria-label={`Step ${i + 1}`}
+              aria-current={currentStep === i ? "step" : undefined}
             >
               <div
                 className={`transition-all duration-300 rounded-full ${

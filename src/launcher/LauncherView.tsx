@@ -156,7 +156,7 @@ export function LauncherView() {
       await loadRecentMeetings();
       if (searchResults) setSearchResults((p) => p?.filter((m) => m.id !== meetingId) ?? null);
       showToast("Meeting deleted", "info");
-    } catch { showToast("Failed to delete", "error"); }
+    } catch { showToast("Couldn't delete meeting", "error"); }
   }, [loadRecentMeetings, searchResults]);
 
   const handleDeleteAll = useCallback(() => {
@@ -215,10 +215,10 @@ export function LauncherView() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* ═══ HEADER ═══ */}
-      <header className="flex items-center justify-between px-5 py-3 border-b border-border/15">
+      <header className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border/15">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600">
-            <Mic className="h-3.5 w-3.5 text-white" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
+            <Mic className="h-3.5 w-3.5 text-white" aria-hidden="true" />
           </div>
           <span className="text-sm font-bold tracking-tight text-foreground">NexQ</span>
         </div>
@@ -227,13 +227,13 @@ export function LauncherView() {
         {activeMeeting && (
           <button
             onClick={() => setCurrentView("overlay")}
-            className="group flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 pl-3 pr-2 py-1.5 transition-all hover:bg-emerald-500/10 hover:border-emerald-500/30 cursor-pointer"
+            className="group flex items-center gap-2 rounded-full border border-success/25 bg-success/8 pl-3 pr-2 py-1.5 shadow-sm shadow-success/8 transition-all hover:bg-success/15 hover:border-success/35 hover:shadow-md hover:shadow-success/12 cursor-pointer"
           >
-            <Radio className="h-3 w-3 text-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-medium text-emerald-300 max-w-[200px] truncate">
+            <Radio className="h-3 w-3 text-success animate-pulse" />
+            <span className="text-[11px] font-medium text-success max-w-[200px] truncate">
               {activeMeeting.title}
             </span>
-            <span className="flex items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">
+            <span className="flex items-center gap-0.5 rounded-full bg-success/15 px-1.5 py-0.5 text-[9px] font-semibold text-success">
               RETURN <ArrowRight className="h-2.5 w-2.5" />
             </span>
           </button>
@@ -242,9 +242,9 @@ export function LauncherView() {
         <button
           onClick={() => setCurrentView("settings")}
           className="rounded-lg p-2 text-muted-foreground/50 transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
-          title="Settings (Ctrl+,)"
+          aria-label="Settings (Ctrl+,)"
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="h-4 w-4" aria-hidden="true" />
         </button>
       </header>
 
@@ -252,21 +252,22 @@ export function LauncherView() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── LEFT: MEETINGS SIDEBAR ── */}
-        <div className="flex w-[280px] shrink-0 flex-col border-r border-border/10 bg-card/20">
+        <div className="flex w-[280px] min-w-[220px] shrink flex-col border-r border-border/10 bg-card/20">
           {/* Search */}
           <div className="px-3 pt-3 pb-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60" />
+              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60" aria-hidden="true" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search..."
+                placeholder="Search meetings..."
+                aria-label="Search meetings"
                 className="w-full rounded-lg border border-border/20 bg-background/50 py-1.5 pl-7.5 pr-7 text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:outline-none"
               />
               {searchQuery && (
-                <button onClick={() => handleSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground cursor-pointer">
-                  <X className="h-2.5 w-2.5" />
+                <button onClick={() => handleSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground cursor-pointer" aria-label="Clear search">
+                  <X className="h-2.5 w-2.5" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -293,15 +294,15 @@ export function LauncherView() {
               ))}
             </div>
             {recentMeetings.length > 0 && (
-              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/50 hover:text-red-400 cursor-pointer" title="Delete all">
-                <Trash2 className="h-3 w-3" />
+              <button onClick={handleDeleteAll} className="rounded p-1 text-muted-foreground/50 hover:text-destructive cursor-pointer" aria-label="Delete all meetings">
+                <Trash2 className="h-3 w-3" aria-hidden="true" />
               </button>
             )}
           </div>
 
           {/* Count */}
           <div className="px-3 pb-1.5">
-            <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/60">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">
               {displayedMeetings.length} meeting{displayedMeetings.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -329,12 +330,13 @@ export function LauncherView() {
               <button
                 onClick={handleStartMeeting}
                 disabled={isStarting}
-                className="group relative flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 pl-5 pr-6 py-3.5 font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-600/35 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                aria-busy={isStarting}
+                className="group relative flex items-center gap-3.5 rounded-2xl bg-primary pl-5 pr-7 py-4 font-semibold text-white shadow-md shadow-primary/15 transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
                   {isStarting
-                    ? <Loader2 className="h-4.5 w-4.5 animate-spin" />
-                    : <Play className="h-4 w-4 ml-0.5" fill="white" />
+                    ? <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+                    : <Play className="h-4 w-4 ml-0.5" fill="white" aria-hidden="true" />
                   }
                 </div>
                 <div className="text-left">
@@ -348,7 +350,7 @@ export function LauncherView() {
               </button>
 
               {startError && (
-                <div className="mt-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-[11px] text-red-400">
+                <div className="mt-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-1.5 text-[11px] text-destructive">
                   {startError}
                 </div>
               )}
@@ -357,7 +359,7 @@ export function LauncherView() {
             {/* Section label */}
             <div className="flex items-center gap-2 pt-1">
               <Database className="h-3 w-3 text-muted-foreground/60" />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Meeting Context
               </span>
               <div className="flex-1 border-t border-border/10" />
@@ -380,10 +382,10 @@ export function LauncherView() {
                       onClick={handleRagUpdate}
                       className={`w-full rounded-lg border border-dashed px-3 py-2 text-[11px] font-medium transition-all cursor-pointer ${
                         settingsStale
-                          ? "border-amber-500/40 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/60"
+                          ? "border-warning/40 bg-warning/5 text-warning hover:bg-warning/10 hover:border-warning/60"
                           : isFirstBuild
                             ? "border-primary/25 bg-primary/5 text-primary/70 hover:bg-primary/10 hover:border-primary/40"
-                            : "border-emerald-500/25 bg-emerald-500/5 text-emerald-400/70 hover:bg-emerald-500/10 hover:border-emerald-500/40"
+                            : "border-success/25 bg-success/5 text-success/70 hover:bg-success/10 hover:border-success/40"
                       }`}
                     >
                       {settingsStale ? (
@@ -406,7 +408,7 @@ export function LauncherView() {
                   );
                 })()}
                 {ragStatus === "updating" && (
-                  <div className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-400">
+                  <div className="flex items-center justify-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-[11px] text-warning">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Building knowledge base...
                   </div>
@@ -420,7 +422,7 @@ export function LauncherView() {
                   </div>
                 )}
                 {ragStatus === "done" && (
-                  <div className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-400">
+                  <div className="flex items-center justify-center gap-2 rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-[11px] text-success">
                     <CheckCircle2 className="h-3 w-3" />
                     Knowledge base updated
                   </div>
@@ -484,10 +486,10 @@ export function LauncherView() {
 
       {/* ═══ DELETE ALL CONFIRMATION ═══ */}
       {showDeleteAllConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Delete all meetings confirmation">
           <div className="w-[380px] rounded-2xl border border-border/40 bg-card p-5 shadow-2xl">
             <div className="mb-1 flex items-center gap-2">
-              <Trash2 className="h-4.5 w-4.5 text-red-400" />
+              <Trash2 className="h-4.5 w-4.5 text-destructive" aria-hidden="true" />
               <h3 className="text-sm font-semibold text-foreground">Delete All Meetings</h3>
             </div>
             <p className="mb-5 text-xs text-muted-foreground">
@@ -495,9 +497,10 @@ export function LauncherView() {
             </p>
             <div className="flex flex-col gap-2">
               <button
+                autoFocus
                 onClick={handleConfirmDeleteAll}
                 disabled={isDeletingAll}
-                className="w-full rounded-xl bg-red-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full rounded-xl bg-destructive px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-destructive/90 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isDeletingAll ? (
                   <span className="flex items-center justify-center gap-2">
@@ -522,17 +525,17 @@ export function LauncherView() {
 
       {/* ═══ CONFLICT MODAL ═══ */}
       {showConflictPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Meeting in progress conflict">
           <div className="w-[380px] rounded-2xl border border-border/40 bg-card p-5 shadow-2xl">
             <div className="mb-1 flex items-center gap-2">
-              <AlertTriangle className="h-4.5 w-4.5 text-amber-500" />
+              <AlertTriangle className="h-4.5 w-4.5 text-warning" aria-hidden="true" />
               <h3 className="text-sm font-semibold text-foreground">Meeting in Progress</h3>
             </div>
             <p className="mb-5 text-xs text-muted-foreground">
               &ldquo;{activeMeeting?.title}&rdquo; is still active.
             </p>
             <div className="flex flex-col gap-2">
-              <button onClick={handleEndAndStartNew} className="w-full rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer">
+              <button autoFocus onClick={handleEndAndStartNew} className="w-full rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer">
                 End Current & Start New
               </button>
               <button onClick={() => { setShowConflictPrompt(false); setCurrentView("overlay"); }} className="w-full rounded-xl border border-border/40 bg-secondary/30 px-4 py-2 text-xs font-medium text-foreground hover:bg-secondary/50 cursor-pointer">

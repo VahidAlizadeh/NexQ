@@ -16,52 +16,9 @@ import {
   Settings,
   Square,
   Activity,
-  Plus,
-  Minus as MinusIcon,
-  Bold,
-  RotateCcw,
-  ChevronDown,
   Terminal,
 } from "lucide-react";
 import { formatDuration } from "../lib/utils";
-
-// ── Font families ──
-const FONT_FAMILIES = [
-  { value: "inherit", label: "Default" },
-  { value: "'Consolas', 'Courier New', monospace", label: "Mono" },
-  { value: "Georgia, 'Times New Roman', serif", label: "Serif" },
-  { value: "'Segoe UI', system-ui, sans-serif", label: "Sans" },
-];
-
-// ── Text format hook (localStorage-persisted) ──
-
-interface TextFormat {
-  zoom: number; // 0.8 to 1.6
-  bold: boolean;
-  fontFamily: string;
-}
-
-function useTextFormat(panel: string) {
-  const key = `nexq_tf_${panel}`;
-  const [fmt, setFmt] = useState<TextFormat>(() => {
-    try {
-      const s = localStorage.getItem(key);
-      return s ? JSON.parse(s) : { zoom: 1, bold: false, fontFamily: "inherit" };
-    } catch {
-      return { zoom: 1, bold: false, fontFamily: "inherit" };
-    }
-  });
-  const save = (f: TextFormat) => { setFmt(f); localStorage.setItem(key, JSON.stringify(f)); };
-  return {
-    fmt,
-    zoomIn: () => save({ ...fmt, zoom: Math.min(fmt.zoom + 0.1, 1.6) }),
-    zoomOut: () => save({ ...fmt, zoom: Math.max(fmt.zoom - 0.1, 0.7) }),
-    toggleBold: () => save({ ...fmt, bold: !fmt.bold }),
-    setFont: (f: string) => save({ ...fmt, fontFamily: f }),
-    reset: () => save({ zoom: 1, bold: false, fontFamily: "inherit" }),
-    isModified: fmt.zoom !== 1 || fmt.bold || fmt.fontFamily !== "inherit",
-  };
-}
 
 // ════════════════════════════════════════════════════════════════
 export function OverlayView() {
@@ -75,9 +32,6 @@ export function OverlayView() {
   const toggleLog = useCallLogStore((s) => s.toggleOpen);
   const logOpen = useCallLogStore((s) => s.isOpen);
   const autoTrigger = useAIActionsStore((s) => s.configs.globalDefaults.autoTrigger);
-
-  const tFmt = useTextFormat("transcript");
-  const aFmt = useTextFormat("ai");
 
   const handleEndMeeting = useCallback(async () => {
     try { await endMeetingFlow(); showToast("Meeting ended", "info"); }
@@ -143,11 +97,10 @@ export function OverlayView() {
 
         {/* ── LEFT: TRANSCRIPT ── */}
         <div className="flex min-w-[180px] flex-1 basis-[220px] flex-col overflow-hidden rounded-xl border border-border/10 bg-card/25">
-          <PanelHeader label="Transcript" fmt={tFmt} />
-          <div
-            className="flex-1 overflow-y-auto p-2.5"
-            style={{ zoom: tFmt.fmt.zoom, fontWeight: tFmt.fmt.bold ? 600 : 400, fontFamily: tFmt.fmt.fontFamily }}
-          >
+          <div className="flex items-center border-b border-border/8 px-3 py-1.5">
+            <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">Transcript</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2.5">
             <TranscriptPanel />
           </div>
         </div>
@@ -163,14 +116,10 @@ export function OverlayView() {
 
           {/* AI Response */}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/10 bg-card/25">
-            <div className="flex flex-wrap items-center justify-between gap-1 border-b border-border/8 px-2.5 py-1.5">
+            <div className="flex items-center gap-1 border-b border-border/8 px-2.5 py-1.5">
               <ModeButtons />
-              <FormatToolbar {...aFmt} />
             </div>
-            <div
-              className="flex-1 overflow-y-auto p-3"
-              style={{ zoom: aFmt.fmt.zoom, fontWeight: aFmt.fmt.bold ? 600 : 400, fontFamily: aFmt.fmt.fontFamily }}
-            >
+            <div className="flex-1 overflow-y-auto p-3">
               <AIResponsePanel />
             </div>
           </div>
@@ -212,92 +161,3 @@ function HeaderBtn({ icon, active, onClick, tooltip }: { icon: React.ReactNode; 
 }
 
 
-// ── Panel Header with Format Toolbar ──
-function PanelHeader({ label, fmt }: { label: string; fmt: ReturnType<typeof useTextFormat> }) {
-  return (
-    <div className="flex items-center justify-between border-b border-border/8 px-3 py-1.5">
-      <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">{label}</span>
-      <FormatToolbar {...fmt} />
-    </div>
-  );
-}
-
-// ── Format Toolbar (fixed width — no shifting) ──
-function FormatToolbar({ fmt, zoomIn, zoomOut, toggleBold, setFont, reset, isModified }: ReturnType<typeof useTextFormat>) {
-  const [showFontMenu, setShowFontMenu] = useState(false);
-  const currentFontLabel = FONT_FAMILIES.find((f) => f.value === fmt.fontFamily)?.label || "Default";
-  const zoomPct = Math.round(fmt.zoom * 100);
-
-  return (
-    <div className="flex items-center gap-0.5 relative">
-      {/* Zoom out */}
-      <button onClick={zoomOut} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer" aria-label={`Zoom out (${zoomPct}%)`}>
-        <MinusIcon className="h-3 w-3" aria-hidden="true" />
-      </button>
-
-      {/* Zoom label */}
-      <span className="w-8 text-center text-meta tabular-nums text-muted-foreground/60 select-none" aria-hidden="true">{zoomPct}%</span>
-
-      {/* Zoom in */}
-      <button onClick={zoomIn} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer" aria-label={`Zoom in (${zoomPct}%)`}>
-        <Plus className="h-3 w-3" aria-hidden="true" />
-      </button>
-
-      <div className="mx-0.5 h-3.5 w-px bg-border/10" />
-
-      {/* Bold */}
-      <button
-        onClick={toggleBold}
-        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors cursor-pointer ${
-          fmt.bold ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground"
-        }`}
-        aria-label="Toggle bold"
-        aria-pressed={fmt.bold}
-      >
-        <Bold className="h-3 w-3" aria-hidden="true" />
-      </button>
-
-      {/* Font family dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setShowFontMenu(!showFontMenu)}
-          className="flex h-7 items-center gap-0.5 rounded-md px-1.5 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
-          aria-label={`Font style: ${currentFontLabel}`}
-          aria-expanded={showFontMenu}
-          aria-haspopup="listbox"
-        >
-          <span className="text-meta font-medium">{currentFontLabel}</span>
-          <ChevronDown className="h-2.5 w-2.5" />
-        </button>
-        {showFontMenu && (
-          <div className="absolute right-0 top-7 z-50 rounded-lg border border-border/30 bg-card shadow-lg py-1 min-w-[100px]">
-            {FONT_FAMILIES.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => { setFont(f.value); setShowFontMenu(false); }}
-                className={`w-full px-3 py-1.5 text-left text-meta transition-colors cursor-pointer ${
-                  fmt.fontFamily === f.value ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent"
-                }`}
-                style={{ fontFamily: f.value === "inherit" ? undefined : f.value }}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Reset — always visible, dim when not modified */}
-      <button
-        onClick={reset}
-        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors cursor-pointer ${
-          isModified ? "text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground" : "text-muted-foreground/15 cursor-default"
-        }`}
-        aria-label="Reset formatting"
-        disabled={!isModified}
-      >
-        <RotateCcw className="h-2.5 w-2.5" aria-hidden="true" />
-      </button>
-    </div>
-  );
-}

@@ -326,6 +326,11 @@ fn get_device_friendly_name_internal(
 
 // Provide no-op stubs on non-Windows platforms so the module compiles everywhere.
 #[cfg(not(target_os = "windows"))]
+pub fn get_default_capture_endpoint_id() -> Result<String, String> {
+    Err("IPolicyConfig is only available on Windows".to_string())
+}
+
+#[cfg(not(target_os = "windows"))]
 pub fn override_default_capture_device(_cpal_device_name: &str) -> Result<Option<String>, String> {
     Err("IPolicyConfig is only available on Windows".to_string())
 }

@@ -813,6 +813,18 @@ pub async fn start_capture_per_party(
                     }
                     crate::stt::emit_stt_debug(&app, "info", "audio",
                         &format!("IPolicyConfig: saved original default '{}', override active", original));
+
+                    // Verify the override took effect by reading back the current default
+                    match crate::audio::device_default::get_default_capture_endpoint_id() {
+                        Ok(current) => {
+                            crate::stt::emit_stt_debug(&app, "info", "ipolicy",
+                                &format!("Current default after override: '{}'", current));
+                        }
+                        Err(e) => {
+                            crate::stt::emit_stt_debug(&app, "warn", "ipolicy",
+                                &format!("Could not verify override: {}", e));
+                        }
+                    }
                 }
                 Ok(None) => {
                     // Target was already the default — no override applied
@@ -824,7 +836,17 @@ pub async fn start_capture_per_party(
                         &format!("IPolicyConfig: override failed ({}). STT will use OS default mic.", e));
                 }
             }
+        } else {
+            crate::stt::emit_stt_debug(&app, "info", "ipolicy",
+                "IPolicyConfig: no override needed (neither party uses web_speech/windows_native with non-default input)");
         }
+
+        // Emit IPolicyConfig status event for frontend synchronization
+        let override_applied = needs_override(&you, "You") || needs_override(&them, "Them");
+        let _ = app.emit("ipolicy_status", serde_json::json!({
+            "applied": override_applied,
+            "target_device": if needs_override(&you, "You") { &you.device_id } else { &them.device_id },
+        }));
     }
 
     {

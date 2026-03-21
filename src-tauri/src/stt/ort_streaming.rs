@@ -643,6 +643,16 @@ fn inference_thread_main(
         }
     };
 
+    // Discover joiner input ranks (rank 2 for Zipformer, rank 3 for Parakeet TDT)
+    let joiner_info = JoinerInfo::discover(&joiner);
+    debug(
+        "info",
+        &format!(
+            "Joiner input ranks: encoder={}, decoder={}",
+            joiner_info.encoder_input_rank, joiner_info.decoder_input_rank
+        ),
+    );
+
     // Initialize encoder state manager (introspects model inputs/outputs)
     let mut state_mgr = match EncoderStateManager::discover(&encoder) {
         Ok(s) => s,
@@ -710,15 +720,39 @@ fn inference_thread_main(
     let mut consecutive_blanks: usize = 0;
     let mut first_transcription = true;
 
+    // Diagnostic counters for periodic stats logging
+    let mut total_samples_fed: u64 = 0;
+    let mut total_encoder_runs: u64 = 0;
+    let mut total_blank_frames: u64 = 0;
+    let mut total_nonblank_frames: u64 = 0;
+    let mut last_stats_time = std::time::Instant::now();
+
     // Main decode loop
     loop {
         if stop_flag.load(AtomicOrdering::SeqCst) {
             break;
         }
 
+        // Periodic diagnostic stats (every 10 seconds)
+        if last_stats_time.elapsed().as_secs() >= 10 {
+            debug(
+                "info",
+                &format!(
+                    "Stats: samples_fed={}, encoder_runs={}, blanks={}, non_blanks={}, tokens={}",
+                    total_samples_fed,
+                    total_encoder_runs,
+                    total_blank_frames,
+                    total_nonblank_frames,
+                    emitted_tokens.len()
+                ),
+            );
+            last_stats_time = std::time::Instant::now();
+        }
+
         // Receive audio with timeout
         match audio_rx.recv_timeout(std::time::Duration::from_millis(100)) {
             Ok(AudioMessage::Samples(samples)) => {
+                total_samples_fed += samples.len() as u64;
                 for &s in &samples {
                     pcm_buffer.push(s as f32 / 32768.0);
                 }
@@ -748,6 +782,27 @@ fn inference_thread_main(
                 }
             };
 
+            total_encoder_runs += 1;
+
+            // Log first encoder output characteristics for diagnostics
+            if total_encoder_runs == 1 && !encoder_frames.is_empty() {
+                let frame = &encoder_frames[0];
+                let min_val = frame.iter().cloned().fold(f32::INFINITY, f32::min);
+                let max_val = frame.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+                let mean = frame.iter().sum::<f32>() / frame.len().max(1) as f32;
+                debug(
+                    "info",
+                    &format!(
+                        "First encoder output: {} frames x {} dim, range=[{:.4}, {:.4}], mean={:.4}",
+                        encoder_frames.len(),
+                        frame.len(),
+                        min_val,
+                        max_val,
+                        mean
+                    ),
+                );
+            }
+
             // Process each encoder output frame through the transducer
             for enc_frame in &encoder_frames {
                 // Run decoder on current context (with LSTM state management)
@@ -764,7 +819,7 @@ fn inference_thread_main(
                 };
 
                 // Run joiner
-                let logits = match run_joiner(&mut joiner, enc_frame, &decoder_out) {
+                let logits = match run_joiner(&mut joiner, enc_frame, &decoder_out, &joiner_info) {
                     Ok(l) => l,
                     Err(e) => {
                         debug("error", &format!("Joiner error: {}", e));
@@ -783,6 +838,7 @@ fn inference_thread_main(
                     .unwrap_or(BLANK_ID);
 
                 if top_token != BLANK_ID {
+                    total_nonblank_frames += 1;
                     emitted_tokens.push(top_token);
                     consecutive_blanks = 0;
 
@@ -805,6 +861,7 @@ fn inference_thread_main(
                         });
                     }
                 } else {
+                    total_blank_frames += 1;
                     consecutive_blanks += 1;
 
                     // Segment boundary: too many blanks
@@ -1168,28 +1225,83 @@ impl DecoderStateManager {
     }
 }
 
+/// Joiner input rank metadata, discovered at load time.
+///
+/// Different transducer models expect different tensor ranks for joiner inputs:
+/// - Zipformer: rank 2 `[batch, feature_dim]`
+/// - Parakeet TDT: rank 3 `[batch, time=1, feature_dim]`
+///
+/// This struct stores the expected ranks so `run_joiner()` can adapt dynamically.
+struct JoinerInfo {
+    /// Expected rank of encoder_outputs input (2 or 3).
+    encoder_input_rank: usize,
+    /// Expected rank of decoder_outputs input (2 or 3).
+    decoder_input_rank: usize,
+}
+
+impl JoinerInfo {
+    fn discover(session: &ort::session::Session) -> Self {
+        let mut enc_rank = 2usize;
+        let mut dec_rank = 2usize;
+        for input in session.inputs() {
+            let name = input.name().to_lowercase();
+            if let ort::value::ValueType::Tensor { shape, .. } = input.dtype() {
+                let rank = shape.len();
+                if name.contains("encoder") {
+                    enc_rank = rank;
+                } else if name.contains("decoder") {
+                    dec_rank = rank;
+                }
+            }
+        }
+        Self {
+            encoder_input_rank: enc_rank,
+            decoder_input_rank: dec_rank,
+        }
+    }
+}
+
 /// Run joiner on encoder frame + decoder output to get logits.
 fn run_joiner(
     session: &mut ort::session::Session,
     encoder_frame: &[f32],
     decoder_out: &[f32],
+    joiner_info: &JoinerInfo,
 ) -> Result<Vec<f32>, String> {
     use ort::value::Tensor;
 
     let enc_dim = encoder_frame.len();
     let dec_dim = decoder_out.len();
 
-    let enc_arr =
-        ndarray::Array2::from_shape_vec((1, enc_dim), encoder_frame.to_vec())
-            .map_err(|e| format!("joiner enc shape error: {}", e))?;
-    let dec_arr =
-        ndarray::Array2::from_shape_vec((1, dec_dim), decoder_out.to_vec())
-            .map_err(|e| format!("joiner dec shape error: {}", e))?;
+    // Adaptive tensor creation: rank 3 [batch, time=1, dim] for Parakeet TDT,
+    // rank 2 [batch, dim] for Zipformer — determined by JoinerInfo introspection.
+    let enc: ort::session::SessionInputValue<'_> = if joiner_info.encoder_input_rank >= 3 {
+        let arr = ndarray::Array3::from_shape_vec((1, 1, enc_dim), encoder_frame.to_vec())
+            .map_err(|e| format!("joiner enc shape error (rank 3): {}", e))?;
+        Tensor::from_array(arr)
+            .map_err(|e| format!("joiner enc tensor: {}", e))?
+            .into()
+    } else {
+        let arr = ndarray::Array2::from_shape_vec((1, enc_dim), encoder_frame.to_vec())
+            .map_err(|e| format!("joiner enc shape error (rank 2): {}", e))?;
+        Tensor::from_array(arr)
+            .map_err(|e| format!("joiner enc tensor: {}", e))?
+            .into()
+    };
 
-    let enc = Tensor::from_array(enc_arr)
-        .map_err(|e| format!("joiner enc tensor failed: {}", e))?;
-    let dec = Tensor::from_array(dec_arr)
-        .map_err(|e| format!("joiner dec tensor failed: {}", e))?;
+    let dec: ort::session::SessionInputValue<'_> = if joiner_info.decoder_input_rank >= 3 {
+        let arr = ndarray::Array3::from_shape_vec((1, 1, dec_dim), decoder_out.to_vec())
+            .map_err(|e| format!("joiner dec shape error (rank 3): {}", e))?;
+        Tensor::from_array(arr)
+            .map_err(|e| format!("joiner dec tensor: {}", e))?
+            .into()
+    } else {
+        let arr = ndarray::Array2::from_shape_vec((1, dec_dim), decoder_out.to_vec())
+            .map_err(|e| format!("joiner dec shape error (rank 2): {}", e))?;
+        Tensor::from_array(arr)
+            .map_err(|e| format!("joiner dec tensor: {}", e))?
+            .into()
+    };
 
     let outputs = session
         .run(ort::inputs![enc, dec])

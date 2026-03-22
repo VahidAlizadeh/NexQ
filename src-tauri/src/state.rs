@@ -14,6 +14,26 @@ use crate::stt::provider::DualPassConfig;
 use crate::stt::STTRouter;
 use std::sync::RwLock;
 
+/// Active scenario prompts pushed from the frontend when a meeting starts.
+/// The intelligence pipeline reads these instead of hardcoded prompt_templates.
+pub struct ActiveScenario {
+    pub system_prompt: String,
+    pub summary_prompt: String,
+    pub question_detection_prompt: String,
+    pub speaker_context: String,
+}
+
+impl Default for ActiveScenario {
+    fn default() -> Self {
+        Self {
+            system_prompt: String::new(),
+            summary_prompt: String::new(),
+            question_detection_prompt: String::new(),
+            speaker_context: String::new(),
+        }
+    }
+}
+
 /// Central application state managed by Tauri.
 /// Each manager is wrapped in Option<Arc<Mutex<>>> so sub-PRDs can
 /// initialize their own managers independently.
@@ -51,6 +71,9 @@ pub struct AppState {
     /// Set alongside original_default_device; used by ensure_ipolicy_override
     /// to verify the OS default hasn't drifted.
     pub ipolicy_target_endpoint: Arc<Mutex<Option<String>>>,
+    /// Active scenario prompts — pushed by the frontend at meeting start.
+    /// Intelligence pipeline reads these for scenario-aware prompt assembly.
+    pub active_scenario: Arc<RwLock<ActiveScenario>>,
 }
 
 impl AppState {
@@ -73,6 +96,7 @@ impl AppState {
             them_muted: Arc::new(AtomicBool::new(false)),
             original_default_device: Arc::new(Mutex::new(None)),
             ipolicy_target_endpoint: Arc::new(Mutex::new(None)),
+            active_scenario: Arc::new(RwLock::new(ActiveScenario::default())),
         }
     }
 }

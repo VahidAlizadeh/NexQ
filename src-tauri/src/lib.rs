@@ -401,6 +401,8 @@ pub fn run() {
             intelligence_commands::push_transcript,
             intelligence_commands::update_action_configs,
             intelligence_commands::get_action_configs,
+            intelligence_commands::set_active_scenario,
+            intelligence_commands::update_speaker_context,
             // == COMMANDS: context ==
             context_commands::load_context_file,
             context_commands::remove_context_file,

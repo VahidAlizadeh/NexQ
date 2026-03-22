@@ -349,6 +349,20 @@ export async function renameSpeaker(meetingId: string, speakerId: string, newNam
   return invoke("rename_speaker", { meetingId, speakerId, newName });
 }
 
+// == IPC: Scenario-Aware Intelligence ==
+
+export async function setActiveScenario(
+  systemPrompt: string,
+  summaryPrompt: string,
+  questionDetectionPrompt: string
+): Promise<void> {
+  return invoke("set_active_scenario", { systemPrompt, summaryPrompt, questionDetectionPrompt });
+}
+
+export async function updateSpeakerContext(speakerContext: string): Promise<void> {
+  return invoke("update_speaker_context", { speakerContext });
+}
+
 // == IPC: Whisper Dual-Pass Config ==
 
 export async function updateWhisperDualPassConfig(

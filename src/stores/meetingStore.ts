@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AppView, Meeting, MeetingSummary } from "../lib/types";
+import type { AppView, Meeting, MeetingSummary, AudioMode, AIScenario } from "../lib/types";
 import {
   startMeeting as ipcStartMeeting,
   endMeeting as ipcEndMeeting,
@@ -36,6 +36,10 @@ interface MeetingState {
   // Crash recovery
   unfinishedMeeting: MeetingSummary | null;
 
+  // Active meeting mode / scenario
+  audioMode: AudioMode;
+  aiScenario: AIScenario;
+
   // Actions
   setCurrentView: (view: AppView) => void;
   setSettingsOpen: (open: boolean) => void;
@@ -46,9 +50,11 @@ interface MeetingState {
   setRecentMeetings: (meetings: MeetingSummary[]) => void;
   setLastPersistedIndex: (index: number) => void;
   setUnfinishedMeeting: (meeting: MeetingSummary | null) => void;
+  setAudioMode: (mode: AudioMode) => void;
+  setAiScenario: (scenario: AIScenario) => void;
 
   // Async flows
-  startMeetingFlow: (title?: string) => Promise<void>;
+  startMeetingFlow: (title?: string, audioMode?: AudioMode, scenario?: AIScenario) => Promise<void>;
   endMeetingFlow: () => Promise<void>;
   loadRecentMeetings: () => Promise<void>;
 
@@ -69,6 +75,8 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   lastPersistedIndex: 0,
   unfinishedMeeting: null,
   _timerInterval: null,
+  audioMode: "online",
+  aiScenario: "team_meeting",
 
   setCurrentView: (view) => {
     const current = get().currentView;
@@ -87,11 +95,51 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   setRecentMeetings: (meetings) => set({ recentMeetings: meetings }),
   setLastPersistedIndex: (index) => set({ lastPersistedIndex: index }),
   setUnfinishedMeeting: (meeting) => set({ unfinishedMeeting: meeting }),
+  setAudioMode: (mode) => set({ audioMode: mode }),
+  setAiScenario: (scenario) => set({ aiScenario: scenario }),
 
-  startMeetingFlow: async (title?: string) => {
+  startMeetingFlow: async (title?: string, audioMode?: AudioMode, scenario?: AIScenario) => {
     try {
+      // Resolve mode and scenario (fall back to current state if not provided)
+      const resolvedMode: AudioMode = audioMode ?? get().audioMode;
+      const resolvedScenario: AIScenario = scenario ?? get().aiScenario;
+
       // 1. Create meeting record in SQLite
       const meeting = await ipcStartMeeting(title);
+
+      // 1b. Store mode/scenario in state immediately after meeting is created
+      set({ audioMode: resolvedMode, aiScenario: resolvedScenario });
+
+      // 1c. Initialize speaker store for the resolved mode
+      try {
+        const { useSpeakerStore } = await import("./speakerStore");
+        const config = useConfigStore.getState();
+        if (resolvedMode === "online") {
+          useSpeakerStore.getState().initForOnline();
+        } else {
+          const hasDiarization =
+            config.diarizationEnabled &&
+            ["deepgram", "azure_speech"].includes(
+              config.meetingAudioConfig?.you?.stt_provider ?? config.sttProvider
+            );
+          useSpeakerStore.getState().initForInPerson(hasDiarization);
+
+          // Inform user if local STT won't support speaker separation
+          if (!hasDiarization) {
+            const { showToast } = await import("../stores/toastStore");
+            showToast(
+              "Local STT doesn't support speaker separation — all speech labeled as Room.",
+              "info"
+            );
+          }
+        }
+      } catch { /* non-critical */ }
+
+      // 1d. Set active scenario in scenarioStore
+      try {
+        const { useScenarioStore } = await import("./scenarioStore");
+        useScenarioStore.getState().setActiveScenario(resolvedScenario);
+      } catch { /* non-critical */ }
 
       // 2. Start audio capture — use per-party config if available, else legacy
       const config = useConfigStore.getState();
@@ -128,6 +176,20 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       try {
         const { useCallLogStore } = await import("./callLogStore");
         useCallLogStore.getState().clearAll();
+      } catch { /* non-critical */ }
+
+      // 3b. Clear new feature stores
+      try {
+        const { useBookmarkStore } = await import("./bookmarkStore");
+        useBookmarkStore.getState().clearBookmarks();
+      } catch { /* non-critical */ }
+      try {
+        const { useActionItemStore } = await import("./actionItemStore");
+        useActionItemStore.getState().clearItems();
+      } catch { /* non-critical */ }
+      try {
+        const { useTopicSectionStore } = await import("./topicSectionStore");
+        useTopicSectionStore.getState().clearSections();
       } catch { /* non-critical */ }
 
       // 4. Set meeting state
@@ -252,6 +314,51 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       // Non-critical
     }
 
+    // 7b. Placeholder persistence for new feature stores (actual IPC in later task)
+    if (meeting) {
+      try {
+        const { useSpeakerStore } = await import("./speakerStore");
+        const speakers = useSpeakerStore.getState().getAllSpeakers();
+        if (speakers.length > 0) {
+          console.log(`[meetingStore] ${speakers.length} speaker(s) to persist for ${meeting.id} (placeholder)`);
+        }
+      } catch { /* non-critical */ }
+
+      try {
+        const { useBookmarkStore } = await import("./bookmarkStore");
+        const bookmarks = useBookmarkStore.getState().bookmarks;
+        if (bookmarks.length > 0) {
+          console.log(`[meetingStore] ${bookmarks.length} bookmark(s) to persist for ${meeting.id} (placeholder)`);
+        }
+      } catch { /* non-critical */ }
+
+      try {
+        const { useActionItemStore } = await import("./actionItemStore");
+        const items = useActionItemStore.getState().items;
+        if (items.length > 0) {
+          console.log(`[meetingStore] ${items.length} action item(s) to persist for ${meeting.id} (placeholder)`);
+        }
+      } catch { /* non-critical */ }
+    }
+
+    // 7c. Reset new feature stores
+    try {
+      const { useSpeakerStore } = await import("./speakerStore");
+      useSpeakerStore.getState().reset();
+    } catch { /* non-critical */ }
+    try {
+      const { useBookmarkStore } = await import("./bookmarkStore");
+      useBookmarkStore.getState().clearBookmarks();
+    } catch { /* non-critical */ }
+    try {
+      const { useActionItemStore } = await import("./actionItemStore");
+      useActionItemStore.getState().clearItems();
+    } catch { /* non-critical */ }
+    try {
+      const { useTopicSectionStore } = await import("./topicSectionStore");
+      useTopicSectionStore.getState().clearSections();
+    } catch { /* non-critical */ }
+
     // 8. Clear active state
     set({
       activeMeeting: null,
@@ -259,6 +366,8 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       meetingStartTime: null,
       elapsedMs: 0,
       lastPersistedIndex: 0,
+      audioMode: "online",
+      aiScenario: "team_meeting",
     });
 
     // 9. Reload recent meetings

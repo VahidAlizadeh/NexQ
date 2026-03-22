@@ -7,13 +7,14 @@ import { searchMeetings, deleteMeeting } from "../lib/ipc";
 import { showToast } from "../stores/toastStore";
 import { RecentMeetings } from "./RecentMeetings";
 import { MeetingDetails } from "./meeting-details";
+import { MeetingSetupModal } from "./MeetingSetupModal";
 import { FileUpload } from "../context/FileUpload";
 import { ResourceCard } from "../context/ResourceCard";
 import { TokenBudget } from "../context/TokenBudget";
 import { TestSearchDialog } from "../context/TestSearchDialog";
 import { NEXQ_VERSION, NEXQ_DEVELOPER } from "../lib/version";
 import { ServiceStatusBar } from "../components/ServiceStatusBar";
-import type { MeetingSummary } from "../lib/types";
+import type { MeetingSummary, AudioMode, AIScenario } from "../lib/types";
 import {
   Settings,
   Search,
@@ -85,8 +86,12 @@ export function LauncherView() {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [ragStatus, setRagStatus] = useState<"idle" | "updating" | "done">("idle");
   const [showTestKB, setShowTestKB] = useState(false);
+  const [showMeetingSetup, setShowMeetingSetup] = useState(false);
+  // Pending audioMode/scenario from setup modal — used when conflict resolution triggers start
+  const pendingMeetingSetup = useRef<{ audioMode: AudioMode; scenario: AIScenario } | null>(null);
 
   const contextStrategy = useConfigStore((s) => s.contextStrategy);
+  const rememberedMeetingSetup = useConfigStore((s) => s.rememberedMeetingSetup);
   const indexStatus = useRagStore((s) => s.indexStatus);
   const isIndexing = useRagStore((s) => s.isIndexing);
   const indexStale = useRagStore((s) => s.indexStale);
@@ -113,12 +118,19 @@ export function LauncherView() {
 
   // ── Handlers ──
 
-  const handleStartMeeting = useCallback(async () => {
+  // Called when user clicks Start Meeting button — open setup modal
+  const handleStartMeeting = useCallback(() => {
     if (activeMeeting) { setShowConflictPrompt(true); return; }
+    setShowMeetingSetup(true);
+  }, [activeMeeting]);
+
+  // Called when user confirms setup in the modal
+  const handleSetupConfirm = useCallback(async (audioMode: AudioMode, scenario: AIScenario) => {
+    setShowMeetingSetup(false);
     setIsStarting(true);
     setStartError(null);
     try {
-      await startMeetingFlow();
+      await startMeetingFlow(undefined, audioMode, scenario);
       showToast("Meeting started", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to start meeting";
@@ -127,14 +139,16 @@ export function LauncherView() {
     } finally {
       setIsStarting(false);
     }
-  }, [startMeetingFlow, activeMeeting]);
+  }, [startMeetingFlow]);
 
   const handleEndAndStartNew = useCallback(async () => {
     setShowConflictPrompt(false);
     setIsStarting(true);
+    const setup = pendingMeetingSetup.current;
+    pendingMeetingSetup.current = null;
     try {
       await endMeetingFlow();
-      await startMeetingFlow();
+      await startMeetingFlow(undefined, setup?.audioMode, setup?.scenario);
       showToast("New meeting started", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to start";
@@ -344,7 +358,10 @@ export function LauncherView() {
                     {isStarting ? "Starting..." : "Start Meeting"}
                   </div>
                   <div className="text-meta font-normal text-white/50">
-                    Ctrl+M
+                    {rememberedMeetingSetup
+                      ? `${rememberedMeetingSetup.audioMode === "online" ? "Online" : "In-Person"} · ${rememberedMeetingSetup.scenario.replace("_", " ")}`
+                      : "Ctrl+M"
+                    }
                   </div>
                 </div>
               </button>
@@ -480,6 +497,13 @@ export function LauncherView() {
           <span className="font-medium">NexQ v{NEXQ_VERSION}</span>
         </div>
       </footer>
+
+      {/* ═══ MEETING SETUP MODAL ═══ */}
+      <MeetingSetupModal
+        open={showMeetingSetup}
+        onStart={handleSetupConfirm}
+        onCancel={() => setShowMeetingSetup(false)}
+      />
 
       {/* ═══ TEST KNOWLEDGE BASE MODAL ═══ */}
       <TestSearchDialog isOpen={showTestKB} onClose={() => setShowTestKB(false)} />

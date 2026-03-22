@@ -496,6 +496,21 @@ export const useConfigStore = create<ConfigState>((set) => ({
           resolvedMeetingConfig.them = { ...resolvedMeetingConfig.them, stt_provider: "deepgram" };
           migrated = true;
         }
+        // Mutual exclusion: Web Speech / Windows Speech can only be used by one party.
+        // If both parties have exclusive providers (from old config), keep "You" and fallback "Them".
+        const exclusiveProviders = ["web_speech", "windows_native"];
+        if (
+          exclusiveProviders.includes(resolvedMeetingConfig.you.stt_provider) &&
+          exclusiveProviders.includes(resolvedMeetingConfig.them.stt_provider)
+        ) {
+          resolvedMeetingConfig.them = {
+            ...resolvedMeetingConfig.them,
+            stt_provider: "deepgram",
+            local_model_id: undefined,
+          };
+          migrated = true;
+          console.log("[configStore] Migrated dual-exclusive STT: kept You, fell back Them to deepgram");
+        }
         if (migrated) {
           await store.set("meetingAudioConfig", resolvedMeetingConfig);
           console.log("[configStore] Migrated meetingAudioConfig providers");

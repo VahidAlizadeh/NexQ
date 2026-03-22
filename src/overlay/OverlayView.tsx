@@ -14,6 +14,7 @@ import { DevLogPanel } from "../components/DevLogPanel";
 import { SpeakerStatsPanel } from "./SpeakerStatsPanel";
 import { ActionItemsPanel } from "./ActionItemsPanel";
 import { useBookmarkHotkey } from "../hooks/useBookmarkHotkey";
+import { useSpeakerDetection } from "../hooks/useSpeakerDetection";
 import { MODE_COLORS } from "../lib/speakerColors";
 import {
   GripHorizontal,
@@ -47,6 +48,9 @@ export function OverlayView() {
 
   // Bookmark hotkey (Ctrl+B)
   const addBookmarkAtNow = useBookmarkHotkey();
+
+  // Speaker detection from Deepgram diarization events
+  useSpeakerDetection();
 
   const handleEndMeeting = useCallback(async () => {
     try { await endMeetingFlow(); showToast("Meeting ended", "info"); }

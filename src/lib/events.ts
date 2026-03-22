@@ -169,3 +169,18 @@ export function onSTTDebug(
 ): Promise<UnlistenFn> {
   return listen<STTDebugEvent>("stt_debug", (e) => handler(e.payload));
 }
+
+// == SPEAKER DETECTION EVENTS ==
+
+export interface SpeakerDetectedEvent {
+  speaker_id: string;
+  meeting_id: string;
+}
+
+export function onSpeakerDetected(
+  handler: (payload: SpeakerDetectedEvent) => void
+): Promise<UnlistenFn> {
+  return listen<SpeakerDetectedEvent>("speaker_detected", (event) =>
+    handler(event.payload)
+  );
+}

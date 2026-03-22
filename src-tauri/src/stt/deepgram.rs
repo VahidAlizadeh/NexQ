@@ -123,6 +123,17 @@ struct DeepgramChannel {
 struct DeepgramAlternative {
     transcript: String,
     confidence: f64,
+    /// Word-level data (present when diarize=true)
+    #[serde(default)]
+    words: Vec<DeepgramWord>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DeepgramWord {
+    #[allow(dead_code)]
+    word: String,
+    /// Speaker ID assigned by diarization (0, 1, 2, ...)
+    speaker: Option<u32>,
 }
 
 impl DeepgramSTT {
@@ -278,6 +289,8 @@ impl DeepgramSTT {
     }
 
     /// Parse a Deepgram JSON response into a TranscriptResult.
+    /// When diarization is active, the speaker is extracted from the dominant
+    /// speaker ID in the word-level data (e.g. "speaker_0", "speaker_1").
     fn parse_response(
         json_str: &str,
         speaker: &str,
@@ -307,6 +320,26 @@ impl DeepgramSTT {
         let is_final = response.is_final.unwrap_or(false);
         let confidence = alt.confidence as f32;
 
+        // Extract speaker from diarization word data if available.
+        // Use the most frequent speaker ID across words as the segment speaker.
+        let diarized_speaker = if !alt.words.is_empty() {
+            let mut speaker_counts: std::collections::HashMap<u32, usize> =
+                std::collections::HashMap::new();
+            for w in &alt.words {
+                if let Some(sid) = w.speaker {
+                    *speaker_counts.entry(sid).or_insert(0) += 1;
+                }
+            }
+            speaker_counts
+                .into_iter()
+                .max_by_key(|&(_, count)| count)
+                .map(|(sid, _)| format!("speaker_{}", sid))
+        } else {
+            None
+        };
+
+        let final_speaker = diarized_speaker.unwrap_or_else(|| speaker.to_string());
+
         // Calculate timestamp from stream start offset
         let timestamp_ms = response
             .start
@@ -318,13 +351,14 @@ impl DeepgramSTT {
             is_final,
             confidence,
             timestamp_ms,
-            speaker: Some(speaker.to_string()),
+            speaker: Some(final_speaker),
             language: None,
             segment_id: None,
         })
     }
 
     /// Spawn the combined reader + keepalive + reconnect task.
+    /// Tracks seen speaker IDs and emits `speaker_detected` events for new ones.
     fn spawn_reader_task(
         mut read_half: futures::stream::SplitStream<
             WebSocketStream<MaybeTlsStream<TcpStream>>,
@@ -334,9 +368,13 @@ impl DeepgramSTT {
         stop_flag: Arc<AtomicBool>,
         start_time: Instant,
         connection_state: Arc<AtomicU8>,
+        app_handle: Option<tauri::AppHandle>,
+        diarize_enabled: bool,
     ) {
         tokio::spawn(async move {
             connection_state.store(2, Ordering::SeqCst); // connected
+            let mut seen_speakers: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
 
             while let Some(msg_result) = read_half.next().await {
                 if stop_flag.load(Ordering::SeqCst) {
@@ -348,6 +386,23 @@ impl DeepgramSTT {
                         if let Some(result) =
                             Self::parse_response(&text, &speaker, start_time)
                         {
+                            // Emit speaker_detected for new diarization speaker IDs
+                            if diarize_enabled {
+                                if let Some(ref spk) = result.speaker {
+                                    if spk.starts_with("speaker_") && !seen_speakers.contains(spk) {
+                                        seen_speakers.insert(spk.clone());
+                                        if let Some(ref handle) = app_handle {
+                                            let payload = serde_json::json!({
+                                                "speaker_id": spk,
+                                                "meeting_id": "",
+                                            });
+                                            let _ = tauri::Emitter::emit(handle, "speaker_detected", &payload);
+                                            log::info!("DeepgramSTT: New speaker detected via diarization: {}", spk);
+                                        }
+                                    }
+                                }
+                            }
+
                             if result_tx.send(result).await.is_err() {
                                 log::warn!("DeepgramSTT: Result channel closed");
                                 break;
@@ -546,6 +601,8 @@ impl STTProvider for DeepgramSTT {
             Arc::clone(&self.stop_flag),
             start_time,
             Arc::clone(&self.connection_state),
+            self.app_handle.clone(),
+            self.config.diarize,
         );
 
         Self::spawn_writer_task(

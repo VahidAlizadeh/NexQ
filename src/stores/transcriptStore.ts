@@ -13,6 +13,7 @@ interface TranscriptState {
   clearSegments: () => void;
   setSearchQuery: (query: string) => void;
   setAutoScroll: (auto: boolean) => void;
+  reassignSpeaker: (fromId: string, toId: string) => void;
 }
 
 export const useTranscriptStore = create<TranscriptState>((set) => ({
@@ -48,4 +49,10 @@ export const useTranscriptStore = create<TranscriptState>((set) => ({
   clearSegments: () => set({ segments: [] }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setAutoScroll: (auto) => set({ autoScroll: auto }),
+  reassignSpeaker: (fromId, toId) =>
+    set((state) => ({
+      segments: state.segments.map((s) =>
+        s.speaker_id === fromId ? { ...s, speaker_id: toId } : s
+      ),
+    })),
 }));

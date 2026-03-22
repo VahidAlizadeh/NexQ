@@ -118,8 +118,7 @@ interface Meeting {
 }
 
 interface TranscriptSegment {
-  // ... existing fields ...
-  confidence?: number;     // 0.0–1.0 from STT provider
+  // ... existing fields (confidence already exists) ...
   speaker_id: string;      // Links to SpeakerIdentity.id
 }
 
@@ -174,9 +173,15 @@ CREATE TABLE meeting_action_items (
   completed INTEGER DEFAULT 0
 );
 
-ALTER TABLE transcript_segments ADD COLUMN confidence REAL;
+-- confidence column already exists on transcript_segments
 ALTER TABLE transcript_segments ADD COLUMN speaker_id TEXT;
 ```
+
+### Migration Notes
+
+- **Existing transcript segments**: Backfill `speaker_id` from existing `speaker` values — map `"User"` → `"you"`, `"Interviewer"`/`"Them"` → `"them"`, `"Unknown"` → `"unknown"`
+- **Existing meetings**: Default `audio_mode="online"`, `ai_scenario="team_meeting"` (via DEFAULT clause)
+- **Scenario persistence**: Custom scenarios and user overrides to built-in prompts are persisted in the app config store (same mechanism as existing MeetingAudioConfig presets), not in a separate DB table
 
 ---
 

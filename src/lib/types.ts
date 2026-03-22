@@ -7,6 +7,12 @@
 
 export type AudioSource = "Mic" | "System";
 
+// == MEETING MODE TYPES ==
+
+export type AudioMode = "online" | "in_person";
+export type AIScenario = "team_meeting" | "lecture" | "interview" | "webinar" | "custom";
+export type SpeakerSource = "fixed" | "diarization" | "room";
+
 export interface AudioDevice {
   id: string;
   name: string;
@@ -37,6 +43,7 @@ export interface TranscriptSegment {
   id: string;
   text: string;
   speaker: Speaker;
+  speaker_id?: string;
   timestamp_ms: number;
   is_final: boolean;
   confidence: number;
@@ -56,6 +63,13 @@ export interface Meeting {
   ai_interactions: AIInteraction[];
   summary: string | null;
   config_snapshot: MeetingConfig | null;
+  audio_mode?: AudioMode;
+  ai_scenario?: AIScenario;
+  speakers?: SpeakerIdentity[];
+  bookmarks?: MeetingBookmark[];
+  topic_sections?: TopicSection[];
+  action_items?: ActionItem[];
+  noise_preset?: string;
 }
 
 export interface MeetingConfig {
@@ -73,6 +87,70 @@ export interface MeetingSummary {
   duration_seconds: number | null;
   segment_count: number;
   has_summary: boolean;
+  audio_mode?: AudioMode;
+  ai_scenario?: AIScenario;
+  speaker_count?: number;
+}
+
+// == SPEAKER TYPES ==
+
+export interface SpeakerIdentity {
+  id: string;
+  display_name: string;
+  source: SpeakerSource;
+  color?: string;
+  stats: SpeakerStats;
+}
+
+export interface SpeakerStats {
+  segment_count: number;
+  word_count: number;
+  talk_time_ms: number;
+  last_spoke_ms: number;
+}
+
+// == MEETING FEATURE TYPES ==
+
+export interface MeetingBookmark {
+  id: string;
+  timestamp_ms: number;
+  note?: string;
+  created_at: string;
+}
+
+export interface TopicSection {
+  id: string;
+  title: string;
+  start_ms: number;
+  end_ms?: number;
+}
+
+export interface ActionItem {
+  id: string;
+  text: string;
+  assignee_speaker_id?: string;
+  timestamp_ms: number;
+  completed: boolean;
+}
+
+// == SCENARIO TYPES ==
+
+export interface ScenarioTemplate {
+  id: string;
+  name: string;
+  description: string;
+  system_prompt: string;
+  summary_prompt: string;
+  question_detection_prompt: string;
+  is_custom: boolean;
+}
+
+export interface NoisePreset {
+  id: string;
+  name: string;
+  vad_sensitivity: number;
+  noise_gate_db: number;
+  description: string;
 }
 
 // == AI/LLM TYPES ==
@@ -255,6 +333,8 @@ export interface MeetingAudioConfig {
   them: PartyAudioConfig;
   recording_enabled: boolean;
   preset_name: string | null;
+  audio_mode?: AudioMode;
+  noise_preset?: string;
 }
 
 export interface AudioSessionInfo {

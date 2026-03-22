@@ -28,6 +28,8 @@ pub struct MeetingSummary {
     pub duration_seconds: Option<i64>,
     pub segment_count: i64,
     pub has_summary: bool,
+    pub audio_mode: String,
+    pub ai_scenario: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -134,7 +136,8 @@ pub fn list_meetings(
     let mut stmt = conn.prepare(
         "SELECT m.id, m.title, m.start_time, m.end_time, m.duration_seconds,
                 (SELECT COUNT(*) FROM transcript_segments ts WHERE ts.meeting_id = m.id) AS segment_count,
-                CASE WHEN m.summary IS NOT NULL AND m.summary != '' THEN 1 ELSE 0 END AS has_summary
+                CASE WHEN m.summary IS NOT NULL AND m.summary != '' THEN 1 ELSE 0 END AS has_summary,
+                m.audio_mode, m.ai_scenario
          FROM meetings m
          ORDER BY m.start_time DESC
          LIMIT ?1 OFFSET ?2",
@@ -149,6 +152,8 @@ pub fn list_meetings(
             duration_seconds: row.get(4)?,
             segment_count: row.get(5)?,
             has_summary: row.get::<_, i32>(6)? != 0,
+            audio_mode: row.get::<_, String>(7).unwrap_or_else(|_| "online".to_string()),
+            ai_scenario: row.get::<_, String>(8).unwrap_or_else(|_| "team_meeting".to_string()),
         })
     })?;
 
@@ -254,7 +259,8 @@ pub fn search_meetings(
     let mut stmt = conn.prepare(
         "SELECT DISTINCT m.id, m.title, m.start_time, m.end_time, m.duration_seconds,
                 (SELECT COUNT(*) FROM transcript_segments ts WHERE ts.meeting_id = m.id) AS segment_count,
-                CASE WHEN m.summary IS NOT NULL AND m.summary != '' THEN 1 ELSE 0 END AS has_summary
+                CASE WHEN m.summary IS NOT NULL AND m.summary != '' THEN 1 ELSE 0 END AS has_summary,
+                m.audio_mode, m.ai_scenario
          FROM meetings m
          LEFT JOIN transcript_segments ts ON ts.meeting_id = m.id
          WHERE m.title LIKE ?1
@@ -273,6 +279,8 @@ pub fn search_meetings(
             duration_seconds: row.get(4)?,
             segment_count: row.get(5)?,
             has_summary: row.get::<_, i32>(6)? != 0,
+            audio_mode: row.get::<_, String>(7).unwrap_or_else(|_| "online".to_string()),
+            ai_scenario: row.get::<_, String>(8).unwrap_or_else(|_| "team_meeting".to_string()),
         })
     })?;
 
@@ -338,4 +346,189 @@ fn list_transcript_segments(
         results.push(row?);
     }
     Ok(results)
+}
+
+// ── Meeting speakers CRUD ───────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MeetingSpeaker {
+    pub id: String,
+    pub meeting_id: String,
+    pub speaker_id: String,
+    pub display_name: String,
+    pub source: String,
+    pub color: Option<String>,
+    pub segment_count: i64,
+    pub word_count: i64,
+    pub talk_time_ms: i64,
+}
+
+/// Replace all speakers for a meeting (delete + insert).
+pub fn save_meeting_speakers(
+    conn: &Connection,
+    meeting_id: &str,
+    speakers: &[MeetingSpeaker],
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "DELETE FROM meeting_speakers WHERE meeting_id = ?1",
+        params![meeting_id],
+    )?;
+
+    let mut stmt = conn.prepare(
+        "INSERT INTO meeting_speakers
+            (id, meeting_id, speaker_id, display_name, source, color, segment_count, word_count, talk_time_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+    )?;
+
+    for s in speakers {
+        stmt.execute(params![
+            s.id,
+            meeting_id,
+            s.speaker_id,
+            s.display_name,
+            s.source,
+            s.color,
+            s.segment_count,
+            s.word_count,
+            s.talk_time_ms,
+        ])?;
+    }
+
+    Ok(())
+}
+
+/// Rename a single speaker within a meeting.
+pub fn rename_speaker(
+    conn: &Connection,
+    meeting_id: &str,
+    speaker_id: &str,
+    new_name: &str,
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "UPDATE meeting_speakers SET display_name = ?1 WHERE meeting_id = ?2 AND speaker_id = ?3",
+        params![new_name, meeting_id, speaker_id],
+    )?;
+    Ok(())
+}
+
+// ── Meeting bookmarks CRUD ──────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MeetingBookmark {
+    pub id: String,
+    pub meeting_id: String,
+    pub timestamp_ms: i64,
+    pub note: Option<String>,
+    pub created_at: String,
+}
+
+/// Replace all bookmarks for a meeting (delete + insert).
+pub fn save_meeting_bookmarks(
+    conn: &Connection,
+    meeting_id: &str,
+    bookmarks: &[MeetingBookmark],
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "DELETE FROM meeting_bookmarks WHERE meeting_id = ?1",
+        params![meeting_id],
+    )?;
+
+    let mut stmt = conn.prepare(
+        "INSERT INTO meeting_bookmarks (id, meeting_id, timestamp_ms, note, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+    )?;
+
+    for b in bookmarks {
+        stmt.execute(params![
+            b.id,
+            meeting_id,
+            b.timestamp_ms,
+            b.note,
+            b.created_at,
+        ])?;
+    }
+
+    Ok(())
+}
+
+// ── Meeting action items CRUD ───────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MeetingActionItem {
+    pub id: String,
+    pub meeting_id: String,
+    pub text: String,
+    pub assignee_speaker_id: Option<String>,
+    pub timestamp_ms: i64,
+    pub completed: bool,
+}
+
+/// Replace all action items for a meeting (delete + insert).
+pub fn save_meeting_action_items(
+    conn: &Connection,
+    meeting_id: &str,
+    items: &[MeetingActionItem],
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "DELETE FROM meeting_action_items WHERE meeting_id = ?1",
+        params![meeting_id],
+    )?;
+
+    let mut stmt = conn.prepare(
+        "INSERT INTO meeting_action_items (id, meeting_id, text, assignee_speaker_id, timestamp_ms, completed)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+    )?;
+
+    for item in items {
+        stmt.execute(params![
+            item.id,
+            meeting_id,
+            item.text,
+            item.assignee_speaker_id,
+            item.timestamp_ms,
+            item.completed as i32,
+        ])?;
+    }
+
+    Ok(())
+}
+
+// ── Meeting topic sections CRUD ─────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MeetingTopicSection {
+    pub id: String,
+    pub meeting_id: String,
+    pub title: String,
+    pub start_ms: i64,
+    pub end_ms: Option<i64>,
+}
+
+/// Replace all topic sections for a meeting (delete + insert).
+pub fn save_meeting_topic_sections(
+    conn: &Connection,
+    meeting_id: &str,
+    sections: &[MeetingTopicSection],
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "DELETE FROM meeting_topic_sections WHERE meeting_id = ?1",
+        params![meeting_id],
+    )?;
+
+    let mut stmt = conn.prepare(
+        "INSERT INTO meeting_topic_sections (id, meeting_id, title, start_ms, end_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+    )?;
+
+    for sec in sections {
+        stmt.execute(params![
+            sec.id,
+            meeting_id,
+            sec.title,
+            sec.start_ms,
+            sec.end_ms,
+        ])?;
+    }
+
+    Ok(())
 }

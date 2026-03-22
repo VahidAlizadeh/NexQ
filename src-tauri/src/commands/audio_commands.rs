@@ -1560,6 +1560,100 @@ fn get_deepgram_config(state: &AppState) -> crate::stt::deepgram::DeepgramConfig
         .unwrap_or_default()
 }
 
+// ── IPolicyConfig verification for Web Speech restart ───────────────
+
+/// Verify the OS default capture device still matches the IPolicy target.
+/// If Windows has reset the default (drift), re-apply the override.
+/// Called by the frontend before each Web Speech restart.
+/// Non-destructive: only reads original_default_device and ipolicy_target_endpoint.
+#[command]
+pub async fn ensure_ipolicy_override(app: AppHandle) -> Result<String, String> {
+    let state = app.state::<AppState>();
+
+    // 1. Check if an override is active (peek, not take)
+    let original = match state.original_default_device.lock() {
+        Ok(guard) => guard.clone(),
+        Err(_) => return Err("State lock poisoned".to_string()),
+    };
+    if original.is_none() {
+        return serde_json::to_string(&serde_json::json!({
+            "active": false,
+            "was_drifted": false
+        })).map_err(|e| e.to_string());
+    }
+
+    // 2. Get the target endpoint (peek, not take)
+    let target = match state.ipolicy_target_endpoint.lock() {
+        Ok(guard) => guard.clone(),
+        Err(_) => return Err("State lock poisoned".to_string()),
+    };
+    let target = match target {
+        Some(t) => t,
+        None => {
+            log::warn!("IPolicyConfig: override active but no target endpoint stored");
+            return serde_json::to_string(&serde_json::json!({
+                "active": true,
+                "was_drifted": false,
+                "current_device": ""
+            })).map_err(|e| e.to_string());
+        }
+    };
+
+    // 3. Read current OS default (handles COM init internally)
+    log::info!("IPolicyConfig: verifying default capture device...");
+
+    #[cfg(target_os = "windows")]
+    {
+        use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED};
+
+        let result = unsafe {
+            let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
+            let we_initialized = hr.0 == 0;
+            if hr.is_err() && hr.0 as u32 != 0x80010106 {
+                return Err(format!("CoInitializeEx failed: 0x{:08X}", hr.0));
+            }
+
+            let res = (|| -> Result<String, String> {
+                let current = crate::audio::device_default::get_default_capture_endpoint_id()?;
+                log::debug!("IPolicyConfig verify: current='{}', target='{}'", current, target);
+
+                let was_drifted = current != target;
+                if was_drifted {
+                    log::warn!(
+                        "IPolicyConfig: drift detected! current='{}' != target='{}', re-applying...",
+                        current, target
+                    );
+                    crate::audio::device_default::set_default_capture_endpoint(&target)?;
+                    crate::stt::emit_stt_debug(&app, "warn", "ipolicy",
+                        &format!("IPolicyConfig drift corrected: '{}' → '{}'", current, target));
+                } else {
+                    log::info!("IPolicyConfig: no drift — default is still correct");
+                }
+
+                serde_json::to_string(&serde_json::json!({
+                    "active": true,
+                    "was_drifted": was_drifted,
+                    "current_device": target
+                })).map_err(|e| e.to_string())
+            })();
+
+            if we_initialized {
+                CoUninitialize();
+            }
+            res
+        };
+        result
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        serde_json::to_string(&serde_json::json!({
+            "active": false,
+            "was_drifted": false
+        })).map_err(|e| e.to_string())
+    }
+}
+
 // ── IPolicyConfig restore helper ────────────────────────────────────
 
 /// Restore the original default capture device if an IPolicyConfig override is active.

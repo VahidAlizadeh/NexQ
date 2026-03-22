@@ -2,7 +2,7 @@
 // Displays timestamp, speaker label, and text for a single transcript segment.
 // Speaker color is dynamic via speakerStore; confidence underline when enabled.
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { TranscriptSegment } from "../lib/types";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useSpeakerStore } from "../stores/speakerStore";
@@ -24,11 +24,23 @@ interface TranscriptLineProps {
  */
 export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const editRef = useRef<HTMLInputElement>(null);
   const meetingStartTime = useMeetingStore((s) => s.meetingStartTime);
-  const getSpeakerColor = useSpeakerStore((s) => s.getSpeakerColor);
-  const getSpeakerDisplayName = useSpeakerStore((s) => s.getSpeakerDisplayName);
   const confidenceThreshold = useConfigStore((s) => s.confidenceThreshold);
   const confidenceHighlightEnabled = useConfigStore((s) => s.confidenceHighlightEnabled);
+
+  // Resolve speaker ID — prefer explicit speaker_id, fall back to speaker field
+  const speakerId = segment.speaker_id ?? (segment.speaker === "User" ? "you" : "them");
+  const isPending = speakerId === "__pending";
+
+  // Reactive: select the actual speaker object — triggers re-render on rename/merge
+  const speaker = useSpeakerStore((s) => isPending ? undefined : s.speakers[speakerId]);
+  const renameSpeaker = useSpeakerStore((s) => s.renameSpeaker);
+
+  const speakerLabel = isPending ? "..." : (speaker?.display_name ?? speakerId);
+  const speakerHex = isPending ? "#6b7280" : (speaker?.color ?? "#6b7280");
 
   // Convert epoch timestamp to elapsed time since meeting start
   const elapsedMs = meetingStartTime
@@ -46,10 +58,27 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
     : `${minutes}:${String(seconds).padStart(2, "0")}`;
   const fullTimestamp = `${shortTimestamp}.${String(millis).padStart(3, "0")}`;
 
-  // Resolve speaker ID — prefer explicit speaker_id, fall back to speaker field
-  const speakerId = segment.speaker_id ?? (segment.speaker === "User" ? "you" : "them");
-  const speakerHex = getSpeakerColor(speakerId);
-  const speakerLabel = getSpeakerDisplayName(speakerId);
+  // Inline rename: don't allow for pending or fixed speakers (you, them, room)
+  const canRename = !isPending && speakerId !== "you" && speakerId !== "them" && speakerId !== "room";
+
+  const startEditing = () => {
+    if (!canRename) return;
+    setEditName(speakerLabel);
+    setIsEditing(true);
+    setTimeout(() => editRef.current?.select(), 0);
+  };
+
+  const commitRename = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== speakerLabel) {
+      renameSpeaker(speakerId, trimmed);
+    }
+    setIsEditing(false);
+  };
+
+  const cancelRename = () => {
+    setIsEditing(false);
+  };
 
   // Confidence underline: low confidence text gets a dotted underline + reduced opacity
   const isLowConfidence =
@@ -103,7 +132,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   return (
     <div
       className={`group flex items-start gap-2 rounded-lg px-1.5 py-1 transition-colors duration-100 hover:bg-accent/30 border-l-2 transcript-line-enter`}
-      style={{ borderLeftColor: `${speakerHex}80` }}
+      style={{ borderLeftColor: isPending ? "transparent" : `${speakerHex}80` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -115,13 +144,32 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
         {isHovered ? fullTimestamp : shortTimestamp}
       </span>
 
-      {/* Speaker label */}
-      <span
-        className="mt-0.5 shrink-0 text-meta font-semibold"
-        style={{ color: speakerHex }}
-      >
-        {speakerLabel}
-      </span>
+      {/* Speaker label — click to rename */}
+      {isEditing ? (
+        <input
+          ref={editRef}
+          type="text"
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitRename();
+            if (e.key === "Escape") cancelRename();
+          }}
+          maxLength={40}
+          className="mt-0.5 shrink-0 w-20 rounded bg-white/5 border border-purple-400/30 px-1 py-0 text-meta font-semibold outline-none"
+          style={{ color: speakerHex }}
+        />
+      ) : (
+        <span
+          className={`mt-0.5 shrink-0 text-meta font-semibold ${canRename ? "cursor-pointer hover:underline" : ""} ${isPending ? "animate-pulse" : ""}`}
+          style={{ color: speakerHex }}
+          onClick={startEditing}
+          title={canRename ? "Click to rename" : undefined}
+        >
+          {speakerLabel}
+        </span>
+      )}
 
       {/* Text content */}
       <span

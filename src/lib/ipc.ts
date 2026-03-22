@@ -11,6 +11,7 @@ import type {
   ContextResource,
   DeepgramConfig,
   GroqConfig,
+  IpolicyStatus,
   LocalSTTEngineInfo,
   Meeting,
   MeetingSummary,
@@ -61,6 +62,11 @@ export async function startAudioTest(
 
 export async function stopAudioTest(): Promise<boolean> {
   return invoke("stop_audio_test");
+}
+
+export async function ensureIpolicyOverride(): Promise<IpolicyStatus> {
+  const result = await invoke<string>("ensure_ipolicy_override");
+  return JSON.parse(result);
 }
 
 /** Peak level (0–1) for one audio endpoint, from IAudioMeterInformation. */

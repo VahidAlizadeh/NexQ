@@ -25,6 +25,12 @@ export interface AudioLevel {
   peak: number;
 }
 
+export interface IpolicyStatus {
+  active: boolean;
+  was_drifted: boolean;
+  current_device?: string;
+}
+
 // == TRANSCRIPT TYPES ==
 
 export interface TranscriptSegment {

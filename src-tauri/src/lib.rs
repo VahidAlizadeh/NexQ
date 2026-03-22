@@ -424,6 +424,11 @@ pub fn run() {
             meeting_commands::save_meeting_ai_interactions,
             meeting_commands::rename_meeting,
             meeting_commands::update_meeting_summary,
+            meeting_commands::save_meeting_speakers,
+            meeting_commands::save_meeting_bookmarks,
+            meeting_commands::save_meeting_action_items,
+            meeting_commands::save_meeting_topic_sections,
+            meeting_commands::rename_speaker,
             // == COMMANDS: settings ==
             settings_commands::get_config,
             settings_commands::set_config,

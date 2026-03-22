@@ -327,6 +327,28 @@ export async function updateMeetingSummary(meetingId: string, summary: string): 
   return invoke("update_meeting_summary", { meetingId, summary });
 }
 
+// == IPC: In-Person Meeting Mode ==
+
+export async function saveMeetingSpeakers(meetingId: string, speakersJson: string): Promise<void> {
+  return invoke("save_meeting_speakers", { meetingId, speakersJson });
+}
+
+export async function saveMeetingBookmarks(meetingId: string, bookmarksJson: string): Promise<void> {
+  return invoke("save_meeting_bookmarks", { meetingId, bookmarksJson });
+}
+
+export async function saveMeetingActionItems(meetingId: string, itemsJson: string): Promise<void> {
+  return invoke("save_meeting_action_items", { meetingId, itemsJson });
+}
+
+export async function saveMeetingTopicSections(meetingId: string, sectionsJson: string): Promise<void> {
+  return invoke("save_meeting_topic_sections", { meetingId, sectionsJson });
+}
+
+export async function renameSpeaker(meetingId: string, speakerId: string, newName: string): Promise<void> {
+  return invoke("rename_speaker", { meetingId, speakerId, newName });
+}
+
 // == IPC: Whisper Dual-Pass Config ==
 
 export async function updateWhisperDualPassConfig(

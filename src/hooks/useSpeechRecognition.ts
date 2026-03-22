@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useTranscriptStore } from "../stores/transcriptStore";
 import { useConfigStore } from "../stores/configStore";
-import { pushTranscript } from "../lib/ipc";
+import { pushTranscript, ensureIpolicyOverride } from "../lib/ipc";
 
 // Web Speech API types (not in all TS libs)
 interface SpeechRecognitionEvent extends Event {
@@ -197,8 +197,11 @@ export function useSpeechRecognition() {
 
       // Backoff: 300ms, 600ms, 1200ms, capped at 2000ms
       const delay = Math.min(300 * Math.pow(2, restartFailCountRef.current), 2000);
+      const restartNum = restartFailCountRef.current + 1;
 
-      setTimeout(() => {
+      console.log(`[STT] Web Speech onend | restart #${restartNum}, delay ${delay}ms`);
+
+      setTimeout(async () => {
         if (instanceIdRef.current !== myInstanceId) return;
         if (!shouldRestartRef.current || !recognitionRef.current) return;
 
@@ -208,6 +211,22 @@ export function useSpeechRecognition() {
           (freshCfg?.you.stt_provider === "web_speech" && freshCfg?.you.is_input_device) ||
           (freshCfg?.them.stt_provider === "web_speech" && freshCfg?.them.is_input_device);
         if (!stillActive) return;
+
+        // Verify IPolicy before restarting — never block restart on failure
+        try {
+          const ipolicy = await ensureIpolicyOverride();
+          if (ipolicy.was_drifted) {
+            console.warn("[STT] IPolicy drift corrected before restart");
+          } else if (ipolicy.active) {
+            console.log("[STT] IPolicy verified (no drift)");
+          }
+        } catch (err) {
+          console.warn("[STT] IPolicy verification failed, proceeding anyway:", err);
+        }
+
+        // Guard again after async — state may have changed during IPolicy check
+        if (instanceIdRef.current !== myInstanceId) return;
+        if (!shouldRestartRef.current || !recognitionRef.current) return;
 
         try {
           recognitionRef.current!.start();
@@ -219,6 +238,12 @@ export function useSpeechRecognition() {
           // by creating a fresh instance
           if (restartFailCountRef.current <= 5) {
             try {
+              // Re-verify IPolicy before fresh instance — device may have drifted
+              try {
+                await ensureIpolicyOverride();
+              } catch {
+                // proceed anyway
+              }
               const fresh = new SpeechRecognition();
               fresh.continuous = true;
               fresh.interimResults = true;
@@ -230,9 +255,9 @@ export function useSpeechRecognition() {
               fresh.onend = recognitionRef.current!.onend;
               recognitionRef.current = fresh;
               fresh.start();
-              console.log("[STT] Web Speech recreated and restarted");
+              console.log("[STT] Web Speech creating fresh instance (restart failed)");
             } catch {
-              console.error("[STT] Web Speech recreation also failed");
+              console.error("[STT] Web Speech fresh instance creation also failed");
             }
           }
         }

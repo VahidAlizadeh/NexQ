@@ -29,6 +29,9 @@ export function useAudioLevel(): AudioLevelState {
   // Use refs for peak decay to avoid excessive re-renders
   const micPeakRef = useRef(0);
   const systemPeakRef = useRef(0);
+  // EMA smoothing refs — reduces spiky behavior for mixer-type inputs
+  const micSmoothedRef = useRef(0);
+  const systemSmoothedRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -38,6 +41,9 @@ export function useAudioLevel(): AudioLevelState {
         if (!mounted) return;
 
         if (event.source === "Mic") {
+          // EMA smoothing: smooth = prev * 0.7 + current * 0.3
+          micSmoothedRef.current = micSmoothedRef.current * 0.7 + event.level * 0.3;
+
           // Update peak with decay
           if (event.peak > micPeakRef.current) {
             micPeakRef.current = event.peak;
@@ -48,10 +54,13 @@ export function useAudioLevel(): AudioLevelState {
 
           setState((prev) => ({
             ...prev,
-            micLevel: event.level,
+            micLevel: micSmoothedRef.current,
             micPeak: micPeakRef.current,
           }));
         } else if (event.source === "System") {
+          // EMA smoothing: smooth = prev * 0.7 + current * 0.3
+          systemSmoothedRef.current = systemSmoothedRef.current * 0.7 + event.level * 0.3;
+
           if (event.peak > systemPeakRef.current) {
             systemPeakRef.current = event.peak;
           } else {
@@ -60,7 +69,7 @@ export function useAudioLevel(): AudioLevelState {
 
           setState((prev) => ({
             ...prev,
-            systemLevel: event.level,
+            systemLevel: systemSmoothedRef.current,
             systemPeak: systemPeakRef.current,
           }));
         }

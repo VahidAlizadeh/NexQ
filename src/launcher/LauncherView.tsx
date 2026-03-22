@@ -56,7 +56,7 @@ function useFavorites() {
   return { favorites, toggleFavorite };
 }
 
-type MeetingFilter = "all" | "favorites" | "with_summary";
+type MeetingFilter = "all" | "favorites" | "with_summary" | "online" | "in_person";
 
 // ════════════════════════════════════════════════════════════════
 //  NEXQ DASHBOARD
@@ -213,6 +213,8 @@ export function LauncherView() {
     let list = searchResults ?? recentMeetings;
     if (filter === "favorites") list = list.filter((m) => favorites.has(m.id));
     if (filter === "with_summary") list = list.filter((m) => m.has_summary);
+    if (filter === "online") list = list.filter((m) => m.audio_mode === "online");
+    if (filter === "in_person") list = list.filter((m) => m.audio_mode === "in_person");
     return list;
   }, [searchResults, recentMeetings, filter, favorites]);
 
@@ -289,17 +291,25 @@ export function LauncherView() {
 
           {/* Filters + Delete all */}
           <div className="flex items-center justify-between px-3 pb-2">
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5 flex-wrap">
               {([
                 { key: "all", label: "All" },
                 { key: "favorites", label: "Starred" },
                 { key: "with_summary", label: "Summary" },
+                { key: "online", label: "Online" },
+                { key: "in_person", label: "In-Person" },
               ] as const).map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
                   className={`rounded px-1.5 py-0.5 text-meta font-medium transition-all duration-150 active:scale-90 cursor-pointer ${
-                    filter === key ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30"
+                    filter === key
+                      ? key === "online"
+                        ? "bg-[rgba(74,108,247,0.15)] text-[#4a6cf7]"
+                        : key === "in_person"
+                          ? "bg-[rgba(168,85,247,0.15)] text-[#a855f7]"
+                          : "bg-primary/10 text-primary"
+                      : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30"
                   }`}
                 >
                   {key === "favorites" && <Star className="mr-0.5 inline h-2 w-2" />}

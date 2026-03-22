@@ -96,7 +96,7 @@ export function TranscriptPanel() {
   // Empty state
   if (segments.length === 0) {
     return (
-      <div className="flex h-full flex-col">
+      <div className="flex flex-1 min-h-0 flex-col">
         <div className="flex flex-1 flex-col items-center justify-center gap-2">
           {isRecording ? (
             <>
@@ -147,7 +147,7 @@ export function TranscriptPanel() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       {/* Search bar (shown when there's a search query or toggled) */}
       <div className="flex items-center gap-2 rounded-lg bg-muted/20 mx-1 mt-1 mb-1.5 px-2.5 py-1.5">
         <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
@@ -180,7 +180,7 @@ export function TranscriptPanel() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto scroll-smooth px-1 py-1"
+        className="flex-1 min-h-0 overflow-y-auto scroll-smooth px-1 py-1"
       >
         {filteredSegments.map((seg) => (
           <TranscriptLine

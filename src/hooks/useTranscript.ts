@@ -7,6 +7,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { onTranscriptUpdate, onTranscriptFinal } from "../lib/events";
 import { useTranscriptStore } from "../stores/transcriptStore";
 import { useSpeakerStore } from "../stores/speakerStore";
+import { useConfigStore } from "../stores/configStore";
 import type { TranscriptSegment, TranscriptUpdateEvent } from "../lib/types";
 
 // Cache reference to avoid repeated imports
@@ -40,27 +41,31 @@ function processSpeaker(segment: TranscriptSegment): TranscriptSegment | null {
   let speakerId: string;
 
   if (segment.speaker_id) {
-    // Diarized segment from Deepgram — use the speaker_id directly (e.g., "speaker_0")
+    // Diarized segment from Deepgram — use the speaker_id directly
     speakerId = segment.speaker_id;
   } else if (isInPerson) {
-    // In-person mode, non-diarized segment (no speaker_id from Deepgram):
-    // This happens with interim results before diarization is applied.
-    // Map to "room" as fallback.
-    speakerId = "room";
+    // In-person mode interim without diarization data
+    const diarizationEnabled = useConfigStore.getState().diarizationEnabled;
+    if (diarizationEnabled) {
+      // Pending: diarization will resolve speaker on the final result
+      speakerId = "__pending";
+    } else {
+      // No diarization: everything is "room"
+      speakerId = "room";
+    }
   } else {
-    // Online mode: standard two-party mapping
     speakerId = segment.speaker === "User" ? "you" : "them";
   }
 
-  // Auto-register unknown speakers
-  if (!speakerStore.getSpeaker(speakerId)) {
-    speakerStore.addSpeaker(speakerId);
-  }
-
-  // Update stats on final segments
-  if (segment.is_final) {
-    const wordCount = segment.text.split(/\s+/).filter(Boolean).length;
-    speakerStore.updateStats(speakerId, wordCount, 0);
+  // Skip registration and stats for pending segments
+  if (speakerId !== "__pending") {
+    if (!speakerStore.getSpeaker(speakerId)) {
+      speakerStore.addSpeaker(speakerId);
+    }
+    if (segment.is_final) {
+      const wordCount = segment.text.split(/\s+/).filter(Boolean).length;
+      speakerStore.updateStats(speakerId, wordCount, 0);
+    }
   }
 
   return { ...segment, speaker_id: speakerId };

@@ -1021,16 +1021,24 @@ pub async fn start_capture_per_party(
                 } else {
                     "transcript_update"
                 };
-                let payload = serde_json::json!({
-                    "segment": {
-                        "id": seg_id,
-                        "text": result.text,
-                        "speaker": "Them",
-                        "timestamp_ms": result.timestamp_ms,
-                        "is_final": result.is_final,
-                        "confidence": result.confidence
-                    }
+                // Extract diarized speaker_id from result.speaker
+                // Deepgram sets speaker to "speaker_N" when diarize=true
+                let speaker_id_val = match result.speaker.as_deref() {
+                    Some(s) if s.starts_with("speaker_") => Some(s.to_string()),
+                    _ => None,
+                };
+                let mut seg = serde_json::json!({
+                    "id": seg_id,
+                    "text": result.text,
+                    "speaker": "Them",
+                    "timestamp_ms": result.timestamp_ms,
+                    "is_final": result.is_final,
+                    "confidence": result.confidence
                 });
+                if let Some(ref sid) = speaker_id_val {
+                    seg["speaker_id"] = serde_json::json!(sid);
+                }
+                let payload = serde_json::json!({ "segment": seg });
                 let _ = stt_app.emit(event_name, &payload);
             }
         });

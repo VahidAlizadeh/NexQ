@@ -1573,6 +1573,11 @@ fn restore_default_device_if_overridden(state: &AppState, app: &tauri::AppHandle
         Err(_) => return,
     };
 
+    // Also clear the target endpoint
+    if let Ok(mut target_guard) = state.ipolicy_target_endpoint.lock() {
+        target_guard.take();
+    }
+
     if let Some(ref original_id) = original {
         crate::stt::emit_stt_debug(app, "info", "audio",
             &format!("IPolicyConfig: restoring default capture → '{}'", original_id));

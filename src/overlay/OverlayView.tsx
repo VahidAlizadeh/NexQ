@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMeetingStore } from "../stores/meetingStore";
+import { useScenarioStore } from "../stores/scenarioStore";
 import { useCallLogStore } from "../stores/callLogStore";
 import { useAIActionsStore } from "../stores/aiActionsStore";
 import { showToast } from "../stores/toastStore";
@@ -10,6 +11,10 @@ import { ModeButtons } from "./ModeButtons";
 import { AskInput } from "./AskInput";
 import { ServiceStatusBar } from "../components/ServiceStatusBar";
 import { DevLogPanel } from "../components/DevLogPanel";
+import { SpeakerStatsPanel } from "./SpeakerStatsPanel";
+import { ActionItemsPanel } from "./ActionItemsPanel";
+import { useBookmarkHotkey } from "../hooks/useBookmarkHotkey";
+import { MODE_COLORS } from "../lib/speakerColors";
 import {
   GripHorizontal,
   Minus,
@@ -17,6 +22,9 @@ import {
   Square,
   Activity,
   Terminal,
+  BarChart3,
+  Bookmark,
+  ClipboardList,
 } from "lucide-react";
 import { formatDuration } from "../lib/utils";
 
@@ -25,13 +33,20 @@ export function OverlayView() {
   const activeMeeting = useMeetingStore((s) => s.activeMeeting);
   const isRecording = useMeetingStore((s) => s.isRecording);
   const elapsedMs = useMeetingStore((s) => s.elapsedMs);
+  const audioMode = useMeetingStore((s) => s.audioMode);
   const endMeetingFlow = useMeetingStore((s) => s.endMeetingFlow);
   const setCurrentView = useMeetingStore((s) => s.setCurrentView);
+  const scenarioTemplate = useScenarioStore((s) => s.getActiveTemplate());
   const [askInputVisible, setAskInputVisible] = useState(false);
   const [devLogOpen, setDevLogOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const toggleLog = useCallLogStore((s) => s.toggleOpen);
   const logOpen = useCallLogStore((s) => s.isOpen);
   const autoTrigger = useAIActionsStore((s) => s.configs.globalDefaults.autoTrigger);
+
+  // Bookmark hotkey (Ctrl+B)
+  const addBookmarkAtNow = useBookmarkHotkey();
 
   const handleEndMeeting = useCallback(async () => {
     try { await endMeetingFlow(); showToast("Meeting ended", "info"); }
@@ -71,12 +86,26 @@ export function OverlayView() {
               <span className="text-meta font-semibold text-destructive tracking-wide">REC</span>
             </div>
           )}
+          {/* Mode badge */}
+          <span
+            className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded"
+            style={{ color: MODE_COLORS[audioMode].text, backgroundColor: MODE_COLORS[audioMode].bg }}
+          >
+            {audioMode === "online" ? "ONLINE" : "IN-PERSON"}
+          </span>
+          {/* Scenario chip */}
+          <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-white/5">
+            {scenarioTemplate.name}
+          </span>
           <span className="text-xs text-muted-foreground/60 tabular-nums font-medium">
             {elapsedMs > 0 ? formatDuration(elapsedMs) : "00:00"}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
+          <HeaderBtn icon={<BarChart3 className="h-3.5 w-3.5" />} active={statsOpen} onClick={() => setStatsOpen(p => !p)} tooltip="Speaker Stats" />
+          <HeaderBtn icon={<Bookmark className="h-3.5 w-3.5" />} onClick={addBookmarkAtNow} tooltip="Add Bookmark (Ctrl+B)" />
+          <HeaderBtn icon={<ClipboardList className="h-3.5 w-3.5" />} active={actionsOpen} onClick={() => setActionsOpen(p => !p)} tooltip="Action Items" />
           <HeaderBtn icon={<Activity className="h-3.5 w-3.5" />} active={logOpen} onClick={toggleLog} tooltip="AI Call Log" />
           <HeaderBtn icon={<Terminal className="h-3.5 w-3.5" />} active={devLogOpen} onClick={() => setDevLogOpen(p => !p)} tooltip="Dev Log (Ctrl+Shift+L)" />
           <HeaderBtn icon={<Settings className="h-3.5 w-3.5" />} onClick={() => setCurrentView("settings")} tooltip="Settings" />
@@ -135,6 +164,12 @@ export function OverlayView() {
 
       {/* DevLog panel */}
       <DevLogPanel open={devLogOpen} onClose={() => setDevLogOpen(false)} />
+
+      {/* Speaker Stats panel */}
+      <SpeakerStatsPanel isOpen={statsOpen} />
+
+      {/* Action Items panel */}
+      <ActionItemsPanel isOpen={actionsOpen} />
 
       {/* ═══ FOOTER: Service Status ═══ */}
       <div className="border-t border-border/20">

@@ -130,6 +130,20 @@ const STT_OPTIONS: {
   },
 ];
 
+// ── Web Speech / Windows Speech mutual exclusion ──
+// These providers capture from the OS default mic via a single SpeechRecognition instance.
+// Only one can be active across both parties at any time.
+const EXCLUSIVE_PROVIDERS: STTProviderType[] = ["web_speech", "windows_native"];
+
+const EXCLUSIVE_FALLBACK_ORDER: STTProviderType[] = [
+  "deepgram", "groq_whisper", "whisper_api", "azure_speech",
+  "sherpa_onnx", "ort_streaming", "parakeet_tdt",
+];
+
+function isExclusiveProvider(provider: string): boolean {
+  return EXCLUSIVE_PROVIDERS.includes(provider as STTProviderType);
+}
+
 // ── Party color config — must use full Tailwind class strings (no interpolation) ──
 const PARTY_CONFIG = {
   you: {
@@ -355,6 +369,8 @@ export function MeetingAudioSettings() {
           apiKeyStatus={apiKeyStatus}
           activeWhisperModel={activeWhisperModel}
           localEngines={localEngines}
+          otherPartyProvider={config.them.stt_provider}
+          otherPartyLabel="Them"
           onChange={(updates) => updateParty("you", updates)}
         />
         <PartyPanel
@@ -369,6 +385,8 @@ export function MeetingAudioSettings() {
           apiKeyStatus={apiKeyStatus}
           activeWhisperModel={activeWhisperModel}
           localEngines={localEngines}
+          otherPartyProvider={config.you.stt_provider}
+          otherPartyLabel="You"
           onChange={(updates) => updateParty("them", updates)}
         />
       </div>
@@ -525,6 +543,8 @@ function PartyPanel({
   apiKeyStatus,
   activeWhisperModel,
   localEngines,
+  otherPartyProvider,
+  otherPartyLabel,
   onChange,
 }: {
   label: string;
@@ -538,6 +558,8 @@ function PartyPanel({
   apiKeyStatus: Record<string, boolean>;
   activeWhisperModel: string | null;
   localEngines: LocalSTTEngineInfo[];
+  otherPartyProvider: STTProviderType | null;
+  otherPartyLabel: string;
   onChange: (updates: Partial<PartyAudioConfig>) => void;
 }) {
   const c = PARTY_CONFIG[role];
@@ -672,6 +694,8 @@ function PartyPanel({
             isInput={party.is_input_device}
             apiKeyStatus={apiKeyStatus}
             localEngines={localEngines}
+            otherPartyProvider={otherPartyProvider}
+            otherPartyLabel={otherPartyLabel}
             onChange={handleProviderChange}
           />
         </div>
@@ -702,21 +726,27 @@ function ProviderSelect({
   isInput,
   apiKeyStatus,
   localEngines,
+  otherPartyProvider,
+  otherPartyLabel,
   onChange,
 }: {
   value: STTProviderType;
   isInput: boolean;
   apiKeyStatus: Record<string, boolean>;
   localEngines: LocalSTTEngineInfo[];
+  otherPartyProvider: STTProviderType | null;
+  otherPartyLabel: string;
   onChange: (val: STTProviderType) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [stealTarget, setStealTarget] = useState<STTProviderType | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
+        setStealTarget(null);
       }
     }
     if (open) document.addEventListener("mousedown", handler);
@@ -736,6 +766,67 @@ function ProviderSelect({
     if (opt.requiresDownload) return isLocalEngineReady(opt.requiresDownload);
     if (opt.requiresKey) return apiKeyStatus[opt.value] ?? false;
     return true;
+  }
+
+  function isExclusiveLocked(opt: typeof STT_OPTIONS[0]): boolean {
+    if (!isExclusiveProvider(opt.value)) return false;
+    if (!otherPartyProvider) return false;
+    return isExclusiveProvider(otherPartyProvider);
+  }
+
+  function findExclusiveFallback(): STTProviderType | null {
+    for (const provider of EXCLUSIVE_FALLBACK_ORDER) {
+      const opt = STT_OPTIONS.find(o => o.value === provider);
+      if (opt && isAvailable(opt)) return provider;
+    }
+    return null;
+  }
+
+  function handleStealConfirm() {
+    if (!stealTarget) return;
+    const freshConfig = useConfigStore.getState().meetingAudioConfig;
+    if (!freshConfig) return;
+
+    const thisRole = freshConfig.you.stt_provider === otherPartyProvider ? "them" : "you";
+    const otherRole = thisRole === "you" ? "them" : "you";
+    const otherStillExclusive = isExclusiveProvider(freshConfig[otherRole].stt_provider);
+
+    if (!otherStillExclusive) {
+      onChange(stealTarget);
+      setStealTarget(null);
+      setOpen(false);
+      return;
+    }
+
+    const fallback = findExclusiveFallback();
+    if (!fallback) {
+      showToast("No fallback STT engine available. Configure an API key or download a local model first.", "error");
+      setStealTarget(null);
+      return;
+    }
+
+    const updatedConfig = { ...freshConfig };
+    updatedConfig[thisRole] = {
+      ...updatedConfig[thisRole],
+      stt_provider: stealTarget,
+      local_model_id: undefined,
+    };
+    updatedConfig[otherRole] = {
+      ...updatedConfig[otherRole],
+      stt_provider: fallback,
+      local_model_id: undefined,
+    };
+    useConfigStore.getState().setMeetingAudioConfig(updatedConfig);
+
+    const stealLabel = STT_OPTIONS.find(o => o.value === stealTarget)?.label ?? stealTarget;
+    const fallbackLabel = STT_OPTIONS.find(o => o.value === fallback)?.label ?? fallback;
+    showToast(
+      `${stealLabel} moved to ${thisRole === "you" ? "You" : "Them"}. ${otherRole === "you" ? "You" : "Them"} fell back to ${fallbackLabel}.`,
+      "info"
+    );
+
+    setStealTarget(null);
+    setOpen(false);
   }
 
   // Auto-reset to a working provider if the current one is no longer available.
@@ -792,24 +883,41 @@ function ProviderSelect({
                   Local & Built-in
                 </span>
               </div>
-              {localOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => { onChange(opt.value); setOpen(false); }}
-                  className={`flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs transition-colors hover:bg-accent ${
-                    value === opt.value ? "bg-primary/5 text-primary" : "text-foreground"
-                  }`}
-                >
-                  <span className={`shrink-0 ${value === opt.value ? "text-primary" : "text-emerald-500"}`}>
-                    {opt.icon}
-                  </span>
-                  <span className="flex-1 text-left">{opt.label}</span>
-                  {value === opt.value && (
-                    <CheckCircle className="h-3 w-3 shrink-0 text-primary" />
-                  )}
-                </button>
-              ))}
+              {localOptions.map((opt) => {
+                const locked = isExclusiveLocked(opt);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      if (locked) {
+                        setStealTarget(opt.value);
+                      } else {
+                        onChange(opt.value);
+                        setOpen(false);
+                      }
+                    }}
+                    className={`flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs transition-colors hover:bg-accent ${
+                      locked ? "opacity-50 hover:opacity-70" : ""
+                    } ${
+                      value === opt.value ? "bg-primary/5 text-primary" : "text-foreground"
+                    }`}
+                  >
+                    <span className={`shrink-0 ${value === opt.value ? "text-primary" : "text-emerald-500"}`}>
+                      {opt.icon}
+                    </span>
+                    <span className="flex-1 text-left">
+                      {opt.label}
+                      {locked && (
+                        <span className="block text-meta text-muted-foreground/50">In use by {otherPartyLabel}</span>
+                      )}
+                    </span>
+                    {value === opt.value && !locked && (
+                      <CheckCircle className="h-3 w-3 shrink-0 text-primary" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -821,24 +929,41 @@ function ProviderSelect({
                   Cloud
                 </span>
               </div>
-              {cloudOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => { onChange(opt.value); setOpen(false); }}
-                  className={`flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs transition-colors hover:bg-accent ${
-                    value === opt.value ? "bg-primary/5 text-primary" : "text-foreground"
-                  }`}
-                >
-                  <span className={`shrink-0 ${value === opt.value ? "text-primary" : "text-blue-500"}`}>
-                    {opt.icon}
-                  </span>
-                  <span className="flex-1 text-left">{opt.label}</span>
-                  {value === opt.value && (
-                    <CheckCircle className="h-3 w-3 shrink-0 text-primary" />
-                  )}
-                </button>
-              ))}
+              {cloudOptions.map((opt) => {
+                const locked = isExclusiveLocked(opt);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      if (locked) {
+                        setStealTarget(opt.value);
+                      } else {
+                        onChange(opt.value);
+                        setOpen(false);
+                      }
+                    }}
+                    className={`flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs transition-colors hover:bg-accent ${
+                      locked ? "opacity-50 hover:opacity-70" : ""
+                    } ${
+                      value === opt.value ? "bg-primary/5 text-primary" : "text-foreground"
+                    }`}
+                  >
+                    <span className={`shrink-0 ${value === opt.value ? "text-primary" : "text-blue-500"}`}>
+                      {opt.icon}
+                    </span>
+                    <span className="flex-1 text-left">
+                      {opt.label}
+                      {locked && (
+                        <span className="block text-meta text-muted-foreground/50">In use by {otherPartyLabel}</span>
+                      )}
+                    </span>
+                    {value === opt.value && !locked && (
+                      <CheckCircle className="h-3 w-3 shrink-0 text-primary" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -846,6 +971,40 @@ function ProviderSelect({
             <p className="px-3 py-3 text-meta text-muted-foreground">
               No providers ready — configure in STT Keys tab
             </p>
+          )}
+
+          {stealTarget && (
+            <div className="border-t border-border/20 bg-amber-500/5 px-3 py-2.5">
+              <p className="text-meta leading-relaxed text-amber-200/80 mb-2">
+                <span className="font-semibold text-amber-400">
+                  {STT_OPTIONS.find(o => o.value === stealTarget)?.label}
+                </span>{" "}
+                can only run on one source at a time. Switch to this party?
+                The other party will fall back to{" "}
+                <span className="font-medium">
+                  {(() => {
+                    const fb = findExclusiveFallback();
+                    return fb ? (STT_OPTIONS.find(o => o.value === fb)?.label ?? fb) : "no available engine";
+                  })()}
+                </span>.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleStealConfirm}
+                  className="rounded-lg bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-meta font-semibold text-amber-400 hover:bg-amber-500/30 cursor-pointer"
+                >
+                  Switch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStealTarget(null)}
+                  className="rounded-lg bg-muted/30 px-3 py-1 text-meta font-medium text-muted-foreground hover:bg-muted/50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}

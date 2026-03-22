@@ -302,6 +302,17 @@ impl AudioCaptureManager {
                 self.system_level = vad_result.energy;
                 self.system_peak = vad::calculate_peak(&chunk.pcm_data);
             }
+            AudioSource::Room => {
+                // In-person mode: Room audio uses the mic VAD pipeline but
+                // reports levels as both mic and system (since it's a single shared source).
+                let vad_result = self.mic_vad.process_chunk(&chunk.pcm_data);
+                chunk.is_speech = vad_result.is_speech;
+                self.mic_level = vad_result.energy;
+                self.mic_peak = vad::calculate_peak(&chunk.pcm_data);
+                // Mirror to system level so UI shows activity on both meters
+                self.system_level = vad_result.energy;
+                self.system_peak = self.mic_peak;
+            }
         }
 
         // Write to recorder if active
@@ -445,6 +456,8 @@ pub struct AudioChunk {
 pub enum AudioSource {
     Mic,
     System,
+    /// In-person meeting mode: single shared microphone capturing the room.
+    Room,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

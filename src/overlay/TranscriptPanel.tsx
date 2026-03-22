@@ -7,6 +7,7 @@ import { useMeetingStore } from "../stores/meetingStore";
 import { useAudioLevel } from "../hooks/useAudioLevel";
 import { useConfigStore } from "../stores/configStore";
 import { TranscriptLine } from "./TranscriptLine";
+import { SpeakerNamingBanner } from "./SpeakerNamingBanner";
 import { Mic, MicOff, Volume2, VolumeX, Search, X } from "lucide-react";
 
 export function TranscriptPanel() {
@@ -142,6 +143,7 @@ export function TranscriptPanel() {
             />
           </div>
         )}
+        <SpeakerNamingBanner />
       </div>
     );
   }
@@ -221,6 +223,9 @@ export function TranscriptPanel() {
           />
         </div>
       )}
+
+      {/* Speaker naming prompt (in-person mode diarization) */}
+      <SpeakerNamingBanner />
 
       {/* Auto-scroll paused indicator */}
       {!autoScroll && segments.length > 0 && (

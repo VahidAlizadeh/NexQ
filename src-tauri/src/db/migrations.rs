@@ -8,6 +8,7 @@ pub fn run(conn: &Connection) -> Result<(), rusqlite::Error> {
 
     v1_schema(conn)?;
     v2_rag_schema(conn)?;
+    v3_meeting_mode_schema(conn)?;
 
     log::info!("Database migrations completed successfully");
     Ok(())
@@ -159,6 +160,99 @@ fn v2_rag_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             END;",
         )?;
     }
+
+    Ok(())
+}
+
+/// Schema v3: In-person meeting mode — meeting metadata, speakers, bookmarks,
+/// topic sections, and action items.
+fn v3_meeting_mode_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
+    // Add new columns to meetings (safe: ignore error if column already exists)
+    for alter in &[
+        "ALTER TABLE meetings ADD COLUMN audio_mode TEXT NOT NULL DEFAULT 'online'",
+        "ALTER TABLE meetings ADD COLUMN ai_scenario TEXT NOT NULL DEFAULT 'team_meeting'",
+        "ALTER TABLE meetings ADD COLUMN noise_preset TEXT",
+    ] {
+        if let Err(e) = conn.execute_batch(alter) {
+            let msg = e.to_string();
+            if !msg.contains("duplicate column") {
+                log::warn!("ALTER TABLE meetings warning: {}", msg);
+            }
+        }
+    }
+
+    // Add speaker_id column to transcript_segments
+    if let Err(e) =
+        conn.execute_batch("ALTER TABLE transcript_segments ADD COLUMN speaker_id TEXT")
+    {
+        let msg = e.to_string();
+        if !msg.contains("duplicate column") {
+            log::warn!("ALTER TABLE transcript_segments warning: {}", msg);
+        }
+    }
+
+    // Backfill speaker_id from existing speaker values (idempotent: only fills NULLs)
+    conn.execute_batch(
+        "
+        UPDATE transcript_segments SET speaker_id = 'you'     WHERE speaker_id IS NULL AND speaker = 'User';
+        UPDATE transcript_segments SET speaker_id = 'them'    WHERE speaker_id IS NULL AND speaker IN ('Interviewer', 'Them');
+        UPDATE transcript_segments SET speaker_id = 'unknown' WHERE speaker_id IS NULL AND speaker = 'Unknown';
+        ",
+    )?;
+
+    // New tables for in-person meeting features
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS meeting_speakers (
+            id              TEXT PRIMARY KEY,
+            meeting_id      TEXT NOT NULL,
+            speaker_id      TEXT NOT NULL,
+            display_name    TEXT NOT NULL,
+            source          TEXT NOT NULL,
+            color           TEXT,
+            segment_count   INTEGER DEFAULT 0,
+            word_count      INTEGER DEFAULT 0,
+            talk_time_ms    INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS meeting_bookmarks (
+            id              TEXT PRIMARY KEY,
+            meeting_id      TEXT NOT NULL,
+            timestamp_ms    INTEGER NOT NULL,
+            note            TEXT,
+            created_at      TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS meeting_topic_sections (
+            id              TEXT PRIMARY KEY,
+            meeting_id      TEXT NOT NULL,
+            title           TEXT NOT NULL,
+            start_ms        INTEGER NOT NULL,
+            end_ms          INTEGER
+        );
+
+        CREATE TABLE IF NOT EXISTS meeting_action_items (
+            id              TEXT PRIMARY KEY,
+            meeting_id      TEXT NOT NULL,
+            text            TEXT NOT NULL,
+            assignee_speaker_id TEXT,
+            timestamp_ms    INTEGER NOT NULL,
+            completed       INTEGER DEFAULT 0
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_meeting_speakers_meeting_id
+            ON meeting_speakers(meeting_id);
+
+        CREATE INDEX IF NOT EXISTS idx_meeting_bookmarks_meeting_id
+            ON meeting_bookmarks(meeting_id);
+
+        CREATE INDEX IF NOT EXISTS idx_meeting_topic_sections_meeting_id
+            ON meeting_topic_sections(meeting_id);
+
+        CREATE INDEX IF NOT EXISTS idx_meeting_action_items_meeting_id
+            ON meeting_action_items(meeting_id);
+        ",
+    )?;
 
     Ok(())
 }

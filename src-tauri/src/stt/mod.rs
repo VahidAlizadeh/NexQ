@@ -542,6 +542,7 @@ impl STTRouter {
         match source {
             AudioSource::Mic => "User",
             AudioSource::System => "Interviewer",
+            AudioSource::Room => "Room",
         }
     }
 }

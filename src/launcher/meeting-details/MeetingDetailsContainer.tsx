@@ -12,6 +12,9 @@ import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
 import { TranscriptView } from "./TranscriptView";
 import { SummaryView } from "./SummaryView";
 import { AIInteractionLog } from "./AIInteractionLog";
+import { SpeakersTab } from "./SpeakersTab";
+import { ActionItemsTab } from "./ActionItemsTab";
+import { BookmarksTab } from "./BookmarksTab";
 import {
   formatTimestamp,
   formatDurationLong,
@@ -192,6 +195,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
                   onToggle={(id) => setExpandedInteraction(expandedInteraction === id ? null : id)}
                 />
               )}
+              {activeTab === "speakers" && <SpeakersTab meeting={meeting} />}
+              {activeTab === "actions" && <ActionItemsTab meeting={meeting} />}
+              {activeTab === "bookmarks" && <BookmarksTab meeting={meeting} />}
             </div>
           </div>
         </div>
@@ -229,6 +235,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
             onToggle={(id) => setExpandedInteraction(expandedInteraction === id ? null : id)}
           />
         )}
+        {activeTab === "speakers" && <SpeakersTab meeting={meeting} />}
+        {activeTab === "actions" && <ActionItemsTab meeting={meeting} />}
+        {activeTab === "bookmarks" && <BookmarksTab meeting={meeting} />}
       </div>
     </div>
   );

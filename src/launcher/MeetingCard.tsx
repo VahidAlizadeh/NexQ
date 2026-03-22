@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Clock,
   FileText,
+  Users,
 } from "lucide-react";
 
 interface MeetingCardProps {
@@ -210,7 +211,7 @@ export function MeetingCard({
           )}
 
           {/* Badges row */}
-          <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
             <span className="text-meta tabular-nums text-muted-foreground/70">
               {formatRelativeTime(meeting.start_time)}
             </span>
@@ -236,6 +237,31 @@ export function MeetingCard({
             {meeting.has_summary && (
               <span className="flex items-center gap-0.5 text-meta text-info">
                 <FileText className="h-2.5 w-2.5" />
+              </span>
+            )}
+
+            {meeting.audio_mode && (
+              <span
+                className="text-[9px] font-bold tracking-wider px-1 py-0.5 rounded"
+                style={{
+                  color: meeting.audio_mode === "online" ? "#4a6cf7" : "#a855f7",
+                  backgroundColor: meeting.audio_mode === "online" ? "rgba(74,108,247,0.12)" : "rgba(168,85,247,0.12)",
+                }}
+              >
+                {meeting.audio_mode === "online" ? "ONLINE" : "IN-PERSON"}
+              </span>
+            )}
+
+            {meeting.ai_scenario && (
+              <span className="text-[9px] font-medium text-muted-foreground/50 truncate max-w-[80px]">
+                {meeting.ai_scenario.replace("_", " ")}
+              </span>
+            )}
+
+            {meeting.speaker_count !== undefined && meeting.speaker_count > 0 && (
+              <span className="flex items-center gap-0.5 text-meta tabular-nums text-muted-foreground/50">
+                <Users className="h-2.5 w-2.5" />
+                {meeting.speaker_count}
               </span>
             )}
           </div>

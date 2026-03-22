@@ -169,3 +169,36 @@ export function onSTTDebug(
 ): Promise<UnlistenFn> {
   return listen<STTDebugEvent>("stt_debug", (e) => handler(e.payload));
 }
+
+// == TOPIC & ACTION ITEM DETECTION EVENTS ==
+
+export function onTopicDetected(
+  handler: (payload: import("./types").TopicSection) => void
+): Promise<UnlistenFn> {
+  return listen<import("./types").TopicSection>("topic_detected", (event) =>
+    handler(event.payload)
+  );
+}
+
+export function onActionItemDetected(
+  handler: (payload: import("./types").ActionItem) => void
+): Promise<UnlistenFn> {
+  return listen<import("./types").ActionItem>("action_item_detected", (event) =>
+    handler(event.payload)
+  );
+}
+
+// == SPEAKER DETECTION EVENTS ==
+
+export interface SpeakerDetectedEvent {
+  speaker_id: string;
+  meeting_id: string;
+}
+
+export function onSpeakerDetected(
+  handler: (payload: SpeakerDetectedEvent) => void
+): Promise<UnlistenFn> {
+  return listen<SpeakerDetectedEvent>("speaker_detected", (event) =>
+    handler(event.payload)
+  );
+}

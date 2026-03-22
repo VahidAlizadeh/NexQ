@@ -10,6 +10,7 @@ import {
 import { useConfigStore } from "../stores/configStore";
 import { useStreamStore } from "../stores/streamStore";
 import { useMeetingStore } from "../stores/meetingStore";
+import { useSpeakerStore } from "../stores/speakerStore";
 import { useAudioLevel } from "../hooks/useAudioLevel";
 import { hasApiKey, listLocalSTTEngines, setLLMProvider, setActiveModel, getApiKey } from "../lib/ipc";
 import type { STTProviderType, LLMProviderType, LocalSTTEngineInfo } from "../lib/types";
@@ -141,6 +142,8 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
 
   // Active state
   const isRecording = useMeetingStore((s) => s.isRecording);
+  const audioMode = useMeetingStore((s) => s.audioMode);
+  const speakerOrder = useSpeakerStore((s) => s.speakerOrder);
   const isStreaming = useStreamStore((s) => s.isStreaming);
   const latencyMs = useStreamStore((s) => s.latencyMs);
   const streamProvider = useStreamStore((s) => s.currentProvider);
@@ -248,55 +251,79 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
 
       <Divider />
 
-      {/* You STT — interactive during recording */}
-      <div className="flex items-center gap-1">
-        <div className="relative">
+      {audioMode === "in_person" ? (
+        /* In-Person mode: single Room STT indicator + speaker count */
+        <div className="flex items-center gap-2">
           <STTChip
             icon={<Mic className="h-3.5 w-3.5" />}
             provider={youStt.provider}
             model={youStt.model}
             active={youActive}
-            color="sky"
-            label="You"
-            muted={mutedYou}
-            interactive={isRecording}
-            pickerOpen={pickerOpen === "you"}
-            onClick={() => setPickerOpen(pickerOpen === "you" ? null : "you")}
-            tooltip={`Your STT: ${youStt.provider}${youStt.model ? ` / ${youStt.model}` : ""}`}
+            color="purple"
+            label="Room"
+            muted={false}
+            interactive={false}
+            pickerOpen={false}
+            onClick={() => {}}
+            tooltip={`Room STT: ${youStt.provider}${youStt.model ? ` / ${youStt.model}` : ""}`}
           />
-          {pickerOpen === "you" && (
-            <STTPickerDropdown
-              currentProvider={youSttProvider as STTProviderType}
-              isInput={meetingAudioConfig?.you.is_input_device ?? true}
-              onSelect={(p) => handleProviderChange("you", p)}
-              onClose={() => setPickerOpen(null)}
-              otherPartyProvider={meetingAudioConfig?.them.stt_provider ?? null}
-              otherPartyLabel="Them"
-            />
-          )}
+          <span className="text-xs text-muted-foreground/60">
+            {speakerOrder.length > 0
+              ? `${speakerOrder.length} speaker${speakerOrder.length !== 1 ? "s" : ""} detected`
+              : "No speakers yet"}
+          </span>
         </div>
-        {isRecording && (
-          <MuteButton type="mic" muted={mutedYou} onToggle={toggleMuteYou} label="You" />
-        )}
-      </div>
+      ) : (
+        <>
+          {/* Online mode: You STT — interactive during recording */}
+          <div className="flex items-center gap-1">
+            <div className="relative">
+              <STTChip
+                icon={<Mic className="h-3.5 w-3.5" />}
+                provider={youStt.provider}
+                model={youStt.model}
+                active={youActive}
+                color="sky"
+                label="You"
+                muted={mutedYou}
+                interactive={isRecording}
+                pickerOpen={pickerOpen === "you"}
+                onClick={() => setPickerOpen(pickerOpen === "you" ? null : "you")}
+                tooltip={`Your STT: ${youStt.provider}${youStt.model ? ` / ${youStt.model}` : ""}`}
+              />
+              {pickerOpen === "you" && (
+                <STTPickerDropdown
+                  currentProvider={youSttProvider as STTProviderType}
+                  isInput={meetingAudioConfig?.you.is_input_device ?? true}
+                  onSelect={(p) => handleProviderChange("you", p)}
+                  onClose={() => setPickerOpen(null)}
+                  otherPartyProvider={meetingAudioConfig?.them.stt_provider ?? null}
+                  otherPartyLabel="Them"
+                />
+              )}
+            </div>
+            {isRecording && (
+              <MuteButton type="mic" muted={mutedYou} onToggle={toggleMuteYou} label="You" />
+            )}
+          </div>
 
-      <Divider />
+          <Divider />
 
-      {/* Them STT — interactive during recording */}
-      <div className="flex items-center gap-1">
-        <div className="relative">
-          <STTChip
-            icon={<Volume2 className="h-3.5 w-3.5" />}
-            provider={themStt.provider}
-            model={themStt.model}
-            active={themActive}
-            color="amber"
-            label="Them"
-            muted={mutedThem}
-            interactive={isRecording}
-            pickerOpen={pickerOpen === "them"}
-            onClick={() => setPickerOpen(pickerOpen === "them" ? null : "them")}
-            tooltip={`Their STT: ${themStt.provider}${themStt.model ? ` / ${themStt.model}` : ""}`}
+          {/* Online mode: Them STT — interactive during recording */}
+          <div className="flex items-center gap-1">
+            <div className="relative">
+              <STTChip
+                icon={<Volume2 className="h-3.5 w-3.5" />}
+                provider={themStt.provider}
+                model={themStt.model}
+                active={themActive}
+                color="amber"
+                label="Them"
+                muted={mutedThem}
+                interactive={isRecording}
+                pickerOpen={pickerOpen === "them"}
+                onClick={() => setPickerOpen(pickerOpen === "them" ? null : "them")}
+                tooltip={`Their STT: ${themStt.provider}${themStt.model ? ` / ${themStt.model}` : ""}`}
           />
           {pickerOpen === "them" && (
             <STTPickerDropdown
@@ -308,11 +335,13 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
               otherPartyLabel="You"
             />
           )}
-        </div>
-        {isRecording && (
-          <MuteButton type="speaker" muted={mutedThem} onToggle={toggleMuteThem} label="Them" />
-        )}
-      </div>
+            </div>
+            {isRecording && (
+              <MuteButton type="speaker" muted={mutedThem} onToggle={toggleMuteThem} label="Them" />
+            )}
+          </div>
+        </>
+      )}
 
       {/* Latency / streaming indicator */}
       {(isStreaming || latencyMs != null) && (
@@ -357,6 +386,13 @@ const COLOR_MAP = {
     bg: "bg-warning/10",
     border: "border-warning/20",
     glow: "shadow-warning/20",
+  },
+  purple: {
+    active: "text-purple-400",
+    dot: "bg-purple-400",
+    bg: "bg-purple-400/10",
+    border: "border-purple-400/20",
+    glow: "shadow-purple-400/20",
   },
 } as const;
 

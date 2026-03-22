@@ -225,7 +225,7 @@ pub async fn start_capture(
 
             // Emit audio levels — separate counters per source for independent update rates
             let should_emit = match chunk.source {
-                AudioSource::Mic => {
+                AudioSource::Mic | AudioSource::Room => {
                     mic_emit_counter += 1;
                     mic_emit_counter % 3 == 0
                 }
@@ -1070,24 +1070,26 @@ pub async fn start_capture_per_party(
         while let Some(mut chunk) = rx.recv().await {
             // Apply VAD from the correct per-source instance
             let vad_result = match chunk.source {
-                AudioSource::Mic => mic_vad.process_chunk(&chunk.pcm_data),
+                AudioSource::Mic | AudioSource::Room => mic_vad.process_chunk(&chunk.pcm_data),
                 AudioSource::System => sys_vad.process_chunk(&chunk.pcm_data),
             };
             chunk.is_speech = vad_result.is_speech;
 
             // Track chunk counts for diagnostics (time-based stats)
             match chunk.source {
-                AudioSource::Mic => {
+                AudioSource::Mic | AudioSource::Room => {
                     mic_chunk_count += 1;
                     if mic_chunk_count == 1 {
-                        log::info!("First mic audio chunk received");
+                        let label = if chunk.source == AudioSource::Room { "room" } else { "mic" };
+                        log::info!("First {} audio chunk received", label);
                         crate::stt::emit_stt_debug(&app_handle, "info", "audio",
-                            "First mic chunk received — audio pipeline active");
+                            &format!("First {} chunk received — audio pipeline active", label));
                     }
                     if last_mic_stats.elapsed() >= stats_interval {
                         let rms = calculate_rms(&chunk.pcm_data);
+                        let label = if chunk.source == AudioSource::Room { "Room" } else { "Mic" };
                         crate::stt::emit_stt_debug_ex(&app_handle, "info", "audio",
-                            &format!("Mic: {} chunks, speech={}, rms={:.0}", mic_chunk_count, chunk.is_speech, rms),
+                            &format!("{}: {} chunks, speech={}, rms={:.0}", label, mic_chunk_count, chunk.is_speech, rms),
                             Some("audio_mic_stats"));
                         last_mic_stats = std::time::Instant::now();
                     }
@@ -1111,7 +1113,7 @@ pub async fn start_capture_per_party(
 
             // Emit audio levels — separate counters per source for independent update rates
             let should_emit = match chunk.source {
-                AudioSource::Mic => {
+                AudioSource::Mic | AudioSource::Room => {
                     mic_emit_ctr += 1;
                     mic_emit_ctr % 3 == 0
                 }
@@ -1160,6 +1162,21 @@ pub async fn start_capture_per_party(
                                 if !them_feed_error_emitted {
                                     crate::stt::emit_stt_debug(&app_handle, "error", "stt",
                                         &format!("'Them' feed_audio error: {}", e));
+                                    them_feed_error_emitted = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                AudioSource::Room => {
+                    // In-person mode: room audio routes to the "Them" provider
+                    // (which handles diarization). Use the same mute gate.
+                    if !them_muted_flag.load(Ordering::Relaxed) {
+                        if let Some(ref mut provider) = them_stt_provider {
+                            if let Err(e) = provider.feed_audio(chunk).await {
+                                if !them_feed_error_emitted {
+                                    crate::stt::emit_stt_debug(&app_handle, "error", "stt",
+                                        &format!("'Room' feed_audio error: {}", e));
                                     them_feed_error_emitted = true;
                                 }
                             }

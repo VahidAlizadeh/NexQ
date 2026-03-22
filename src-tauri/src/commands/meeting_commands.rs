@@ -1,6 +1,9 @@
 use tauri::{command, State};
 
-use crate::db::meetings::{self, MeetingUpdate, TranscriptSegment};
+use crate::db::meetings::{
+    self, MeetingActionItem, MeetingBookmark, MeetingSpeaker, MeetingTopicSection,
+    MeetingUpdate, TranscriptSegment,
+};
 use crate::state::AppState;
 
 #[command]
@@ -277,4 +280,114 @@ pub async fn append_transcript_segment(
 
     meetings::append_transcript_segment(db.connection(), &meeting_id, &full_segment)
         .map_err(|e| format!("Failed to append transcript segment: {}", e))
+}
+
+// ── In-person meeting mode commands ─────────────────────────────────────────
+
+#[command]
+pub async fn save_meeting_speakers(
+    meeting_id: String,
+    speakers_json: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let speakers: Vec<MeetingSpeaker> = serde_json::from_str(&speakers_json)
+        .map_err(|e| format!("Failed to parse speakers JSON: {}", e))?;
+
+    meetings::save_meeting_speakers(db.connection(), &meeting_id, &speakers)
+        .map_err(|e| format!("Failed to save meeting speakers: {}", e))
+}
+
+#[command]
+pub async fn save_meeting_bookmarks(
+    meeting_id: String,
+    bookmarks_json: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let bookmarks: Vec<MeetingBookmark> = serde_json::from_str(&bookmarks_json)
+        .map_err(|e| format!("Failed to parse bookmarks JSON: {}", e))?;
+
+    meetings::save_meeting_bookmarks(db.connection(), &meeting_id, &bookmarks)
+        .map_err(|e| format!("Failed to save meeting bookmarks: {}", e))
+}
+
+#[command]
+pub async fn save_meeting_action_items(
+    meeting_id: String,
+    items_json: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let items: Vec<MeetingActionItem> = serde_json::from_str(&items_json)
+        .map_err(|e| format!("Failed to parse action items JSON: {}", e))?;
+
+    meetings::save_meeting_action_items(db.connection(), &meeting_id, &items)
+        .map_err(|e| format!("Failed to save meeting action items: {}", e))
+}
+
+#[command]
+pub async fn save_meeting_topic_sections(
+    meeting_id: String,
+    sections_json: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let sections: Vec<MeetingTopicSection> = serde_json::from_str(&sections_json)
+        .map_err(|e| format!("Failed to parse topic sections JSON: {}", e))?;
+
+    meetings::save_meeting_topic_sections(db.connection(), &meeting_id, &sections)
+        .map_err(|e| format!("Failed to save meeting topic sections: {}", e))
+}
+
+#[command]
+pub async fn rename_speaker(
+    meeting_id: String,
+    speaker_id: String,
+    new_name: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    meetings::rename_speaker(db.connection(), &meeting_id, &speaker_id, &new_name)
+        .map_err(|e| format!("Failed to rename speaker: {}", e))
 }

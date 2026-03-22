@@ -7,13 +7,14 @@ import { searchMeetings, deleteMeeting } from "../lib/ipc";
 import { showToast } from "../stores/toastStore";
 import { RecentMeetings } from "./RecentMeetings";
 import { MeetingDetails } from "./meeting-details";
+import { MeetingSetupModal } from "./MeetingSetupModal";
 import { FileUpload } from "../context/FileUpload";
 import { ResourceCard } from "../context/ResourceCard";
 import { TokenBudget } from "../context/TokenBudget";
 import { TestSearchDialog } from "../context/TestSearchDialog";
 import { NEXQ_VERSION, NEXQ_DEVELOPER } from "../lib/version";
 import { ServiceStatusBar } from "../components/ServiceStatusBar";
-import type { MeetingSummary } from "../lib/types";
+import type { MeetingSummary, AudioMode, AIScenario } from "../lib/types";
 import {
   Settings,
   Search,
@@ -55,7 +56,7 @@ function useFavorites() {
   return { favorites, toggleFavorite };
 }
 
-type MeetingFilter = "all" | "favorites" | "with_summary";
+type MeetingFilter = "all" | "favorites" | "with_summary" | "online" | "in_person";
 
 // ════════════════════════════════════════════════════════════════
 //  NEXQ DASHBOARD
@@ -85,8 +86,12 @@ export function LauncherView() {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [ragStatus, setRagStatus] = useState<"idle" | "updating" | "done">("idle");
   const [showTestKB, setShowTestKB] = useState(false);
+  const [showMeetingSetup, setShowMeetingSetup] = useState(false);
+  // Pending audioMode/scenario from setup modal — used when conflict resolution triggers start
+  const pendingMeetingSetup = useRef<{ audioMode: AudioMode; scenario: AIScenario } | null>(null);
 
   const contextStrategy = useConfigStore((s) => s.contextStrategy);
+  const rememberedMeetingSetup = useConfigStore((s) => s.rememberedMeetingSetup);
   const indexStatus = useRagStore((s) => s.indexStatus);
   const isIndexing = useRagStore((s) => s.isIndexing);
   const indexStale = useRagStore((s) => s.indexStale);
@@ -113,12 +118,19 @@ export function LauncherView() {
 
   // ── Handlers ──
 
-  const handleStartMeeting = useCallback(async () => {
+  // Called when user clicks Start Meeting button — open setup modal
+  const handleStartMeeting = useCallback(() => {
     if (activeMeeting) { setShowConflictPrompt(true); return; }
+    setShowMeetingSetup(true);
+  }, [activeMeeting]);
+
+  // Called when user confirms setup in the modal
+  const handleSetupConfirm = useCallback(async (audioMode: AudioMode, scenario: AIScenario) => {
+    setShowMeetingSetup(false);
     setIsStarting(true);
     setStartError(null);
     try {
-      await startMeetingFlow();
+      await startMeetingFlow(undefined, audioMode, scenario);
       showToast("Meeting started", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to start meeting";
@@ -127,14 +139,16 @@ export function LauncherView() {
     } finally {
       setIsStarting(false);
     }
-  }, [startMeetingFlow, activeMeeting]);
+  }, [startMeetingFlow]);
 
   const handleEndAndStartNew = useCallback(async () => {
     setShowConflictPrompt(false);
     setIsStarting(true);
+    const setup = pendingMeetingSetup.current;
+    pendingMeetingSetup.current = null;
     try {
       await endMeetingFlow();
-      await startMeetingFlow();
+      await startMeetingFlow(undefined, setup?.audioMode, setup?.scenario);
       showToast("New meeting started", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to start";
@@ -199,6 +213,8 @@ export function LauncherView() {
     let list = searchResults ?? recentMeetings;
     if (filter === "favorites") list = list.filter((m) => favorites.has(m.id));
     if (filter === "with_summary") list = list.filter((m) => m.has_summary);
+    if (filter === "online") list = list.filter((m) => m.audio_mode === "online");
+    if (filter === "in_person") list = list.filter((m) => m.audio_mode === "in_person");
     return list;
   }, [searchResults, recentMeetings, filter, favorites]);
 
@@ -275,17 +291,25 @@ export function LauncherView() {
 
           {/* Filters + Delete all */}
           <div className="flex items-center justify-between px-3 pb-2">
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5 flex-wrap">
               {([
                 { key: "all", label: "All" },
                 { key: "favorites", label: "Starred" },
                 { key: "with_summary", label: "Summary" },
+                { key: "online", label: "Online" },
+                { key: "in_person", label: "In-Person" },
               ] as const).map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
                   className={`rounded px-1.5 py-0.5 text-meta font-medium transition-all duration-150 active:scale-90 cursor-pointer ${
-                    filter === key ? "bg-primary/10 text-primary" : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30"
+                    filter === key
+                      ? key === "online"
+                        ? "bg-[rgba(74,108,247,0.15)] text-[#4a6cf7]"
+                        : key === "in_person"
+                          ? "bg-[rgba(168,85,247,0.15)] text-[#a855f7]"
+                          : "bg-primary/10 text-primary"
+                      : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30"
                   }`}
                 >
                   {key === "favorites" && <Star className="mr-0.5 inline h-2 w-2" />}
@@ -344,7 +368,10 @@ export function LauncherView() {
                     {isStarting ? "Starting..." : "Start Meeting"}
                   </div>
                   <div className="text-meta font-normal text-white/50">
-                    Ctrl+M
+                    {rememberedMeetingSetup
+                      ? `${rememberedMeetingSetup.audioMode === "online" ? "Online" : "In-Person"} · ${rememberedMeetingSetup.scenario.replace("_", " ")}`
+                      : "Ctrl+M"
+                    }
                   </div>
                 </div>
               </button>
@@ -480,6 +507,13 @@ export function LauncherView() {
           <span className="font-medium">NexQ v{NEXQ_VERSION}</span>
         </div>
       </footer>
+
+      {/* ═══ MEETING SETUP MODAL ═══ */}
+      <MeetingSetupModal
+        open={showMeetingSetup}
+        onStart={handleSetupConfirm}
+        onCancel={() => setShowMeetingSetup(false)}
+      />
 
       {/* ═══ TEST KNOWLEDGE BASE MODAL ═══ */}
       <TestSearchDialog isOpen={showTestKB} onClose={() => setShowTestKB(false)} />

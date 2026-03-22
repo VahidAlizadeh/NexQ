@@ -10,6 +10,8 @@ import type {
   WhisperDualPassConfig,
   DeepgramConfig,
   GroqConfig,
+  AudioMode,
+  AIScenario,
 } from "../lib/types";
 
 const DEFAULT_DEEPGRAM_CONFIG: DeepgramConfig = {
@@ -133,6 +135,13 @@ interface ConfigState {
   // Context Strategy
   contextStrategy: ContextStrategy;
 
+  // In-person meeting mode settings
+  rememberedMeetingSetup: { audioMode: AudioMode; scenario: AIScenario } | null;
+  diarizationEnabled: boolean;
+  noisePreset: string | null;
+  confidenceThreshold: number;
+  confidenceHighlightEnabled: boolean;
+
   // Loading state
   _loaded: boolean;
 
@@ -169,6 +178,11 @@ interface ConfigState {
   setFirstRunCompleted: (completed: boolean) => void;
   setHotkeys: (hotkeys: HotkeyConfig) => void;
   setVerifiedCloudProviders: (providers: string[]) => void;
+  setRememberedMeetingSetup: (setup: { audioMode: AudioMode; scenario: AIScenario } | null) => void;
+  setDiarizationEnabled: (enabled: boolean) => void;
+  setNoisePreset: (preset: string | null) => void;
+  setConfidenceThreshold: (threshold: number) => void;
+  setConfidenceHighlightEnabled: (enabled: boolean) => void;
   loadConfig: () => Promise<void>;
 }
 
@@ -197,6 +211,11 @@ export const useConfigStore = create<ConfigState>((set) => ({
   firstRunCompleted: false,
   contextStrategy: "stuffing",
   hotkeys: DEFAULT_HOTKEYS,
+  rememberedMeetingSetup: null,
+  diarizationEnabled: true,
+  noisePreset: null,
+  confidenceThreshold: 0.7,
+  confidenceHighlightEnabled: true,
   _loaded: false,
   mutedYou: false,
   mutedThem: false,
@@ -418,6 +437,26 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ verifiedCloudProviders: providers });
     persistValue("verifiedCloudProviders", providers);
   },
+  setRememberedMeetingSetup: (setup) => {
+    set({ rememberedMeetingSetup: setup });
+    persistValue("rememberedMeetingSetup", setup);
+  },
+  setDiarizationEnabled: (enabled) => {
+    set({ diarizationEnabled: enabled });
+    persistValue("diarizationEnabled", enabled);
+  },
+  setNoisePreset: (preset) => {
+    set({ noisePreset: preset });
+    persistValue("noisePreset", preset);
+  },
+  setConfidenceThreshold: (threshold) => {
+    set({ confidenceThreshold: threshold });
+    persistValue("confidenceThreshold", threshold);
+  },
+  setConfidenceHighlightEnabled: (enabled) => {
+    set({ confidenceHighlightEnabled: enabled });
+    persistValue("confidenceHighlightEnabled", enabled);
+  },
 
   /**
    * Load all persisted config values from the Tauri plugin-store on app start.
@@ -452,6 +491,11 @@ export const useConfigStore = create<ConfigState>((set) => ({
       const groqConfig = await store.get<GroqConfig>("groqConfig");
       const pauseThresholdMs = await store.get<number>("pauseThresholdMs");
       const activeModelPerEngine = await store.get<Record<string, string>>("activeModelPerEngine");
+      const rememberedMeetingSetup = await store.get<{ audioMode: AudioMode; scenario: AIScenario } | null>("rememberedMeetingSetup");
+      const diarizationEnabled = await store.get<boolean>("diarizationEnabled");
+      const noisePreset = await store.get<string | null>("noisePreset");
+      const confidenceThreshold = await store.get<number>("confidenceThreshold");
+      const confidenceHighlightEnabled = await store.get<boolean>("confidenceHighlightEnabled");
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
@@ -574,6 +618,11 @@ export const useConfigStore = create<ConfigState>((set) => ({
         ...(deepgramConfig != null && { deepgramConfig }),
         ...(groqConfig != null && { groqConfig }),
         ...(pauseThresholdMs != null && { pauseThresholdMs }),
+        ...(rememberedMeetingSetup !== undefined && { rememberedMeetingSetup: rememberedMeetingSetup ?? null }),
+        ...(diarizationEnabled != null && { diarizationEnabled }),
+        ...(noisePreset !== undefined && { noisePreset: noisePreset ?? null }),
+        ...(confidenceThreshold != null && { confidenceThreshold }),
+        ...(confidenceHighlightEnabled != null && { confidenceHighlightEnabled }),
       }));
 
       // Post-load: ensure local providers have a local_model_id so footer/backend use the right model

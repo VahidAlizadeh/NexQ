@@ -139,7 +139,7 @@ pub async fn generate_assist(
     // Build transcript from frontend segments (universal — works with any STT engine).
     // The frontend transcript store is the single source of truth.
     // Falls back to engine buffer only if frontend didn't send segments.
-    let transcript_text = if let Some(ref segs) = transcript_segments {
+    let mut transcript_text = if let Some(ref segs) = transcript_segments {
         build_transcript_from_segments(segs, window_seconds)
     } else {
         // Legacy fallback: read from backend buffer
@@ -153,6 +153,13 @@ pub async fn generate_assist(
         }
     };
 
+    // Prepend speaker context from active scenario (if set) before transcript
+    if let Ok(scenario) = state.active_scenario.read() {
+        if !scenario.speaker_context.is_empty() && !transcript_text.is_empty() {
+            transcript_text = format!("{}\n\n{}", scenario.speaker_context, transcript_text);
+        }
+    }
+
     // Resolve per-action settings
     let include_rag = action_cfg.as_ref().map(|c| c.include_rag_chunks).unwrap_or(true);
     let include_transcript = action_cfg.as_ref().map(|c| c.include_transcript).unwrap_or(true);
@@ -160,12 +167,19 @@ pub async fn generate_assist(
     let include_instructions = action_cfg.as_ref().map(|c| c.include_custom_instructions).unwrap_or(true);
     let rag_top_k = action_cfg.as_ref().and_then(|c| c.rag_top_k).unwrap_or(global_defaults.rag_top_k);
 
-    // Resolve base system prompt: from action config or fallback to default template
+    // Resolve base system prompt: per-action config > active scenario > hardcoded template.
+    // Active scenario is set by the frontend at meeting start based on the selected AI scenario.
     let base_system_prompt = action_cfg
         .as_ref()
         .map(|c| c.system_prompt.clone())
         .unwrap_or_else(|| {
-            crate::intelligence::prompt_templates::get_system_prompt(&mode).to_string()
+            // Check if the active scenario has a system prompt set
+            let scenario_prompt = state.active_scenario.read().ok().and_then(|s| {
+                if s.system_prompt.is_empty() { None } else { Some(s.system_prompt.clone()) }
+            });
+            scenario_prompt.unwrap_or_else(|| {
+                crate::intelligence::prompt_templates::get_system_prompt(&mode).to_string()
+            })
         });
 
     // Append composed instructions (tone + format + length + custom text) to system prompt.
@@ -436,6 +450,39 @@ pub async fn update_action_configs(
     engine.set_action_configs(configs);
 
     log::info!("Action configs updated from frontend");
+    Ok(())
+}
+
+/// Set the active scenario prompts from the frontend (called at meeting start).
+/// The intelligence pipeline reads these for scenario-aware prompt assembly.
+#[command]
+pub async fn set_active_scenario(
+    system_prompt: String,
+    summary_prompt: String,
+    question_detection_prompt: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let mut scenario = state.active_scenario.write()
+        .map_err(|e| format!("Failed to lock active scenario: {}", e))?;
+    scenario.system_prompt = system_prompt;
+    scenario.summary_prompt = summary_prompt;
+    scenario.question_detection_prompt = question_detection_prompt;
+    log::info!("Active scenario updated (system_prompt len={}, summary_prompt len={})",
+        scenario.system_prompt.len(), scenario.summary_prompt.len());
+    Ok(())
+}
+
+/// Update the speaker context within the active scenario.
+/// Called by the frontend when speaker information changes during a meeting.
+#[command]
+pub async fn update_speaker_context(
+    speaker_context: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let mut scenario = state.active_scenario.write()
+        .map_err(|e| format!("Failed to lock active scenario: {}", e))?;
+    scenario.speaker_context = speaker_context;
+    log::info!("Speaker context updated (len={})", scenario.speaker_context.len());
     Ok(())
 }
 

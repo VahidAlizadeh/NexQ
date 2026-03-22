@@ -135,10 +135,19 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         }
       } catch { /* non-critical */ }
 
-      // 1d. Set active scenario in scenarioStore
+      // 1d. Set active scenario in scenarioStore + push prompts to Rust backend
       try {
         const { useScenarioStore } = await import("./scenarioStore");
         useScenarioStore.getState().setActiveScenario(resolvedScenario);
+
+        // Push scenario prompts to Rust backend for scenario-aware intelligence
+        const template = useScenarioStore.getState().getActiveTemplate();
+        const { setActiveScenario } = await import("../lib/ipc");
+        await setActiveScenario(
+          template.system_prompt,
+          template.summary_prompt,
+          template.question_detection_prompt
+        );
       } catch { /* non-critical */ }
 
       // 2. Start audio capture — use per-party config if available, else legacy
@@ -314,31 +323,55 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       // Non-critical
     }
 
-    // 7b. Placeholder persistence for new feature stores (actual IPC in later task)
+    // 7b. Persist new feature stores via actual IPC calls
     if (meeting) {
       try {
         const { useSpeakerStore } = await import("./speakerStore");
         const speakers = useSpeakerStore.getState().getAllSpeakers();
         if (speakers.length > 0) {
-          console.log(`[meetingStore] ${speakers.length} speaker(s) to persist for ${meeting.id} (placeholder)`);
+          const { saveMeetingSpeakers } = await import("../lib/ipc");
+          await saveMeetingSpeakers(meeting.id, JSON.stringify(speakers));
+          console.log(`[meetingStore] Persisted ${speakers.length} speaker(s) for ${meeting.id}`);
         }
-      } catch { /* non-critical */ }
+      } catch (err) {
+        console.error("[meetingStore] Failed to persist speakers:", err);
+      }
 
       try {
         const { useBookmarkStore } = await import("./bookmarkStore");
         const bookmarks = useBookmarkStore.getState().bookmarks;
         if (bookmarks.length > 0) {
-          console.log(`[meetingStore] ${bookmarks.length} bookmark(s) to persist for ${meeting.id} (placeholder)`);
+          const { saveMeetingBookmarks } = await import("../lib/ipc");
+          await saveMeetingBookmarks(meeting.id, JSON.stringify(bookmarks));
+          console.log(`[meetingStore] Persisted ${bookmarks.length} bookmark(s) for ${meeting.id}`);
         }
-      } catch { /* non-critical */ }
+      } catch (err) {
+        console.error("[meetingStore] Failed to persist bookmarks:", err);
+      }
 
       try {
         const { useActionItemStore } = await import("./actionItemStore");
         const items = useActionItemStore.getState().items;
         if (items.length > 0) {
-          console.log(`[meetingStore] ${items.length} action item(s) to persist for ${meeting.id} (placeholder)`);
+          const { saveMeetingActionItems } = await import("../lib/ipc");
+          await saveMeetingActionItems(meeting.id, JSON.stringify(items));
+          console.log(`[meetingStore] Persisted ${items.length} action item(s) for ${meeting.id}`);
         }
-      } catch { /* non-critical */ }
+      } catch (err) {
+        console.error("[meetingStore] Failed to persist action items:", err);
+      }
+
+      try {
+        const { useTopicSectionStore } = await import("./topicSectionStore");
+        const sections = useTopicSectionStore.getState().sections;
+        if (sections.length > 0) {
+          const { saveMeetingTopicSections } = await import("../lib/ipc");
+          await saveMeetingTopicSections(meeting.id, JSON.stringify(sections));
+          console.log(`[meetingStore] Persisted ${sections.length} topic section(s) for ${meeting.id}`);
+        }
+      } catch (err) {
+        console.error("[meetingStore] Failed to persist topic sections:", err);
+      }
     }
 
     // 7c. Reset new feature stores

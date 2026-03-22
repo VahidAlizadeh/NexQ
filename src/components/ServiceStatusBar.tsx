@@ -673,7 +673,8 @@ function STTPickerDropdown({
   function isAvailable(opt: (typeof STT_PROVIDER_OPTIONS)[0]): boolean {
     if (opt.inputOnly && !isInput) return false;
     if (opt.requiresDownload) return isLocalEngineReady(opt.requiresDownload);
-    if (opt.requiresKey) return apiKeyStatus[opt.value] ?? false;
+    // Assume available if key status hasn't loaded yet — prevents false fallbacks
+    if (opt.requiresKey) return apiKeyStatus[opt.value] ?? true;
     return true;
   }
 

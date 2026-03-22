@@ -833,7 +833,8 @@ function ProviderSelect({
     // Don't show providers that require downloads/keys even if currently selected
     if (opt.inputOnly && !isInput) return false;
     if (opt.requiresDownload) return isLocalEngineReady(opt.requiresDownload);
-    if (opt.requiresKey) return apiKeyStatus[opt.value] ?? false;
+    // If API key status hasn't loaded yet, assume available to prevent false fallbacks
+    if (opt.requiresKey) return apiKeyStatus[opt.value] ?? true;
     return true;
   }
 

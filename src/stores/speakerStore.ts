@@ -15,6 +15,7 @@ interface SpeakerState {
   addSpeaker: (speakerId: string) => void;
   renameSpeaker: (speakerId: string, newName: string) => void;
   dismissNaming: () => void;
+  mergeSpeaker: (fromId: string, intoId: string) => void;
   updateStats: (speakerId: string, wordCount: number, durationMs: number) => void;
 
   // Getters
@@ -116,6 +117,33 @@ export const useSpeakerStore = create<SpeakerState>((set, get) => ({
 
   dismissNaming: () => {
     set({ pendingNaming: null });
+  },
+
+  mergeSpeaker: (fromId, intoId) => {
+    set((s) => {
+      const source = s.speakers[fromId];
+      const target = s.speakers[intoId];
+      if (!source || !target) return s;
+
+      // Transfer stats from source into target
+      const mergedStats = {
+        segment_count: target.stats.segment_count + source.stats.segment_count,
+        word_count: target.stats.word_count + source.stats.word_count,
+        talk_time_ms: target.stats.talk_time_ms + source.stats.talk_time_ms,
+        last_spoke_ms: Math.max(target.stats.last_spoke_ms, source.stats.last_spoke_ms),
+      };
+
+      // Remove source, update target stats
+      const { [fromId]: _removed, ...remainingSpeakers } = s.speakers;
+      return {
+        speakers: {
+          ...remainingSpeakers,
+          [intoId]: { ...target, stats: mergedStats },
+        },
+        speakerOrder: s.speakerOrder.filter((id) => id !== fromId),
+        pendingNaming: s.pendingNaming === fromId ? null : s.pendingNaming,
+      };
+    });
   },
 
   updateStats: (speakerId, wordCount, durationMs) => {

@@ -68,12 +68,14 @@ export const useSpeakerStore = create<SpeakerState>((set, get) => ({
 
   initForInPerson: (hasDiarization) => {
     if (hasDiarization) {
-      // Diarization will fill speakers dynamically via addSpeaker
-      set({ speakers: {}, speakerOrder: [], pendingNaming: null });
+      // Pre-register "you" for mic transcription; diarized speakers added dynamically
+      const you = makeSpeaker("you", "You", "fixed", FIXED_SPEAKER_COLORS.you);
+      set({ speakers: { you }, speakerOrder: ["you"], pendingNaming: null });
     } else {
-      // Single shared "room" source
+      // Single shared "room" source + you for mic
+      const you = makeSpeaker("you", "You", "fixed", FIXED_SPEAKER_COLORS.you);
       const room = makeSpeaker("room", "Room", "room", FIXED_SPEAKER_COLORS.room);
-      set({ speakers: { room }, speakerOrder: ["room"], pendingNaming: null });
+      set({ speakers: { you, room }, speakerOrder: ["you", "room"], pendingNaming: null });
     }
   },
 
@@ -84,7 +86,13 @@ export const useSpeakerStore = create<SpeakerState>((set, get) => ({
 
     const orderIndex = state.speakerOrder.length;
     const color = getSpeakerColor(speakerId, orderIndex);
-    const displayName = `Speaker ${orderIndex + 1}`;
+
+    // Parse numeric part of speaker ID for a friendlier display name
+    // Deepgram returns IDs like "0", "1", "2" or "speaker_0", etc.
+    const numMatch = speakerId.match(/(\d+)/);
+    const speakerNum = numMatch ? parseInt(numMatch[1], 10) + 1 : orderIndex + 1;
+    const displayName = `Speaker ${speakerNum}`;
+
     const speaker = makeSpeaker(speakerId, displayName, "diarization", color);
 
     set((s) => ({

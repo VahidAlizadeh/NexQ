@@ -349,6 +349,10 @@ export async function renameSpeaker(meetingId: string, speakerId: string, newNam
   return invoke("rename_speaker", { meetingId, speakerId, newName });
 }
 
+export async function updateMeetingMode(meetingId: string, audioMode: string, aiScenario: string): Promise<void> {
+  return invoke("update_meeting_mode", { meetingId, audioMode, aiScenario });
+}
+
 // == IPC: Scenario-Aware Intelligence ==
 
 export async function setActiveScenario(

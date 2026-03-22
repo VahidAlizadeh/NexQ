@@ -462,9 +462,12 @@ export const useConfigStore = create<ConfigState>((set) => ({
    * Load all persisted config values from the Tauri plugin-store on app start.
    * Any key not found in the store will keep its default value.
    * Auto-migrates old single-provider fields to the new per-party MeetingAudioConfig.
+   * IMPORTANT: Migrations only run on first load. Subsequent calls (e.g., navigating
+   * to settings mid-meeting) just reload values without applying destructive migrations.
    */
   loadConfig: async () => {
     try {
+      const alreadyLoaded = useConfigStore.getState()._loaded;
       const store = await getStore();
 
       const theme = await store.get<ThemeMode>("theme");
@@ -499,8 +502,9 @@ export const useConfigStore = create<ConfigState>((set) => ({
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
+      // ONLY run migrations on first load — not when re-entering settings mid-meeting.
       let resolvedMeetingConfig = meetingAudioConfig ?? null;
-      if (!resolvedMeetingConfig && (micDeviceId || systemDeviceId)) {
+      if (!alreadyLoaded && !resolvedMeetingConfig && (micDeviceId || systemDeviceId)) {
         resolvedMeetingConfig = {
           you: {
             role: "You",
@@ -522,7 +526,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
       }
 
       // Migrate whisper_cpp → correct defaults (whisper_cpp is batch-only, not for live STT)
-      if (resolvedMeetingConfig) {
+      // Only run on first load to avoid overwriting user settings mid-meeting.
+      if (!alreadyLoaded && resolvedMeetingConfig) {
         let migrated = false;
         if ((resolvedMeetingConfig.you.stt_provider as string) === "whisper_cpp") {
           resolvedMeetingConfig.you = { ...resolvedMeetingConfig.you, stt_provider: "web_speech", local_model_id: undefined };
@@ -561,16 +566,16 @@ export const useConfigStore = create<ConfigState>((set) => ({
         }
       }
 
-      // Migrate top-level sttProvider away from whisper_cpp
+      // Migrate top-level sttProvider away from whisper_cpp (first load only)
       let resolvedSttProvider = sttProvider;
-      if (!resolvedSttProvider || (resolvedSttProvider as string) === "whisper_cpp") {
+      if (!alreadyLoaded && (!resolvedSttProvider || (resolvedSttProvider as string) === "whisper_cpp")) {
         resolvedSttProvider = "windows_native" as STTProviderType;
         await store.set("sttProvider", resolvedSttProvider);
         console.log("[configStore] Migrated top-level sttProvider to windows_native");
       }
 
-      // If no meetingAudioConfig was found after all migrations, create a default
-      if (!resolvedMeetingConfig) {
+      // If no meetingAudioConfig was found after all migrations, create a default (first load only)
+      if (!alreadyLoaded && !resolvedMeetingConfig) {
         resolvedMeetingConfig = {
           you: {
             role: "You",

@@ -5,6 +5,8 @@
 import { useEffect, useCallback } from "react";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useBookmarkStore } from "../stores/bookmarkStore";
+import { showToast } from "../stores/toastStore";
+import { formatDuration } from "../lib/utils";
 
 export function useBookmarkHotkey(): () => void {
   const isRecording = useMeetingStore((s) => s.isRecording);
@@ -15,6 +17,7 @@ export function useBookmarkHotkey(): () => void {
     if (!isRecording || !meetingStartTime) return;
     const offsetMs = Date.now() - meetingStartTime;
     addBookmark(offsetMs);
+    showToast(`Bookmark added at ${formatDuration(offsetMs)}`, "success");
   }, [isRecording, meetingStartTime, addBookmark]);
 
   useEffect(() => {

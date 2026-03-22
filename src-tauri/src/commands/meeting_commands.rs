@@ -272,6 +272,7 @@ pub async fn append_transcript_segment(
         meeting_id: meeting_id.clone(),
         text: partial["text"].as_str().unwrap_or("").to_string(),
         speaker: partial["speaker"].as_str().unwrap_or("Unknown").to_string(),
+        speaker_id: partial["speaker_id"].as_str().map(|s| s.to_string()),
         timestamp_ms: partial["timestamp_ms"].as_i64().unwrap_or(0),
         is_final: partial["is_final"].as_bool().unwrap_or(true),
         confidence: partial["confidence"].as_f64().unwrap_or(0.0),
@@ -370,6 +371,32 @@ pub async fn save_meeting_topic_sections(
 
     meetings::save_meeting_topic_sections(db.connection(), &meeting_id, &sections)
         .map_err(|e| format!("Failed to save meeting topic sections: {}", e))
+}
+
+#[command]
+pub async fn update_meeting_mode(
+    meeting_id: String,
+    audio_mode: String,
+    ai_scenario: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    db.connection()
+        .execute(
+            "UPDATE meetings SET audio_mode = ?1, ai_scenario = ?2 WHERE id = ?3",
+            rusqlite::params![audio_mode, ai_scenario, meeting_id],
+        )
+        .map_err(|e| format!("Failed to update meeting mode: {}", e))?;
+
+    Ok(())
 }
 
 #[command]

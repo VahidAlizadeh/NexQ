@@ -254,23 +254,35 @@ export function ServiceStatusBar({ compact = false }: { compact?: boolean }) {
       {audioMode === "in_person" ? (
         /* In-Person mode: single Room STT indicator + speaker count */
         <div className="flex items-center gap-2">
-          <STTChip
-            icon={<Mic className="h-3.5 w-3.5" />}
-            provider={youStt.provider}
-            model={youStt.model}
-            active={youActive}
-            color="purple"
-            label="Room"
-            muted={false}
-            interactive={false}
-            pickerOpen={false}
-            onClick={() => {}}
-            tooltip={`Room STT: ${youStt.provider}${youStt.model ? ` / ${youStt.model}` : ""}`}
-          />
+          <div className="relative">
+            <STTChip
+              icon={<Mic className="h-3.5 w-3.5" />}
+              provider={themStt.provider}
+              model={themStt.model}
+              active={themActive || youActive}
+              color="purple"
+              label="ROOM"
+              muted={mutedThem}
+              interactive={isRecording}
+              pickerOpen={pickerOpen === "them"}
+              onClick={() => setPickerOpen(pickerOpen === "them" ? null : "them")}
+              tooltip={`Room STT: ${themStt.provider}${themStt.model ? ` / ${themStt.model}` : ""}`}
+            />
+            {pickerOpen === "them" && (
+              <STTPickerDropdown
+                currentProvider={themSttProvider as STTProviderType}
+                isInput={meetingAudioConfig?.them.is_input_device ?? false}
+                onSelect={(p) => handleProviderChange("them", p)}
+                onClose={() => setPickerOpen(null)}
+                otherPartyProvider={meetingAudioConfig?.you.stt_provider ?? null}
+                otherPartyLabel="You"
+              />
+            )}
+          </div>
           <span className="text-xs text-muted-foreground/60">
             {speakerOrder.length > 0
               ? `${speakerOrder.length} speaker${speakerOrder.length !== 1 ? "s" : ""} detected`
-              : "No speakers yet"}
+              : ""}
           </span>
         </div>
       ) : (

@@ -16,19 +16,13 @@ import {
   Volume2,
   Brain,
   Timer,
-  Columns2,
-  Rows3,
 } from "lucide-react";
-
-export type LayoutMode = "single" | "split";
 
 interface MeetingHeaderProps {
   meeting: Meeting;
   stats: MeetingStats;
   onBack: () => void;
   onTitleChanged: (title: string) => void;
-  layoutMode: LayoutMode;
-  onLayoutChange: (mode: LayoutMode) => void;
 }
 
 export function MeetingHeader({
@@ -36,8 +30,6 @@ export function MeetingHeader({
   stats,
   onBack,
   onTitleChanged,
-  layoutMode,
-  onLayoutChange,
 }: MeetingHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(meeting.title);
@@ -145,29 +137,6 @@ export function MeetingHeader({
           </div>
         </div>
 
-        {/* Layout toggle */}
-        <div className="flex items-center rounded-lg border border-border/20 bg-secondary/20 p-0.5">
-          <button
-            onClick={() => onLayoutChange("single")}
-            className={`rounded-md p-1.5 transition-colors cursor-pointer ${
-              layoutMode === "single" ? "bg-primary/20 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
-            }`}
-            aria-label="Single column layout"
-            aria-pressed={layoutMode === "single"}
-          >
-            <Rows3 className="h-4 w-4" aria-hidden="true" />
-          </button>
-          <button
-            onClick={() => onLayoutChange("split")}
-            className={`rounded-md p-1.5 transition-colors cursor-pointer ${
-              layoutMode === "split" ? "bg-primary/20 text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"
-            }`}
-            aria-label="Two column layout"
-            aria-pressed={layoutMode === "split"}
-          >
-            <Columns2 className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
       </div>
 
       {/* Row 2: Stats bar */}

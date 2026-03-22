@@ -11,20 +11,43 @@ import type { TranscriptSegment, TranscriptUpdateEvent } from "../lib/types";
 
 /**
  * Process a transcript segment through the speaker store:
- * - Resolve speaker_id from segment metadata
+ * - Resolve speaker_id from segment metadata (mode-aware)
  * - Auto-create speaker if not already tracked
  * - Update speaker stats on final segments
  * - Return enriched segment with speaker_id set
  */
+// Cache reference to avoid repeated imports
+let _meetingStoreRef: typeof import("../stores/meetingStore") | null = null;
+
 function processSpeaker(segment: TranscriptSegment): TranscriptSegment {
   const speakerStore = useSpeakerStore.getState();
 
-  // Resolve speaker_id: use existing speaker_id, or derive from speaker label
-  const speakerId =
-    segment.speaker_id ??
-    (segment.speaker === "User" ? "you" : segment.speaker === "Them" ? "them" : "room");
+  // Check audio mode — use cached import to avoid circular dependency
+  let isInPerson = false;
+  try {
+    // useMeetingStore is imported at module level in the hook setup
+    if (_meetingStoreRef) {
+      isInPerson = _meetingStoreRef.useMeetingStore.getState().audioMode === "in_person";
+    }
+  } catch { /* fallback to online mode */ }
 
-  // Auto-register unknown speakers
+  let speakerId: string;
+
+  if (segment.speaker_id) {
+    // Diarized segment from Deepgram — use the speaker_id directly
+    speakerId = segment.speaker_id;
+  } else if (isInPerson) {
+    // In-person mode without diarization speaker_id:
+    // - "User" segments (from mic/Web Speech) → map to "you"
+    // - "Them" segments (from room audio) → map to "room"
+    speakerId = segment.speaker === "User" ? "you" : "room";
+  } else {
+    // Online mode: standard two-party mapping
+    speakerId = segment.speaker === "User" ? "you" : "them";
+  }
+
+  // Auto-register unknown speakers (don't auto-register "you"/"them"/"room"
+  // since those are initialized by initForOnline/initForInPerson)
   if (!speakerStore.getSpeaker(speakerId)) {
     speakerStore.addSpeaker(speakerId);
   }
@@ -55,6 +78,11 @@ export function useTranscript() {
   const updateInterimSegment = useTranscriptStore(
     (s) => s.updateInterimSegment
   );
+
+  // Lazy-load meetingStore reference for mode-aware speaker processing
+  if (!_meetingStoreRef) {
+    import("../stores/meetingStore").then((mod) => { _meetingStoreRef = mod; });
+  }
 
   // Use refs to avoid re-subscribing when store actions change reference
   const appendRef = useRef(appendSegment);

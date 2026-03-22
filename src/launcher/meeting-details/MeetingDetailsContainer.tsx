@@ -7,7 +7,7 @@ import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
 import { useSummaryGeneration } from "../../hooks/useSummaryGeneration";
 import { showToast } from "../../stores/toastStore";
-import { MeetingHeader, type LayoutMode } from "./MeetingHeader";
+import { MeetingHeader } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
 import { TranscriptView } from "./TranscriptView";
 import { SummaryView } from "./SummaryView";
@@ -34,15 +34,6 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<MeetingTab>("transcript");
   const [expandedInteraction, setExpandedInteraction] = useState<string | null>(null);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
-    try { return (localStorage.getItem("nexq_meeting_layout") as LayoutMode) || "single"; }
-    catch { return "single"; }
-  });
-
-  const handleLayoutChange = useCallback((mode: LayoutMode) => {
-    setLayoutMode(mode);
-    try { localStorage.setItem("nexq_meeting_layout", mode); } catch {}
-  }, []);
 
   const loadMeeting = useCallback(async () => {
     setLoading(true);
@@ -85,13 +76,13 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-        if (activeTab === "transcript" || layoutMode === "split") {
+        if (activeTab === "transcript") {
           e.preventDefault();
           search.open();
         }
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        if (activeTab === "summary" || layoutMode === "split") {
+        if (activeTab === "summary") {
           e.preventDefault();
           if (!summaryGeneration.isGenerating && meeting && !meeting.summary) {
             summaryGeneration.generate();
@@ -102,7 +93,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [activeTab, layoutMode, search, summaryGeneration, meeting]);
+  }, [activeTab, search, summaryGeneration, meeting]);
 
   // Export
   const handleExport = useCallback(async () => {
@@ -147,67 +138,6 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     );
   }
 
-  // ═══════════════════════════════════════════
-  // SPLIT LAYOUT — Transcript left, Tabs right
-  // ═══════════════════════════════════════════
-  if (layoutMode === "split") {
-    return (
-      <div className="flex h-full flex-col">
-        <MeetingHeader
-          meeting={meeting}
-          stats={stats}
-          onBack={onBack}
-          onTitleChanged={handleTitleChanged}
-          layoutMode={layoutMode}
-          onLayoutChange={handleLayoutChange}
-        />
-
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left: Transcript (always visible) */}
-          <div className="flex flex-1 flex-col border-r border-border/10 min-w-0">
-            <div className="px-5 py-1.5 border-b border-border/20">
-              <span className="text-xs font-semibold text-muted-foreground/50">
-                Transcript
-                <span className="ml-1.5 text-muted-foreground/30">{meeting.transcript.length}</span>
-              </span>
-            </div>
-            <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
-          </div>
-
-          {/* Right: Tabbed content */}
-          <div className="flex w-[45%] min-w-[300px] max-w-[500px] flex-col">
-            <MeetingTabBar
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              meeting={meeting}
-            />
-            <div className="flex-1 overflow-y-auto" role="tabpanel">
-              {activeTab === "transcript" && (
-                <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
-              )}
-              {activeTab === "summary" && (
-                <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />
-              )}
-              {activeTab === "ai" && (
-                <AIInteractionLog
-                  interactions={meeting.ai_interactions}
-                  expandedId={expandedInteraction}
-                  onToggle={(id) => setExpandedInteraction(expandedInteraction === id ? null : id)}
-                />
-              )}
-              {activeTab === "speakers" && <SpeakersTab meeting={meeting} />}
-              {activeTab === "actions" && <ActionItemsTab meeting={meeting} />}
-              {activeTab === "bookmarks" && <BookmarksTab meeting={meeting} />}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════════════════════════════════════
-  // SINGLE COLUMN LAYOUT
-  // ═══════════════════════════════════════════
   return (
     <div className="flex h-full flex-col">
       <MeetingHeader
@@ -215,15 +145,13 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         stats={stats}
         onBack={onBack}
         onTitleChanged={handleTitleChanged}
-        layoutMode={layoutMode}
-        onLayoutChange={handleLayoutChange}
       />
 
       <MeetingTabBar activeTab={activeTab} setActiveTab={setActiveTab} meeting={meeting} />
 
       <div className="flex-1 overflow-y-auto" role="tabpanel">
         {activeTab === "transcript" && (
-          <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} />
+          <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} speakers={meeting.speakers} />
         )}
         {activeTab === "summary" && (
           <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />

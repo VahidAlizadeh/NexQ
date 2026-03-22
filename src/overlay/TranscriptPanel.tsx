@@ -8,7 +8,7 @@ import { useAudioLevel } from "../hooks/useAudioLevel";
 import { useConfigStore } from "../stores/configStore";
 import { TranscriptLine } from "./TranscriptLine";
 import { SpeakerNamingBanner } from "./SpeakerNamingBanner";
-import { Mic, MicOff, Volume2, VolumeX, Search, X } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Search, X, Radio } from "lucide-react";
 
 export function TranscriptPanel() {
   const segments = useTranscriptStore((s) => s.segments);
@@ -17,12 +17,17 @@ export function TranscriptPanel() {
   const setSearchQuery = useTranscriptStore((s) => s.setSearchQuery);
   const setAutoScroll = useTranscriptStore((s) => s.setAutoScroll);
   const isRecording = useMeetingStore((s) => s.isRecording);
+  const audioMode = useMeetingStore((s) => s.audioMode);
   const meetingAudioConfig = useConfigStore((s) => s.meetingAudioConfig);
   const { micLevel, systemLevel } = useAudioLevel();
   const mutedYou = useConfigStore((s) => s.mutedYou);
   const mutedThem = useConfigStore((s) => s.mutedThem);
   const toggleMuteYou = useConfigStore((s) => s.toggleMuteYou);
   const toggleMuteThem = useConfigStore((s) => s.toggleMuteThem);
+  const isInPerson = audioMode === "in_person";
+  // In in-person mode, room audio comes via the "them" config (system audio / AudienceMix),
+  // so use systemLevel for the Room bar. micLevel is for the user's mic (online mode).
+  const roomLevel = isInPerson ? Math.max(micLevel, systemLevel) : 0;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -119,28 +124,44 @@ export function TranscriptPanel() {
         </div>
         {isRecording && (
           <div className="mx-1 mb-1.5 space-y-1">
-            <AudioActivityBar
-              icon={<Mic className="h-3.5 w-3.5" />}
-              mutedIcon={<MicOff className="h-3.5 w-3.5" />}
-              label="You"
-              level={micLevel}
-              colorClass="bg-speaker-user"
-              trackClass="bg-speaker-user/10"
-              textClass="text-speaker-user"
-              muted={mutedYou}
-              onToggleMute={toggleMuteYou}
-            />
-            <AudioActivityBar
-              icon={<Volume2 className="h-3.5 w-3.5" />}
-              mutedIcon={<VolumeX className="h-3.5 w-3.5" />}
-              label="Them"
-              level={systemLevel}
-              colorClass="bg-speaker-interviewer"
-              trackClass="bg-speaker-interviewer/10"
-              textClass="text-speaker-interviewer"
-              muted={mutedThem}
-              onToggleMute={toggleMuteThem}
-            />
+            {isInPerson ? (
+              <AudioActivityBar
+                icon={<Radio className="h-3.5 w-3.5" />}
+                mutedIcon={<MicOff className="h-3.5 w-3.5" />}
+                label="Room"
+                level={roomLevel}
+                colorClass="bg-purple-500"
+                trackClass="bg-purple-500/10"
+                textClass="text-purple-400"
+                muted={mutedThem}
+                onToggleMute={toggleMuteThem}
+              />
+            ) : (
+              <>
+                <AudioActivityBar
+                  icon={<Mic className="h-3.5 w-3.5" />}
+                  mutedIcon={<MicOff className="h-3.5 w-3.5" />}
+                  label="You"
+                  level={micLevel}
+                  colorClass="bg-speaker-user"
+                  trackClass="bg-speaker-user/10"
+                  textClass="text-speaker-user"
+                  muted={mutedYou}
+                  onToggleMute={toggleMuteYou}
+                />
+                <AudioActivityBar
+                  icon={<Volume2 className="h-3.5 w-3.5" />}
+                  mutedIcon={<VolumeX className="h-3.5 w-3.5" />}
+                  label="Them"
+                  level={systemLevel}
+                  colorClass="bg-speaker-interviewer"
+                  trackClass="bg-speaker-interviewer/10"
+                  textClass="text-speaker-interviewer"
+                  muted={mutedThem}
+                  onToggleMute={toggleMuteThem}
+                />
+              </>
+            )}
           </div>
         )}
         <SpeakerNamingBanner />
@@ -196,31 +217,47 @@ export function TranscriptPanel() {
       </div>
       </div>
 
-      {/* Live audio activity indicators with mute controls */}
+      {/* Live audio activity indicators — mode-aware */}
       {isRecording && (
         <div className="mx-1 mb-1.5 space-y-1">
-          <AudioActivityBar
-            icon={<Mic className="h-3.5 w-3.5" />}
-            mutedIcon={<MicOff className="h-3.5 w-3.5" />}
-            label="You"
-            level={micLevel}
-            colorClass="bg-speaker-user"
-            trackClass="bg-speaker-user/10"
-            textClass="text-speaker-user"
-            muted={mutedYou}
-            onToggleMute={toggleMuteYou}
-          />
-          <AudioActivityBar
-            icon={<Volume2 className="h-3.5 w-3.5" />}
-            mutedIcon={<VolumeX className="h-3.5 w-3.5" />}
-            label="Them"
-            level={systemLevel}
-            colorClass="bg-speaker-interviewer"
-            trackClass="bg-speaker-interviewer/10"
-            textClass="text-speaker-interviewer"
-            muted={mutedThem}
-            onToggleMute={toggleMuteThem}
-          />
+          {isInPerson ? (
+            <AudioActivityBar
+              icon={<Radio className="h-3.5 w-3.5" />}
+              mutedIcon={<MicOff className="h-3.5 w-3.5" />}
+              label="Room"
+              level={roomLevel}
+              colorClass="bg-purple-500"
+              trackClass="bg-purple-500/10"
+              textClass="text-purple-400"
+              muted={mutedThem}
+              onToggleMute={toggleMuteThem}
+            />
+          ) : (
+            <>
+              <AudioActivityBar
+                icon={<Mic className="h-3.5 w-3.5" />}
+                mutedIcon={<MicOff className="h-3.5 w-3.5" />}
+                label="You"
+                level={micLevel}
+                colorClass="bg-speaker-user"
+                trackClass="bg-speaker-user/10"
+                textClass="text-speaker-user"
+                muted={mutedYou}
+                onToggleMute={toggleMuteYou}
+              />
+              <AudioActivityBar
+                icon={<Volume2 className="h-3.5 w-3.5" />}
+                mutedIcon={<VolumeX className="h-3.5 w-3.5" />}
+                label="Them"
+                level={systemLevel}
+                colorClass="bg-speaker-interviewer"
+                trackClass="bg-speaker-interviewer/10"
+                textClass="text-speaker-interviewer"
+                muted={mutedThem}
+                onToggleMute={toggleMuteThem}
+              />
+            </>
+          )}
         </div>
       )}
 

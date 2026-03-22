@@ -175,11 +175,15 @@ export function OverlayView() {
       {/* DevLog panel */}
       <DevLogPanel open={devLogOpen} onClose={() => setDevLogOpen(false)} />
 
-      {/* Speaker Stats panel */}
-      <SpeakerStatsPanel isOpen={statsOpen} />
-
-      {/* Action Items panel */}
-      <ActionItemsPanel isOpen={actionsOpen} />
+      {/* Speaker Stats + Action Items — adaptive two-column layout */}
+      {(statsOpen || actionsOpen) && (
+        <div className={`border-t border-border/20 px-3 py-2 ${
+          statsOpen && actionsOpen ? "grid grid-cols-2 gap-3" : ""
+        }`}>
+          {statsOpen && <SpeakerStatsPanel isOpen={statsOpen} />}
+          {actionsOpen && <ActionItemsPanel isOpen={actionsOpen} />}
+        </div>
+      )}
 
       {/* ═══ FOOTER: Service Status ═══ */}
       <div className="border-t border-border/20">

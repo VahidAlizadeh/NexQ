@@ -431,6 +431,7 @@ pub fn run() {
             meeting_commands::save_meeting_action_items,
             meeting_commands::save_meeting_topic_sections,
             meeting_commands::rename_speaker,
+            meeting_commands::update_meeting_mode,
             // == COMMANDS: settings ==
             settings_commands::get_config,
             settings_commands::set_config,

@@ -16,7 +16,7 @@ export function MeetingTabBar({ activeTab, setActiveTab, meeting }: MeetingTabBa
   const speakerCount = meeting.speakers?.length ?? 0;
 
   return (
-    <div className="flex items-center gap-1 border-b border-border/20 px-3 py-1.5 overflow-x-auto" role="tablist">
+    <div className="relative flex items-center gap-1 border-b border-border/20 px-3 py-1.5 overflow-x-auto overflow-y-visible" role="tablist">
       <TabButton
         active={activeTab === "transcript"}
         onClick={() => setActiveTab("transcript")}

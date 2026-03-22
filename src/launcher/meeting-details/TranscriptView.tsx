@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo, useState } from "react";
-import type { TranscriptSegment } from "../../lib/types";
+import type { TranscriptSegment, SpeakerIdentity } from "../../lib/types";
 import type { TranscriptSearchState } from "../../hooks/useTranscriptSearch";
 import { TranscriptSearch } from "./TranscriptSearch";
 import {
@@ -13,6 +13,8 @@ interface TranscriptViewProps {
   segments: TranscriptSegment[];
   search: TranscriptSearchState;
   meetingStartTime?: number;
+  /** Saved speakers from meeting — used for post-meeting label/color resolution */
+  speakers?: SpeakerIdentity[];
 }
 
 // Speaker colors for timeline blocks
@@ -23,12 +25,44 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "hsl(var(--muted-foreground))",
 };
 
-export function TranscriptView({ segments, search, meetingStartTime }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime, speakers }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const toElapsed = (ms: number) =>
     meetingStartTime ? Math.max(0, ms - meetingStartTime) : ms;
+
+  // Build speaker lookup from saved speakers for label/color resolution
+  const speakerMap = useMemo(() => {
+    if (!speakers || speakers.length === 0) return null;
+    const map = new Map<string, SpeakerIdentity>();
+    for (const s of speakers) map.set(s.id, s);
+    return map;
+  }, [speakers]);
+
+  const resolveSpeakerLabel = (seg: TranscriptSegment): string => {
+    if (speakerMap && seg.speaker_id) {
+      const s = speakerMap.get(seg.speaker_id);
+      if (s) return s.display_name;
+    }
+    return getSpeakerLabel(seg.speaker);
+  };
+
+  const resolveSpeakerColorClass = (seg: TranscriptSegment): string => {
+    if (speakerMap && seg.speaker_id) {
+      const s = speakerMap.get(seg.speaker_id);
+      if (s?.color) return ""; // use inline style instead
+    }
+    return getSpeakerColor(seg.speaker);
+  };
+
+  const resolveSpeakerColorHex = (seg: TranscriptSegment): string | undefined => {
+    if (speakerMap && seg.speaker_id) {
+      const s = speakerMap.get(seg.speaker_id);
+      if (s?.color) return s.color;
+    }
+    return undefined;
+  };
 
   // Search: scroll to match
   useEffect(() => {
@@ -113,8 +147,11 @@ export function TranscriptView({ segments, search, meetingStartTime }: Transcrip
                 </span>
 
                 {/* Speaker */}
-                <span className={`shrink-0 pt-0.5 text-xs font-bold ${getSpeakerColor(segment.speaker)}`}>
-                  {getSpeakerLabel(segment.speaker)}
+                <span
+                  className={`shrink-0 pt-0.5 text-xs font-bold ${resolveSpeakerColorClass(segment)}`}
+                  style={resolveSpeakerColorHex(segment) ? { color: resolveSpeakerColorHex(segment) } : undefined}
+                >
+                  {resolveSpeakerLabel(segment)}
                 </span>
 
                 {/* Text content */}

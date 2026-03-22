@@ -398,28 +398,39 @@ export function MeetingAudioSettings() {
         />
       </div>
 
-      {/* ── Diarization Toggle ── */}
-      <div className="flex items-center justify-between rounded-xl border border-border/20 bg-card/40 px-4 py-3">
-        <div>
-          <p className="text-xs font-medium text-foreground">Speaker Diarization</p>
-          <p className="mt-0.5 text-meta text-muted-foreground/70">Separate speakers in in-person mode (cloud STT only)</p>
-        </div>
-        <button
-          onClick={() => setDiarizationEnabled(!diarizationEnabled)}
-          role="switch"
-          aria-checked={diarizationEnabled}
-          aria-label="Toggle speaker diarization"
-          className={`relative h-5 w-9 cursor-pointer rounded-full transition-all duration-200 ${
-            diarizationEnabled ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]" : "bg-muted"
-          }`}
-        >
-          <span
-            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200 ${
-              diarizationEnabled ? "translate-x-4 scale-105" : "translate-x-0"
+      {/* ── Diarization Toggle — only shown when Deepgram or Azure is active ── */}
+      {(["deepgram", "azure_speech"] as STTProviderType[]).some(
+        (p) => config.you.stt_provider === p || config.them.stt_provider === p
+      ) && (
+        <div className="flex items-center justify-between rounded-xl border border-border/20 bg-card/40 px-4 py-3">
+          <div>
+            <p className="text-xs font-medium text-foreground">Speaker Diarization</p>
+            <p className="mt-0.5 text-meta text-muted-foreground/70">
+              Separate speakers in in-person mode (supported by{" "}
+              {[
+                config.you.stt_provider === "deepgram" || config.them.stt_provider === "deepgram" ? "Deepgram" : null,
+                config.you.stt_provider === "azure_speech" || config.them.stt_provider === "azure_speech" ? "Azure" : null,
+              ].filter(Boolean).join(" & ")}
+              )
+            </p>
+          </div>
+          <button
+            onClick={() => setDiarizationEnabled(!diarizationEnabled)}
+            role="switch"
+            aria-checked={diarizationEnabled}
+            aria-label="Toggle speaker diarization"
+            className={`relative h-5 w-9 cursor-pointer rounded-full transition-all duration-200 ${
+              diarizationEnabled ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]" : "bg-muted"
             }`}
-          />
-        </button>
-      </div>
+          >
+            <span
+              className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200 ${
+                diarizationEnabled ? "translate-x-4 scale-105" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      )}
 
       {/* ── Recording Toggle (full-width row) ── */}
       <div className="flex items-center justify-between rounded-xl border border-border/20 bg-card/40 px-4 py-3">

@@ -107,8 +107,12 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       // 1. Create meeting record in SQLite
       const meeting = await ipcStartMeeting(title);
 
-      // 1b. Store mode/scenario in state immediately after meeting is created
+      // 1b. Store mode/scenario in state and persist to DB
       set({ audioMode: resolvedMode, aiScenario: resolvedScenario });
+      try {
+        const { updateMeetingMode } = await import("../lib/ipc");
+        await updateMeetingMode(meeting.id, resolvedMode, resolvedScenario);
+      } catch { /* non-critical */ }
 
       // 1c. Initialize speaker store for the resolved mode
       try {

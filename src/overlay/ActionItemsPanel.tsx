@@ -1,6 +1,4 @@
-// Task 16b: Action Items Panel
-// Shows AI-detected action items with checkboxes.
-// Empty state when no items yet.
+// Action Items Panel — shows AI-detected action items with checkboxes.
 
 import { useActionItemStore } from "../stores/actionItemStore";
 import { useSpeakerStore } from "../stores/speakerStore";
@@ -20,8 +18,8 @@ export function ActionItemsPanel({ isOpen }: ActionItemsPanelProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="border-t border-border/20 px-3 py-2">
-      <div className="flex items-center gap-1.5 mb-2">
+    <div className="flex flex-col min-h-0">
+      <div className="flex items-center gap-1.5 mb-1.5 px-1">
         <ClipboardList className="h-3.5 w-3.5 text-muted-foreground/60" />
         <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">
           Action Items
@@ -34,9 +32,9 @@ export function ActionItemsPanel({ isOpen }: ActionItemsPanelProps) {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-xs text-muted-foreground/50 py-1">No action items detected yet.</p>
+        <p className="text-xs text-muted-foreground/50 py-1 px-1">No action items detected yet.</p>
       ) : (
-        <div className="space-y-1">
+        <div className="overflow-y-auto max-h-[200px] space-y-1 pr-1">
           {items.map((item) => {
             const speakerColor = item.assignee_speaker_id
               ? getSpeakerColor(item.assignee_speaker_id)
@@ -76,10 +74,7 @@ export function ActionItemsPanel({ isOpen }: ActionItemsPanelProps) {
 
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {speakerName && speakerColor && (
-                      <span
-                        className="text-meta font-medium"
-                        style={{ color: speakerColor }}
-                      >
+                      <span className="text-meta font-medium" style={{ color: speakerColor }}>
                         @{speakerName}
                       </span>
                     )}

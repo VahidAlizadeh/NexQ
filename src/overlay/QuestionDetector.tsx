@@ -61,8 +61,8 @@ export function QuestionDetector() {
   }, []);
 
   const latest = questions.length > 0 ? questions[0] : null;
-  // Show current + last 5 previous (6 total max visible)
-  const previousQuestions = questions.slice(1, 6);
+  // Show current + last 3 previous (4 total max visible)
+  const previousQuestions = questions.slice(1, 4);
 
   return (
     <div className="flex flex-col gap-2.5" role="region" aria-label="Detected questions">

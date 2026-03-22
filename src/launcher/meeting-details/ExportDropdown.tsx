@@ -117,7 +117,7 @@ export function ExportDropdown({ meeting }: ExportDropdownProps) {
 
       {isOpen && (
         <div
-          className="absolute right-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-xl border border-border/30 bg-card shadow-xl shadow-black/20"
+          className="absolute right-0 bottom-full z-50 mb-1.5 w-52 overflow-hidden rounded-xl border border-border/30 bg-card shadow-xl shadow-black/20"
           role="menu"
           aria-label="Export options"
         >

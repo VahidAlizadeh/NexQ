@@ -340,11 +340,20 @@ impl DeepgramSTT {
 
         let final_speaker = diarized_speaker.unwrap_or_else(|| speaker.to_string());
 
-        // Calculate timestamp from stream start offset
-        let timestamp_ms = response
+        // Convert Deepgram's stream-relative offset to epoch timestamp.
+        // The frontend expects epoch timestamps (consistent with Web Speech's Date.now()).
+        let stream_offset_ms = response
             .start
             .map(|s| (s * 1000.0) as u64)
             .unwrap_or_else(|| start_time.elapsed().as_millis() as u64);
+        let epoch_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+        // Use current epoch minus the difference between elapsed and stream offset
+        // to get the approximate epoch time of when this segment started.
+        let elapsed_ms = start_time.elapsed().as_millis() as u64;
+        let timestamp_ms = epoch_ms.saturating_sub(elapsed_ms.saturating_sub(stream_offset_ms));
 
         Some(TranscriptResult {
             text,

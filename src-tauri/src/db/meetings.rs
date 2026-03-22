@@ -38,6 +38,8 @@ pub struct TranscriptSegment {
     pub meeting_id: String,
     pub text: String,
     pub speaker: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speaker_id: Option<String>,
     pub timestamp_ms: i64,
     pub is_final: bool,
     pub confidence: f64,
@@ -299,13 +301,14 @@ pub fn append_transcript_segment(
 ) -> Result<(), DatabaseError> {
     conn.execute(
         "INSERT OR REPLACE INTO transcript_segments
-            (id, meeting_id, text, speaker, timestamp_ms, is_final, confidence, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            (id, meeting_id, text, speaker, speaker_id, timestamp_ms, is_final, confidence, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             segment.id,
             meeting_id,
             segment.text,
             segment.speaker,
+            segment.speaker_id,
             segment.timestamp_ms,
             segment.is_final,
             segment.confidence,
@@ -322,7 +325,7 @@ fn list_transcript_segments(
     meeting_id: &str,
 ) -> Result<Vec<TranscriptSegment>, DatabaseError> {
     let mut stmt = conn.prepare(
-        "SELECT id, meeting_id, text, speaker, timestamp_ms, is_final, confidence, created_at
+        "SELECT id, meeting_id, text, speaker, speaker_id, timestamp_ms, is_final, confidence, created_at
          FROM transcript_segments
          WHERE meeting_id = ?1
          ORDER BY timestamp_ms ASC",
@@ -334,10 +337,11 @@ fn list_transcript_segments(
             meeting_id: row.get(1)?,
             text: row.get(2)?,
             speaker: row.get(3)?,
-            timestamp_ms: row.get(4)?,
-            is_final: row.get(5)?,
-            confidence: row.get(6)?,
-            created_at: row.get(7)?,
+            speaker_id: row.get(4)?,
+            timestamp_ms: row.get(5)?,
+            is_final: row.get(6)?,
+            confidence: row.get(7)?,
+            created_at: row.get(8)?,
         })
     })?;
 

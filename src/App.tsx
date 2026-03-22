@@ -34,6 +34,10 @@ function App() {
   useEffect(() => {
     loadConfig();
     useAIActionsStore.getState().loadConfigs();
+    // Load scenario config (custom scenarios, overrides, active scenario)
+    import("./stores/scenarioStore").then(({ useScenarioStore }) => {
+      useScenarioStore.getState().loadScenarioConfig();
+    }).catch(() => { /* non-critical */ });
   }, [loadConfig]);
 
   // Load recent meetings on app start

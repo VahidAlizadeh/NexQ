@@ -1,11 +1,42 @@
 // Sub-PRD 4: Subscribe to transcript_update + transcript_final events
 // Connects the Tauri IPC event stream to the Zustand transcript store.
+// Also processes speaker_id through speakerStore for enrichment and stats.
 
 import { useEffect, useRef } from "react";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { onTranscriptUpdate, onTranscriptFinal } from "../lib/events";
 import { useTranscriptStore } from "../stores/transcriptStore";
-import type { TranscriptUpdateEvent } from "../lib/types";
+import { useSpeakerStore } from "../stores/speakerStore";
+import type { TranscriptSegment, TranscriptUpdateEvent } from "../lib/types";
+
+/**
+ * Process a transcript segment through the speaker store:
+ * - Resolve speaker_id from segment metadata
+ * - Auto-create speaker if not already tracked
+ * - Update speaker stats on final segments
+ * - Return enriched segment with speaker_id set
+ */
+function processSpeaker(segment: TranscriptSegment): TranscriptSegment {
+  const speakerStore = useSpeakerStore.getState();
+
+  // Resolve speaker_id: use existing speaker_id, or derive from speaker label
+  const speakerId =
+    segment.speaker_id ??
+    (segment.speaker === "User" ? "you" : segment.speaker === "Them" ? "them" : "room");
+
+  // Auto-register unknown speakers
+  if (!speakerStore.getSpeaker(speakerId)) {
+    speakerStore.addSpeaker(speakerId);
+  }
+
+  // Update stats on final segments
+  if (segment.is_final) {
+    const wordCount = segment.text.split(/\s+/).filter(Boolean).length;
+    speakerStore.updateStats(speakerId, wordCount, 0);
+  }
+
+  return { ...segment, speaker_id: speakerId };
+}
 
 /**
  * Hook that subscribes to transcript IPC events and routes them
@@ -13,6 +44,8 @@ import type { TranscriptUpdateEvent } from "../lib/types";
  *
  * - "transcript_update" events (interim results) -> updateInterimSegment
  * - "transcript_final" events (final results) -> appendSegment
+ *
+ * All segments are processed through the speaker store for enrichment.
  *
  * Call this hook once in a parent component that wraps the transcript UI
  * (e.g., OverlayView). It automatically cleans up listeners on unmount.
@@ -42,8 +75,9 @@ export function useTranscript() {
       const unlisten1 = await onTranscriptUpdate(
         (event: TranscriptUpdateEvent) => {
           if (!mounted) return;
-          console.log("[STT] transcript_update:", event.segment);
-          updateRef.current(event.segment);
+          const enriched = processSpeaker(event.segment);
+          console.log("[STT] transcript_update:", enriched);
+          updateRef.current(enriched);
         }
       );
 
@@ -51,10 +85,11 @@ export function useTranscript() {
       const unlisten2 = await onTranscriptFinal(
         (event: TranscriptUpdateEvent) => {
           if (!mounted) return;
-          console.log("[STT] transcript_final:", event.segment);
+          const enriched = processSpeaker(event.segment);
+          console.log("[STT] transcript_final:", enriched);
           // Use updateInterimSegment so it replaces the interim with same id,
           // or appends if no interim existed (e.g., very short utterance)
-          updateRef.current(event.segment);
+          updateRef.current(enriched);
         }
       );
 

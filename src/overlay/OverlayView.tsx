@@ -15,6 +15,8 @@ import { SpeakerStatsPanel } from "./SpeakerStatsPanel";
 import { ActionItemsPanel } from "./ActionItemsPanel";
 import { useBookmarkHotkey } from "../hooks/useBookmarkHotkey";
 import { useSpeakerDetection } from "../hooks/useSpeakerDetection";
+import { useTopicDetection } from "../hooks/useTopicDetection";
+import { useActionItemDetection } from "../hooks/useActionItemDetection";
 import { MODE_COLORS } from "../lib/speakerColors";
 import {
   GripHorizontal,
@@ -51,6 +53,10 @@ export function OverlayView() {
 
   // Speaker detection from Deepgram diarization events
   useSpeakerDetection();
+
+  // Live topic & action item detection from backend events
+  useTopicDetection();
+  useActionItemDetection();
 
   const handleEndMeeting = useCallback(async () => {
     try { await endMeetingFlow(); showToast("Meeting ended", "info"); }

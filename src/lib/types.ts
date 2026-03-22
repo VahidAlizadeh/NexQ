@@ -5,7 +5,7 @@
 
 // == AUDIO TYPES ==
 
-export type AudioSource = "Mic" | "System";
+export type AudioSource = "Mic" | "System" | "Room";
 
 // == MEETING MODE TYPES ==
 

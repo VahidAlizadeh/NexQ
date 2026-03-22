@@ -47,6 +47,10 @@ pub struct AppState {
     /// Original default capture endpoint ID saved before IPolicyConfig override.
     /// Set when Web Speech / Windows Speech uses a non-default device; restored on stop.
     pub original_default_device: Arc<Mutex<Option<String>>>,
+    /// Resolved Windows endpoint ID of the IPolicyConfig target device.
+    /// Set alongside original_default_device; used by ensure_ipolicy_override
+    /// to verify the OS default hasn't drifted.
+    pub ipolicy_target_endpoint: Arc<Mutex<Option<String>>>,
 }
 
 impl AppState {
@@ -68,6 +72,7 @@ impl AppState {
             you_muted: Arc::new(AtomicBool::new(false)),
             them_muted: Arc::new(AtomicBool::new(false)),
             original_default_device: Arc::new(Mutex::new(None)),
+            ipolicy_target_endpoint: Arc::new(Mutex::new(None)),
         }
     }
 }

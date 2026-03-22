@@ -37,6 +37,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Cpu,
+  Info,
 } from "lucide-react";
 import { BUILT_IN_PRESETS, type MeetingPreset, applyPreset } from "./presets";
 
@@ -172,6 +173,8 @@ export function MeetingAudioSettings() {
     systemDeviceId,
     recordingEnabled,
   } = useConfigStore();
+  const diarizationEnabled = useConfigStore((s) => s.diarizationEnabled);
+  const setDiarizationEnabled = useConfigStore((s) => s.setDiarizationEnabled);
 
   const [devices, setDevices] = useState<AudioDeviceList>({
     inputs: [],
@@ -359,6 +362,8 @@ export function MeetingAudioSettings() {
       <div className="grid grid-cols-2 gap-4">
         <PartyPanel
           label="You"
+          description="Your microphone — used in online meetings"
+          badge="Online meetings only"
           role="you"
           icon={<Mic className="h-4 w-4" />}
           party={config.you}
@@ -375,6 +380,8 @@ export function MeetingAudioSettings() {
         />
         <PartyPanel
           label="Them"
+          labelSuffix={<span className="text-xs font-semibold uppercase tracking-wide text-purple-400">/&nbsp;Room</span>}
+          description="Remote party (online) or room microphone (in-person)"
           role="them"
           icon={<Volume2 className="h-4 w-4" />}
           party={config.them}
@@ -389,6 +396,29 @@ export function MeetingAudioSettings() {
           otherPartyLabel="You"
           onChange={(updates) => updateParty("them", updates)}
         />
+      </div>
+
+      {/* ── Diarization Toggle ── */}
+      <div className="flex items-center justify-between rounded-xl border border-border/20 bg-card/40 px-4 py-3">
+        <div>
+          <p className="text-xs font-medium text-foreground">Speaker Diarization</p>
+          <p className="mt-0.5 text-meta text-muted-foreground/70">Separate speakers in in-person mode (cloud STT only)</p>
+        </div>
+        <button
+          onClick={() => setDiarizationEnabled(!diarizationEnabled)}
+          role="switch"
+          aria-checked={diarizationEnabled}
+          aria-label="Toggle speaker diarization"
+          className={`relative h-5 w-9 cursor-pointer rounded-full transition-all duration-200 ${
+            diarizationEnabled ? "bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]" : "bg-muted"
+          }`}
+        >
+          <span
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200 ${
+              diarizationEnabled ? "translate-x-4 scale-105" : "translate-x-0"
+            }`}
+          />
+        </button>
       </div>
 
       {/* ── Recording Toggle (full-width row) ── */}
@@ -525,6 +555,16 @@ export function MeetingAudioSettings() {
           </div>
         </div>
       </div>
+
+      {/* ── Info Callout ── */}
+      <div className="flex items-start gap-3 rounded-xl border border-border/20 bg-card/40 px-4 py-3">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+        <p className="text-xs text-muted-foreground/70">
+          <span className="font-medium text-foreground">Dual-purpose audio:</span>{" "}
+          In <span className="text-sky-400 font-medium">online meetings</span>, "You" captures your mic and "Them" captures remote audio via system loopback.
+          In <span className="text-purple-400 font-medium">in-person meetings</span>, both sources share the room microphone and speaker diarization separates voices.
+        </p>
+      </div>
     </div>
   );
 }
@@ -533,6 +573,9 @@ export function MeetingAudioSettings() {
 
 function PartyPanel({
   label,
+  labelSuffix,
+  description,
+  badge,
   role,
   icon,
   party,
@@ -548,6 +591,9 @@ function PartyPanel({
   onChange,
 }: {
   label: string;
+  labelSuffix?: React.ReactNode;
+  description?: string;
+  badge?: string;
   role: "you" | "them";
   icon: React.ReactNode;
   party: PartyAudioConfig;
@@ -615,8 +661,20 @@ function PartyPanel({
           <span className={c.iconColor}>{icon}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className={`text-xs font-semibold uppercase tracking-wide ${c.iconColor}`}>{label}</p>
-          <p className="mt-0.5 text-meta text-muted-foreground/60">Audio source & recognition</p>
+          <div className="flex items-center gap-1.5">
+            <p className={`text-xs font-semibold uppercase tracking-wide ${c.iconColor}`}>{label}</p>
+            {labelSuffix}
+          </div>
+          {description ? (
+            <p className="mt-0.5 text-meta text-muted-foreground/60">{description}</p>
+          ) : (
+            <p className="mt-0.5 text-meta text-muted-foreground/60">Audio source & recognition</p>
+          )}
+          {badge && (
+            <span className="mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium bg-sky-500/10 text-sky-400 border border-sky-500/20">
+              {badge}
+            </span>
+          )}
         </div>
         {/* Live activity indicator */}
         <div className="flex shrink-0 items-center gap-1.5">

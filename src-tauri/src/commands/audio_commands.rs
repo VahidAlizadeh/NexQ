@@ -811,6 +811,20 @@ pub async fn start_capture_per_party(
                     if let Ok(mut guard) = state.original_default_device.lock() {
                         *guard = Some(original.clone());
                     }
+                    // Also store the resolved target endpoint for ensure_ipolicy_override
+                    match crate::audio::device_default::find_capture_endpoint_id_by_name(target_device) {
+                        Ok(target_ep) => {
+                            if let Ok(mut guard) = state.ipolicy_target_endpoint.lock() {
+                                *guard = Some(target_ep.clone());
+                            }
+                            crate::stt::emit_stt_debug(&app, "info", "ipolicy",
+                                &format!("IPolicyConfig: stored target endpoint '{}'", target_ep));
+                        }
+                        Err(e) => {
+                            crate::stt::emit_stt_debug(&app, "warn", "ipolicy",
+                                &format!("IPolicyConfig: could not resolve target endpoint: {}", e));
+                        }
+                    }
                     crate::stt::emit_stt_debug(&app, "info", "audio",
                         &format!("IPolicyConfig: saved original default '{}', override active", original));
 
@@ -830,6 +844,15 @@ pub async fn start_capture_per_party(
                     // Target was already the default — no override applied
                     crate::stt::emit_stt_debug(&app, "info", "audio",
                         "IPolicyConfig: selected device is already the default — no override needed");
+                    // Still store the target endpoint — it IS the current default
+                    match crate::audio::device_default::get_default_capture_endpoint_id() {
+                        Ok(ep) => {
+                            if let Ok(mut guard) = state.ipolicy_target_endpoint.lock() {
+                                *guard = Some(ep);
+                            }
+                        }
+                        Err(_) => {}
+                    }
                 }
                 Err(e) => {
                     crate::stt::emit_stt_debug(&app, "warn", "audio",

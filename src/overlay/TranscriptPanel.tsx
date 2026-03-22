@@ -176,11 +176,12 @@ export function TranscriptPanel() {
         )}
       </div>
 
-      {/* Transcript lines */}
+      {/* Transcript lines — relative+absolute breaks out of flex min-height */}
+      <div className="relative flex-1 min-h-0">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto scroll-smooth px-1 py-1"
+        className="absolute inset-0 overflow-y-auto scroll-smooth px-1 py-1"
       >
         {filteredSegments.map((seg) => (
           <TranscriptLine
@@ -190,6 +191,7 @@ export function TranscriptPanel() {
           />
         ))}
         <div ref={bottomRef} />
+      </div>
       </div>
 
       {/* Live audio activity indicators with mute controls */}

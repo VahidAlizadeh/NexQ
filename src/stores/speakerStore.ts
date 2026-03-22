@@ -68,14 +68,12 @@ export const useSpeakerStore = create<SpeakerState>((set, get) => ({
 
   initForInPerson: (hasDiarization) => {
     if (hasDiarization) {
-      // Pre-register "you" for mic transcription; diarized speakers added dynamically
-      const you = makeSpeaker("you", "You", "fixed", FIXED_SPEAKER_COLORS.you);
-      set({ speakers: { you }, speakerOrder: ["you"], pendingNaming: null });
+      // In-person with diarization: start empty, speakers added dynamically via speaker_detected events
+      set({ speakers: {}, speakerOrder: [], pendingNaming: null });
     } else {
-      // Single shared "room" source + you for mic
-      const you = makeSpeaker("you", "You", "fixed", FIXED_SPEAKER_COLORS.you);
+      // In-person without diarization: single "Room" label for all audio
       const room = makeSpeaker("room", "Room", "room", FIXED_SPEAKER_COLORS.room);
-      set({ speakers: { you, room }, speakerOrder: ["you", "room"], pendingNaming: null });
+      set({ speakers: { room }, speakerOrder: ["room"], pendingNaming: null });
     }
   },
 

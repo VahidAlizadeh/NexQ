@@ -9,45 +9,50 @@ import { useTranscriptStore } from "../stores/transcriptStore";
 import { useSpeakerStore } from "../stores/speakerStore";
 import type { TranscriptSegment, TranscriptUpdateEvent } from "../lib/types";
 
-/**
- * Process a transcript segment through the speaker store:
- * - Resolve speaker_id from segment metadata (mode-aware)
- * - Auto-create speaker if not already tracked
- * - Update speaker stats on final segments
- * - Return enriched segment with speaker_id set
- */
 // Cache reference to avoid repeated imports
 let _meetingStoreRef: typeof import("../stores/meetingStore") | null = null;
 
-function processSpeaker(segment: TranscriptSegment): TranscriptSegment {
+/**
+ * Process a transcript segment through the speaker store:
+ * - Resolve speaker_id from segment metadata (mode-aware)
+ * - In in-person mode, discard mic-only "User" segments (room captures everything)
+ * - Auto-create speaker if not already tracked
+ * - Update speaker stats on final segments
+ * - Return enriched segment with speaker_id set, or null to discard
+ */
+function processSpeaker(segment: TranscriptSegment): TranscriptSegment | null {
   const speakerStore = useSpeakerStore.getState();
 
-  // Check audio mode — use cached import to avoid circular dependency
+  // Check audio mode
   let isInPerson = false;
   try {
-    // useMeetingStore is imported at module level in the hook setup
     if (_meetingStoreRef) {
       isInPerson = _meetingStoreRef.useMeetingStore.getState().audioMode === "in_person";
     }
   } catch { /* fallback to online mode */ }
 
+  // In in-person mode, discard "User" segments — the room mic captures everyone,
+  // so mic/Web Speech transcription is redundant and confusing.
+  if (isInPerson && segment.speaker === "User") {
+    return null;
+  }
+
   let speakerId: string;
 
   if (segment.speaker_id) {
-    // Diarized segment from Deepgram — use the speaker_id directly
+    // Diarized segment from Deepgram — use the speaker_id directly (e.g., "speaker_0")
     speakerId = segment.speaker_id;
   } else if (isInPerson) {
-    // In-person mode without diarization speaker_id:
-    // - "User" segments (from mic/Web Speech) → map to "you"
-    // - "Them" segments (from room audio) → map to "room"
-    speakerId = segment.speaker === "User" ? "you" : "room";
+    // In-person mode, non-diarized segment (no speaker_id from Deepgram):
+    // This happens with interim results before diarization is applied.
+    // Map to "room" as fallback.
+    speakerId = "room";
   } else {
     // Online mode: standard two-party mapping
     speakerId = segment.speaker === "User" ? "you" : "them";
   }
 
-  // Auto-register unknown speakers (don't auto-register "you"/"them"/"room"
-  // since those are initialized by initForOnline/initForInPerson)
+  // Auto-register unknown speakers
   if (!speakerStore.getSpeaker(speakerId)) {
     speakerStore.addSpeaker(speakerId);
   }
@@ -69,9 +74,7 @@ function processSpeaker(segment: TranscriptSegment): TranscriptSegment {
  * - "transcript_final" events (final results) -> appendSegment
  *
  * All segments are processed through the speaker store for enrichment.
- *
- * Call this hook once in a parent component that wraps the transcript UI
- * (e.g., OverlayView). It automatically cleans up listeners on unmount.
+ * In in-person mode, "User" segments from mic are discarded.
  */
 export function useTranscript() {
   const appendSegment = useTranscriptStore((s) => s.appendSegment);
@@ -104,7 +107,7 @@ export function useTranscript() {
         (event: TranscriptUpdateEvent) => {
           if (!mounted) return;
           const enriched = processSpeaker(event.segment);
-          console.log("[STT] transcript_update:", enriched);
+          if (!enriched) return; // Discarded (e.g., "User" in in-person mode)
           updateRef.current(enriched);
         }
       );
@@ -114,7 +117,7 @@ export function useTranscript() {
         (event: TranscriptUpdateEvent) => {
           if (!mounted) return;
           const enriched = processSpeaker(event.segment);
-          console.log("[STT] transcript_final:", enriched);
+          if (!enriched) return; // Discarded
           // Use updateInterimSegment so it replaces the interim with same id,
           // or appends if no interim existed (e.g., very short utterance)
           updateRef.current(enriched);
@@ -125,7 +128,6 @@ export function useTranscript() {
         unlistenUpdate = unlisten1;
         unlistenFinal = unlisten2;
       } else {
-        // Component unmounted before setup finished
         unlisten1();
         unlisten2();
       }

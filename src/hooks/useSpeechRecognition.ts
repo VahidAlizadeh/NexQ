@@ -78,14 +78,21 @@ function getSpeakerLabel(cfg: ReturnType<typeof useConfigStore.getState>["meetin
 export function useSpeechRecognition() {
   const isRecording = useMeetingStore((s) => s.isRecording);
 
+  const audioMode = useMeetingStore((s) => s.audioMode);
+
   // Derive a stable boolean — only re-runs when web_speech status changes.
+  // In in-person mode, SKIP web_speech for the "you" party — room mic captures everyone.
+  // Only use web_speech if it's configured for the "them" (room) party in in-person mode.
   const usesWebSpeech = useConfigStore((s) => {
     const cfg = s.meetingAudioConfig;
     if (!cfg) return false;
-    return (
-      (cfg.you.stt_provider === "web_speech" && cfg.you.is_input_device) ||
-      (cfg.them.stt_provider === "web_speech" && cfg.them.is_input_device)
-    );
+    const youIsWebSpeech = cfg.you.stt_provider === "web_speech" && cfg.you.is_input_device;
+    const themIsWebSpeech = cfg.them.stt_provider === "web_speech" && cfg.them.is_input_device;
+    if (audioMode === "in_person") {
+      // In-person: only use web_speech for the room source (them), not for mic (you)
+      return themIsWebSpeech;
+    }
+    return youIsWebSpeech || themIsWebSpeech;
   });
 
   // Ref for store action — always fresh without being a dep.

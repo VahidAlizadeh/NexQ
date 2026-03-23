@@ -176,20 +176,28 @@ function SpeakerRow({ speaker, color, allSpeakers, onRename }: SpeakerRowProps) 
   );
 }
 
-/** Synthesise a minimal speaker list for online meetings (You + Them) */
+/** Resolve a segment to its speaker ID — normalises "User"→"you", "Them"→"them" */
+function resolveSpeakerId(seg: { speaker: string; speaker_id?: string }): string {
+  if (seg.speaker_id) return seg.speaker_id;
+  if (seg.speaker === "User") return "you";
+  if (seg.speaker === "Them") return "them";
+  return seg.speaker;
+}
+
+/** Synthesise speaker stats from the actual transcript segments */
 function syntheticSpeakersFromTranscript(meeting: Meeting): SpeakerIdentity[] {
-  const counts: Record<string, { segments: number; words: number; talkMs: number }> = {};
+  const counts: Record<string, { segments: number; words: number; talkMs: number; speaker: string }> = {};
   for (const seg of meeting.transcript) {
-    const key = seg.speaker;
-    if (!counts[key]) counts[key] = { segments: 0, words: 0, talkMs: 0 };
+    const key = resolveSpeakerId(seg);
+    if (!counts[key]) counts[key] = { segments: 0, words: 0, talkMs: 0, speaker: seg.speaker };
     counts[key].segments++;
-    counts[key].words += seg.text.split(/\s+/).filter(Boolean).length;
-    // Estimate 200ms per word as rough talk time
-    counts[key].talkMs += seg.text.split(/\s+/).filter(Boolean).length * 200;
+    const wordCount = seg.text.split(/\s+/).filter(Boolean).length;
+    counts[key].words += wordCount;
+    counts[key].talkMs += wordCount * 200;
   }
-  return Object.entries(counts).map(([spk, stats]) => ({
-    id: spk,
-    display_name: spk === "User" ? "You" : spk === "Them" ? "Them" : spk,
+  return Object.entries(counts).map(([id, stats]) => ({
+    id,
+    display_name: id === "you" ? "You" : id === "them" ? "Them" : stats.speaker,
     source: "fixed" as const,
     stats: {
       segment_count: stats.segments,
@@ -201,11 +209,24 @@ function syntheticSpeakersFromTranscript(meeting: Meeting): SpeakerIdentity[] {
 }
 
 export function SpeakersTab({ meeting, onSegmentClick }: SpeakersTabProps) {
-  // Use stored speakers if available, otherwise synthesise from transcript
+  // Always recompute stats from transcript (stored talk_time_ms may be 0),
+  // then merge display names/colors from stored speakers for renamed speakers.
   const [speakersState, setSpeakersState] = useState<SpeakerIdentity[]>(() => {
-    if (meeting.speakers && meeting.speakers.length > 0) return meeting.speakers;
-    if (meeting.transcript.length > 0) return syntheticSpeakersFromTranscript(meeting);
-    return [];
+    const synthetic = meeting.transcript.length > 0
+      ? syntheticSpeakersFromTranscript(meeting)
+      : [];
+    if (synthetic.length === 0) return meeting.speakers ?? [];
+    if (meeting.speakers && meeting.speakers.length > 0) {
+      const storedMap = new Map(meeting.speakers.map(s => [s.id, s]));
+      return synthetic.map(s => {
+        const stored = storedMap.get(s.id);
+        if (stored) {
+          return { ...s, display_name: stored.display_name, color: stored.color, source: stored.source };
+        }
+        return s;
+      });
+    }
+    return synthetic;
   });
 
   const handleRename = useCallback((id: string, newName: string) => {

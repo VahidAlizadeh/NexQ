@@ -30,6 +30,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<MeetingTab>("transcript");
   const [expandedInteraction, setExpandedInteraction] = useState<string | null>(null);
+  const [scrollToSegmentIndex, setScrollToSegmentIndex] = useState<number | null>(null);
 
   const loadMeeting = useCallback(async () => {
     setLoading(true);
@@ -151,6 +152,8 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
             bookmarks={meeting.bookmarks}
             meetingId={meeting.id}
             onBookmarksChanged={(bookmarks) => setMeeting((prev) => prev ? { ...prev, bookmarks } : prev)}
+            initialScrollToIndex={scrollToSegmentIndex}
+            onScrollHandled={() => setScrollToSegmentIndex(null)}
           />
         )}
         {activeTab === "summary" && (
@@ -166,7 +169,10 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         {activeTab === "speakers" && (
           <SpeakersTab
             meeting={meeting}
-            onSegmentClick={() => setActiveTab("transcript")}
+            onSegmentClick={(idx) => {
+              setScrollToSegmentIndex(idx);
+              setActiveTab("transcript");
+            }}
           />
         )}
         {activeTab === "actions" && (

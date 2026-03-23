@@ -25,6 +25,10 @@ interface TranscriptViewProps {
   meetingId?: string;
   /** Callback to update parent state after bookmark mutations */
   onBookmarksChanged?: (bookmarks: MeetingBookmark[]) => void;
+  /** Raw segment index to scroll to on mount (from speaker timeline click) */
+  initialScrollToIndex?: number | null;
+  /** Called after the initial scroll is handled */
+  onScrollHandled?: () => void;
 }
 
 // Speaker colors for timeline blocks
@@ -35,7 +39,7 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "hsl(var(--muted-foreground))",
 };
 
-export function TranscriptView({ segments, search, meetingStartTime, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged, initialScrollToIndex, onScrollHandled }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
   const localSearchInputRef = useRef<HTMLInputElement | null>(null);
   const setInputRef = useCallback((el: HTMLInputElement | null) => {
@@ -110,6 +114,21 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
     }
     return undefined;
   };
+
+  // Scroll to a specific segment (from speaker timeline click)
+  useEffect(() => {
+    if (initialScrollToIndex == null) return;
+    const mergedIdx = rawToMergedIndex.get(initialScrollToIndex) ?? initialScrollToIndex;
+    // Defer to next frame to ensure refs are populated after mount
+    requestAnimationFrame(() => {
+      const el = segmentRefs.current[mergedIdx];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setSelectedIndex(mergedIdx);
+      }
+      onScrollHandled?.();
+    });
+  }, [initialScrollToIndex, rawToMergedIndex, onScrollHandled]);
 
   // Search: scroll to match (remap raw index → merged index)
   useEffect(() => {

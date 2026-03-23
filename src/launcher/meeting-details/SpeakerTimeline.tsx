@@ -44,7 +44,7 @@ export function SpeakerTimeline({
   } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Build speaker_id -> segment blocks map
+  // Build speaker_id -> segment blocks map (normalised keys, merged adjacent blocks)
   const speakerSegments = useMemo(() => {
     if (meetingDurationMs <= 0) return new Map<string, SegmentBlock[]>();
 
@@ -52,8 +52,9 @@ export function SpeakerTimeline({
 
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i];
-      // Resolve speaker key: prefer speaker_id, fallback to speaker label
-      const key = seg.speaker_id || seg.speaker;
+      // Normalise key to match speaker IDs: "User"→"you", "Them"→"them"
+      const key = seg.speaker_id
+        || (seg.speaker === "User" ? "you" : seg.speaker === "Them" ? "them" : seg.speaker);
 
       if (!map.has(key)) map.set(key, []);
 
@@ -66,13 +67,21 @@ export function SpeakerTimeline({
         (estimatedMs / meetingDurationMs) * 100
       );
 
-      map.get(key)!.push({
-        segmentIndex: i,
-        leftPct: Math.max(0, Math.min(leftPct, 100)),
-        widthPct: Math.min(widthPct, 100 - Math.max(0, leftPct)),
-        text: seg.text,
-        timestampMs: seg.timestamp_ms,
-      });
+      const blocks = map.get(key)!;
+      const last = blocks.length > 0 ? blocks[blocks.length - 1] : null;
+
+      // Merge with previous block if gap < 1% of timeline (reduces visual noise)
+      if (last && leftPct - (last.leftPct + last.widthPct) < 1) {
+        last.widthPct = Math.max(last.widthPct, leftPct + widthPct - last.leftPct);
+      } else {
+        blocks.push({
+          segmentIndex: i,
+          leftPct: Math.max(0, Math.min(leftPct, 100)),
+          widthPct: Math.min(widthPct, 100 - Math.max(0, leftPct)),
+          text: seg.text,
+          timestampMs: seg.timestamp_ms,
+        });
+      }
     }
 
     return map;
@@ -171,7 +180,7 @@ export function SpeakerTimeline({
               </span>
 
               {/* Timeline bar */}
-              <div className="relative h-3 flex-1 overflow-hidden rounded-sm bg-secondary/15">
+              <div className="relative h-4 flex-1 overflow-hidden rounded-sm bg-secondary/15">
                 {/* Time markers */}
                 {timeMarkers.map((m, i) => (
                   <div

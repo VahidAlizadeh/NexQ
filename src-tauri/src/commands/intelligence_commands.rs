@@ -44,9 +44,12 @@ fn compose_instructions(presets: &InstructionPresets, custom: &str) -> String {
 
 /// Build transcript text from frontend-provided segments, applying the per-action window.
 /// The frontend transcript store is the single source of truth for ALL STT engines.
-fn build_transcript_from_segments(segments_json: &str, window_seconds: u64) -> String {
+/// When `include_segment_ids` is true, each line includes the segment ID for LLM reference.
+fn build_transcript_from_segments(segments_json: &str, window_seconds: u64, include_segment_ids: bool) -> String {
     #[derive(serde::Deserialize)]
     struct Seg {
+        #[serde(default)]
+        id: String,
         text: String,
         speaker: String,
         timestamp_ms: u64,
@@ -73,15 +76,27 @@ fn build_transcript_from_segments(segments_json: &str, window_seconds: u64) -> S
         latest_ts.saturating_sub(window_seconds * 1000)
     };
 
-    segments.iter()
+    let filtered: Vec<&Seg> = segments.iter()
         .filter(|s| s.timestamp_ms >= cutoff_ms)
+        .collect();
+
+    let base_ts = filtered.first().map(|s| s.timestamp_ms).unwrap_or(0);
+
+    filtered.iter()
         .map(|s| {
             let label = match s.speaker.as_str() {
                 "User" => "You",
                 "Them" => "Them",
                 other => other,
             };
-            format!("[{}]: {}", label, s.text)
+            if include_segment_ids && !s.id.is_empty() {
+                let elapsed_s = s.timestamp_ms.saturating_sub(base_ts) / 1000;
+                let mm = elapsed_s / 60;
+                let ss = elapsed_s % 60;
+                format!("[{:02}:{:02} id:{} ts:{}] {}: {}", mm, ss, s.id, s.timestamp_ms, label, s.text)
+            } else {
+                format!("[{}]: {}", label, s.text)
+            }
         })
         .collect::<Vec<_>>()
         .join("\n")
@@ -139,8 +154,9 @@ pub async fn generate_assist(
     // Build transcript from frontend segments (universal — works with any STT engine).
     // The frontend transcript store is the single source of truth.
     // Falls back to engine buffer only if frontend didn't send segments.
+    let include_segment_ids = mode == "BookmarkSuggestions";
     let mut transcript_text = if let Some(ref segs) = transcript_segments {
-        build_transcript_from_segments(segs, window_seconds)
+        build_transcript_from_segments(segs, window_seconds, include_segment_ids)
     } else {
         // Legacy fallback: read from backend buffer
         let intel = state.intelligence.as_ref()

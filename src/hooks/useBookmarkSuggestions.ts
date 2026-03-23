@@ -250,18 +250,9 @@ export function useBookmarkSuggestions(
 
       unlistenersRef.current.push(...cleanups);
 
-      // Build detailed prompt that specifies the exact JSON schema
-      const customQuestion = `Analyze this meeting transcript and identify 5-8 key moments worth bookmarking.
-
-Return a JSON array where each item has these exact fields:
-- "segment_id": the exact "id" value from the transcript segment
-- "timestamp_ms": the exact "timestamp_ms" value from that segment
-- "note": a concise description (8-15 words) of why this moment matters
-
-Good bookmarks highlight: decisions made, action items assigned, important questions, key insights, topic transitions, or commitments.
-
-Return ONLY the JSON array, no other text.
-Example: [{"segment_id":"web_abc_1","timestamp_ms":1711234567890,"note":"Agreed to submit proposal by Friday deadline"}]`;
+      const customQuestion =
+        "Identify the most important moments in this meeting transcript. " +
+        "Use the exact id and ts values from each transcript line.";
 
       await invoke("generate_assist", {
         mode: "BookmarkSuggestions",

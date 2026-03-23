@@ -1,5 +1,5 @@
 // NexQ version — update on every release / significant fix.
 // Displayed in the launcher footer and about page.
-export const NEXQ_VERSION = "2.7.4";
-export const NEXQ_BUILD_DATE = "2026-03-23"; // v2.7.4: fix AI bookmark suggestions prompt + timestamp resolution
+export const NEXQ_VERSION = "2.7.5";
+export const NEXQ_BUILD_DATE = "2026-03-23"; // v2.7.5: include segment IDs in transcript for bookmark LLM
 export const NEXQ_DEVELOPER = "Vahid Alizadeh";

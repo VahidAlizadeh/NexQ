@@ -1,12 +1,17 @@
 // Sub-PRD 4 / Task 13: Individual transcript line component
 // Displays timestamp, speaker label, and text for a single transcript segment.
 // Speaker color is dynamic via speakerStore; confidence underline when enabled.
+// SP2 Task 7: Hover bookmark icon, right-click context menu, bookmarked line indicator.
 
 import { useState, useRef } from "react";
+import { Bookmark as BookmarkIcon } from "lucide-react";
 import type { TranscriptSegment } from "../lib/types";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useSpeakerStore } from "../stores/speakerStore";
 import { useConfigStore } from "../stores/configStore";
+import { useBookmarkStore } from "../stores/bookmarkStore";
+import { TranscriptContextMenu } from "./TranscriptContextMenu";
+import { showBookmarkToast } from "./BookmarkToast";
 
 interface TranscriptLineProps {
   segment: TranscriptSegment;
@@ -30,6 +35,12 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const meetingStartTime = useMeetingStore((s) => s.meetingStartTime);
   const confidenceThreshold = useConfigStore((s) => s.confidenceThreshold);
   const confidenceHighlightEnabled = useConfigStore((s) => s.confidenceHighlightEnabled);
+
+  // SP2 Task 7: Bookmark state + context menu position
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const bookmark = useBookmarkStore((s) => s.getBookmarkForSegment(segment.id));
+  const isBookmarked = !!bookmark;
+  const toggleBookmark = useBookmarkStore((s) => s.toggleBookmark);
 
   // Resolve speaker ID — prefer explicit speaker_id, fall back to speaker field
   const speakerId = segment.speaker_id ?? (segment.speaker === "User" ? "you" : "them");
@@ -78,6 +89,33 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
 
   const cancelRename = () => {
     setIsEditing(false);
+  };
+
+  // SP2 Task 7: Bookmark handlers
+  const handleToggleBookmark = () => {
+    const result = toggleBookmark(segment.id, segment.timestamp_ms);
+    if (result) {
+      const offsetMs = meetingStartTime ? segment.timestamp_ms - meetingStartTime : segment.timestamp_ms;
+      showBookmarkToast(result.id, offsetMs);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(segment.text);
+  };
+
+  const handleAddNote = () => {
+    let bm = bookmark;
+    if (!bm) {
+      bm = useBookmarkStore.getState().addBookmark(segment.timestamp_ms, undefined, segment.id);
+    }
+    const offsetMs = meetingStartTime ? segment.timestamp_ms - meetingStartTime : segment.timestamp_ms;
+    showBookmarkToast(bm.id, offsetMs);
   };
 
   // Confidence underline: low confidence text gets a dotted underline + reduced opacity
@@ -131,10 +169,11 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
 
   return (
     <div
-      className={`group flex items-start gap-2 rounded-lg px-1.5 py-1 transition-colors duration-100 hover:bg-accent/30 border-l-2 transcript-line-enter`}
+      className={`group relative flex items-start gap-2 rounded-lg px-1.5 py-1 transition-colors duration-100 hover:bg-accent/30 border-l-2 transcript-line-enter`}
       style={{ borderLeftColor: isPending ? "transparent" : `${speakerHex}80` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onContextMenu={handleContextMenu}
     >
       {/* Timestamp */}
       <span
@@ -143,6 +182,11 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
       >
         {isHovered ? fullTimestamp : shortTimestamp}
       </span>
+
+      {/* Bookmarked indicator — subtle filled icon near speaker label */}
+      {isBookmarked && (
+        <BookmarkIcon className="mt-1 h-2.5 w-2.5 shrink-0 fill-primary text-primary opacity-60" />
+      )}
 
       {/* Speaker label — click to rename */}
       {isEditing ? (
@@ -171,21 +215,54 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
         </span>
       )}
 
-      {/* Text content */}
-      <span
-        className={`text-xs leading-relaxed ${
-          segment.is_final
-            ? "text-foreground/90"
-            : "text-foreground/50 italic"
-        } ${
-          isLowConfidence
-            ? "border-b border-dotted border-white/30 opacity-70"
-            : ""
-        }`}
-        title={isLowConfidence ? `Confidence: ${Math.round(segment.confidence * 100)}%` : undefined}
-      >
-        {renderText()}
-      </span>
+      {/* Text content + bookmark note */}
+      <div className="flex-1 min-w-0">
+        <span
+          className={`text-xs leading-relaxed ${
+            segment.is_final
+              ? "text-foreground/90"
+              : "text-foreground/50 italic"
+          } ${
+            isLowConfidence
+              ? "border-b border-dotted border-white/30 opacity-70"
+              : ""
+          }`}
+          title={isLowConfidence ? `Confidence: ${Math.round(segment.confidence * 100)}%` : undefined}
+        >
+          {renderText()}
+        </span>
+
+        {/* Bookmark note — rendered below transcript text */}
+        {isBookmarked && bookmark?.note && (
+          <p className="mt-0.5 text-[10px] italic text-muted-foreground/40 truncate">
+            {bookmark.note}
+          </p>
+        )}
+      </div>
+
+      {/* Hover bookmark icon — appears at right edge on hover */}
+      <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleToggleBookmark}
+          className="rounded p-0.5 hover:bg-accent/50 transition-colors"
+          title={isBookmarked ? "Remove bookmark" : "Bookmark this line"}
+        >
+          <BookmarkIcon className={`h-3 w-3 ${isBookmarked ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />
+        </button>
+      </div>
+
+      {/* Right-click context menu */}
+      {contextMenu && (
+        <TranscriptContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          isBookmarked={isBookmarked}
+          onBookmark={handleToggleBookmark}
+          onAddNote={handleAddNote}
+          onCopy={handleCopy}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

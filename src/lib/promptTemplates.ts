@@ -52,6 +52,15 @@ const DEFAULT_PROMPTS: Record<IntelligenceMode, string> = {
     '- "text": string - Clear, concise description of the action item\n' +
     '- "assignee_speaker_id": string or null - The speaker_id of the person responsible (from the speaker list provided), or null if unclear\n' +
     '- "timestamp_ms": number - The approximate timestamp in milliseconds where the action item was discussed',
+  BookmarkSuggestions:
+    "You are an AI assistant that identifies key moments in meeting transcripts. " +
+    "Analyze the transcript and find the most important moments: decisions, agreements, topic transitions, action commitments, and notable statements.\n\n" +
+    "Return ONLY a valid JSON array with no other text, no markdown formatting, no code fences. " +
+    "Each element must have exactly these fields:\n" +
+    '- "timestamp_ms": number - The timestamp in milliseconds of the key moment\n' +
+    '- "segment_id": string or null - The transcript segment ID closest to this moment, if identifiable\n' +
+    '- "note": string - A brief description of why this moment is important (max 100 chars)\n\n' +
+    "Limit to the 10 most important moments.",
 };
 
 export function getSystemPromptForMode(mode: IntelligenceMode): string {

@@ -110,6 +110,8 @@ export function getModeLabel(mode: IntelligenceMode): string {
       return "Summary";
     case "ActionItemsExtraction":
       return "Actions";
+    case "BookmarkSuggestions":
+      return "Bookmarks";
   }
 }
 
@@ -131,6 +133,8 @@ export function getModeShortcut(mode: IntelligenceMode): string {
     case "MeetingSummary":
       return "";
     case "ActionItemsExtraction":
+      return "";
+    case "BookmarkSuggestions":
       return "";
   }
 }

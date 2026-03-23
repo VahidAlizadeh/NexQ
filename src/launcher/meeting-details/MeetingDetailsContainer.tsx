@@ -7,6 +7,7 @@ import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
 import { useSummaryGeneration } from "../../hooks/useSummaryGeneration";
 import { useActionItemsExtraction } from "../../hooks/useActionItemsExtraction";
+import { useBookmarkSuggestions } from "../../hooks/useBookmarkSuggestions";
 import { exportMeetingAsMarkdown } from "../../lib/export";
 import { MeetingHeader } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
@@ -68,6 +69,13 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   });
   const actionExtraction = useActionItemsExtraction(meeting, (items) => {
     setMeeting((prev) => (prev ? { ...prev, action_items: items } : prev));
+  });
+  const bookmarkSuggestions = useBookmarkSuggestions(meeting, (newBookmark) => {
+    setMeeting((prev) =>
+      prev
+        ? { ...prev, bookmarks: [...(prev.bookmarks ?? []), newBookmark] }
+        : prev,
+    );
   });
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -177,6 +185,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
               setMeeting((prev) => (prev ? { ...prev, bookmarks } : prev))
             }
             onNavigateToBookmark={() => setActiveTab("transcript")}
+            suggestions={bookmarkSuggestions}
           />
         )}
       </div>

@@ -176,7 +176,8 @@ export type IntelligenceMode =
   | "Recap"
   | "AskQuestion"
   | "MeetingSummary"
-  | "ActionItemsExtraction";
+  | "ActionItemsExtraction"
+  | "BookmarkSuggestions";
 
 export interface AIResponse {
   id: string;

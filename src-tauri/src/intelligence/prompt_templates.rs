@@ -12,6 +12,7 @@ pub fn get_system_prompt(mode: &str) -> &'static str {
         "AskQuestion" => ASK_QUESTION_PROMPT,
         "MeetingSummary" => MEETING_SUMMARY_PROMPT,
         "ActionItemsExtraction" => ACTION_ITEMS_EXTRACTION_PROMPT,
+        "BookmarkSuggestions" => BOOKMARK_SUGGESTIONS_PROMPT,
         _ => ASSIST_PROMPT,
     }
 }
@@ -76,6 +77,19 @@ Each element must have exactly these fields:\n\
 - \"text\": string - Clear, concise description of the action item\n\
 - \"assignee_speaker_id\": string or null - The speaker_id of the person responsible (from the speaker list provided), or null if unclear\n\
 - \"timestamp_ms\": number - The approximate timestamp in milliseconds where the action item was discussed";
+
+pub const BOOKMARK_SUGGESTIONS_PROMPT: &str = "\
+You are an AI assistant that identifies key moments in meeting transcripts. \
+Analyze the transcript and find the most important moments: decisions, agreements, \
+topic transitions, action commitments, and notable statements.\n\
+\n\
+Return ONLY a valid JSON array with no other text, no markdown formatting, no code fences. \
+Each element must have exactly these fields:\n\
+- \"timestamp_ms\": number - The timestamp in milliseconds of the key moment\n\
+- \"segment_id\": string or null - The transcript segment ID closest to this moment, if identifiable\n\
+- \"note\": string - A brief description of why this moment is important (max 100 chars)\n\
+\n\
+Limit to the 10 most important moments.";
 
 pub const ASK_QUESTION_PROMPT: &str = "\
 The user has a specific question about the meeting or uploaded documents. Answer directly \

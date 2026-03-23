@@ -13,6 +13,8 @@ import { ServiceStatusBar } from "../components/ServiceStatusBar";
 import { DevLogPanel } from "../components/DevLogPanel";
 import { SpeakerStatsPanel } from "./SpeakerStatsPanel";
 import { ActionItemsPanel } from "./ActionItemsPanel";
+import { BookmarkToast } from "./BookmarkToast";
+import { BookmarkPanel } from "./BookmarkPanel";
 import { useBookmarkHotkey } from "../hooks/useBookmarkHotkey";
 import { useSpeakerDetection } from "../hooks/useSpeakerDetection";
 import { useTopicDetection } from "../hooks/useTopicDetection";
@@ -44,12 +46,13 @@ export function OverlayView() {
   const [devLogOpen, setDevLogOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const toggleLog = useCallLogStore((s) => s.toggleOpen);
   const logOpen = useCallLogStore((s) => s.isOpen);
   const autoTrigger = useAIActionsStore((s) => s.configs.globalDefaults.autoTrigger);
 
   // Bookmark hotkey (Ctrl+B)
-  const addBookmarkAtNow = useBookmarkHotkey();
+  useBookmarkHotkey();
 
   // Speaker detection from Deepgram diarization events
   useSpeakerDetection();
@@ -114,7 +117,7 @@ export function OverlayView() {
 
         <div className="flex items-center gap-1">
           <HeaderBtn icon={<BarChart3 className="h-3.5 w-3.5" />} active={statsOpen} onClick={() => setStatsOpen(p => !p)} tooltip="Speaker Stats" />
-          <HeaderBtn icon={<Bookmark className="h-3.5 w-3.5" />} onClick={addBookmarkAtNow} tooltip="Add Bookmark (Ctrl+B)" />
+          <HeaderBtn icon={<Bookmark className="h-3.5 w-3.5" />} active={bookmarksOpen} onClick={() => setBookmarksOpen(p => !p)} tooltip="Bookmarks (Ctrl+B to add)" />
           <HeaderBtn icon={<ClipboardList className="h-3.5 w-3.5" />} active={actionsOpen} onClick={() => setActionsOpen(p => !p)} tooltip="Action Items" />
           <HeaderBtn icon={<Activity className="h-3.5 w-3.5" />} active={logOpen} onClick={toggleLog} tooltip="AI Call Log" />
           <HeaderBtn icon={<Terminal className="h-3.5 w-3.5" />} active={devLogOpen} onClick={() => setDevLogOpen(p => !p)} tooltip="Dev Log (Ctrl+Shift+L)" />
@@ -184,6 +187,12 @@ export function OverlayView() {
           {actionsOpen && <ActionItemsPanel isOpen={actionsOpen} />}
         </div>
       )}
+
+      {/* Bookmark panel */}
+      {bookmarksOpen && <BookmarkPanel />}
+
+      {/* Bookmark toast (manages its own visibility) */}
+      <BookmarkToast />
 
       {/* ═══ FOOTER: Service Status ═══ */}
       <div className="border-t border-border/20">

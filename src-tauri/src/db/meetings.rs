@@ -415,6 +415,37 @@ pub fn rename_speaker(
     Ok(())
 }
 
+/// List all speakers for a given meeting.
+pub fn list_meeting_speakers(
+    conn: &Connection,
+    meeting_id: &str,
+) -> Result<Vec<MeetingSpeaker>, DatabaseError> {
+    let mut stmt = conn.prepare(
+        "SELECT id, meeting_id, speaker_id, display_name, source, color, segment_count, word_count, talk_time_ms
+         FROM meeting_speakers WHERE meeting_id = ?1",
+    )?;
+
+    let rows = stmt.query_map(params![meeting_id], |row| {
+        Ok(MeetingSpeaker {
+            id: row.get(0)?,
+            meeting_id: row.get(1)?,
+            speaker_id: row.get(2)?,
+            display_name: row.get(3)?,
+            source: row.get(4)?,
+            color: row.get(5)?,
+            segment_count: row.get(6)?,
+            word_count: row.get(7)?,
+            talk_time_ms: row.get(8)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
+}
+
 // ── Meeting bookmarks CRUD ──────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -453,6 +484,33 @@ pub fn save_meeting_bookmarks(
     }
 
     Ok(())
+}
+
+/// List all bookmarks for a given meeting, ordered by timestamp.
+pub fn list_meeting_bookmarks(
+    conn: &Connection,
+    meeting_id: &str,
+) -> Result<Vec<MeetingBookmark>, DatabaseError> {
+    let mut stmt = conn.prepare(
+        "SELECT id, meeting_id, timestamp_ms, note, created_at
+         FROM meeting_bookmarks WHERE meeting_id = ?1 ORDER BY timestamp_ms ASC",
+    )?;
+
+    let rows = stmt.query_map(params![meeting_id], |row| {
+        Ok(MeetingBookmark {
+            id: row.get(0)?,
+            meeting_id: row.get(1)?,
+            timestamp_ms: row.get(2)?,
+            note: row.get(3)?,
+            created_at: row.get(4)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
 }
 
 // ── Meeting action items CRUD ───────────────────────────────────────────────
@@ -497,6 +555,34 @@ pub fn save_meeting_action_items(
     Ok(())
 }
 
+/// List all action items for a given meeting, ordered by timestamp.
+pub fn list_meeting_action_items(
+    conn: &Connection,
+    meeting_id: &str,
+) -> Result<Vec<MeetingActionItem>, DatabaseError> {
+    let mut stmt = conn.prepare(
+        "SELECT id, meeting_id, text, assignee_speaker_id, timestamp_ms, completed
+         FROM meeting_action_items WHERE meeting_id = ?1 ORDER BY timestamp_ms ASC",
+    )?;
+
+    let rows = stmt.query_map(params![meeting_id], |row| {
+        Ok(MeetingActionItem {
+            id: row.get(0)?,
+            meeting_id: row.get(1)?,
+            text: row.get(2)?,
+            assignee_speaker_id: row.get(3)?,
+            timestamp_ms: row.get(4)?,
+            completed: row.get(5)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
+}
+
 // ── Meeting topic sections CRUD ─────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -535,4 +621,31 @@ pub fn save_meeting_topic_sections(
     }
 
     Ok(())
+}
+
+/// List all topic sections for a given meeting, ordered by start time.
+pub fn list_meeting_topic_sections(
+    conn: &Connection,
+    meeting_id: &str,
+) -> Result<Vec<MeetingTopicSection>, DatabaseError> {
+    let mut stmt = conn.prepare(
+        "SELECT id, meeting_id, title, start_ms, end_ms
+         FROM meeting_topic_sections WHERE meeting_id = ?1 ORDER BY start_ms ASC",
+    )?;
+
+    let rows = stmt.query_map(params![meeting_id], |row| {
+        Ok(MeetingTopicSection {
+            id: row.get(0)?,
+            meeting_id: row.get(1)?,
+            title: row.get(2)?,
+            start_ms: row.get(3)?,
+            end_ms: row.get(4)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
 }

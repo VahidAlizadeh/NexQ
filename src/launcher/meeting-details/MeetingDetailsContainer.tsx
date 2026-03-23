@@ -190,7 +190,15 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
             onBookmarkUpdated={(bookmarks) =>
               setMeeting((prev) => (prev ? { ...prev, bookmarks } : prev))
             }
-            onNavigateToBookmark={() => setActiveTab("transcript")}
+            onNavigateToBookmark={(bookmark) => {
+              // Find the segment index matching this bookmark
+              const idx = meeting.transcript.findIndex(
+                (s) => (bookmark.segment_id && s.id === bookmark.segment_id)
+                  || s.timestamp_ms === bookmark.timestamp_ms
+              );
+              setScrollToSegmentIndex(idx >= 0 ? idx : null);
+              setActiveTab("transcript");
+            }}
             suggestions={bookmarkSuggestions}
           />
         )}

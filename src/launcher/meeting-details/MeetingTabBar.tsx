@@ -1,5 +1,5 @@
 import type { Meeting } from "../../lib/types";
-import { FileText, Sparkles, MessageSquare, Users, ListTodo, Bookmark } from "lucide-react";
+import { FileText, Sparkles, MessageSquare, Users, ListTodo, Bookmark, Loader2 } from "lucide-react";
 import { ExportDropdown } from "./ExportDropdown";
 
 export type MeetingTab = "transcript" | "summary" | "ai" | "speakers" | "actions" | "bookmarks";
@@ -8,9 +8,13 @@ interface MeetingTabBarProps {
   activeTab: MeetingTab;
   setActiveTab: (tab: MeetingTab) => void;
   meeting: Meeting;
+  onGenerateSummary?: () => void;
+  onSuggestBookmarks?: () => void;
+  isSummaryGenerating?: boolean;
+  isBookmarksSuggesting?: boolean;
 }
 
-export function MeetingTabBar({ activeTab, setActiveTab, meeting }: MeetingTabBarProps) {
+export function MeetingTabBar({ activeTab, setActiveTab, meeting, onGenerateSummary, onSuggestBookmarks, isSummaryGenerating, isBookmarksSuggesting }: MeetingTabBarProps) {
   const actionCount = meeting.action_items?.length ?? 0;
   const bookmarkCount = meeting.bookmarks?.length ?? 0;
   const speakerCount = meeting.speakers?.length ?? 0;
@@ -62,8 +66,32 @@ export function MeetingTabBar({ activeTab, setActiveTab, meeting }: MeetingTabBa
         />
       </div>
 
-      {/* Spacer + Export — OUTSIDE the overflow container */}
-      <div className="ml-auto flex items-center pl-2">
+      {/* Spacer + AI Actions + Export — OUTSIDE the overflow container */}
+      <div className="ml-auto flex items-center gap-1 pl-2">
+        {/* AI Actions */}
+        {onGenerateSummary && !meeting.summary && (
+          <button
+            onClick={onGenerateSummary}
+            disabled={isSummaryGenerating || meeting.transcript.length === 0}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-30 cursor-pointer"
+            title="Generate AI summary"
+          >
+            {isSummaryGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            Summary
+          </button>
+        )}
+        {onSuggestBookmarks && (
+          <button
+            onClick={onSuggestBookmarks}
+            disabled={isBookmarksSuggesting || meeting.transcript.length === 0}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-30 cursor-pointer"
+            title="AI bookmark suggestions"
+          >
+            {isBookmarksSuggesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bookmark className="h-3 w-3" />}
+            Bookmarks
+          </button>
+        )}
+        <div className="mx-1 h-4 w-px bg-border/20" />
         <ExportDropdown meeting={meeting} />
       </div>
     </div>

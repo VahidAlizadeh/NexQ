@@ -139,7 +139,25 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         onTitleChanged={handleTitleChanged}
       />
 
-      <MeetingTabBar activeTab={activeTab} setActiveTab={setActiveTab} meeting={meeting} />
+      <MeetingTabBar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        meeting={meeting}
+        onGenerateSummary={() => {
+          setActiveTab("summary");
+          if (!meeting.summary && !summaryGeneration.isGenerating) {
+            summaryGeneration.generate();
+          }
+        }}
+        onSuggestBookmarks={() => {
+          setActiveTab("bookmarks");
+          if (!bookmarkSuggestions.isSuggesting) {
+            bookmarkSuggestions.suggest();
+          }
+        }}
+        isSummaryGenerating={summaryGeneration.isGenerating}
+        isBookmarksSuggesting={bookmarkSuggestions.isSuggesting}
+      />
 
       <div className="flex-1 overflow-y-auto" role="tabpanel">
         {activeTab === "transcript" && (

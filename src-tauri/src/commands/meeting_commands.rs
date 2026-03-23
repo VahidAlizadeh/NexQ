@@ -330,6 +330,64 @@ pub async fn save_meeting_bookmarks(
 }
 
 #[command]
+pub async fn add_meeting_bookmark(
+    bookmark_json: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    let bookmark: MeetingBookmark = serde_json::from_str(&bookmark_json)
+        .map_err(|e| format!("Failed to parse bookmark JSON: {}", e))?;
+
+    meetings::add_meeting_bookmark(db.connection(), &bookmark)
+        .map_err(|e| format!("Failed to add bookmark: {}", e))
+}
+
+#[command]
+pub async fn update_meeting_bookmark(
+    bookmark_id: String,
+    note: Option<String>,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    meetings::update_meeting_bookmark_note(db.connection(), &bookmark_id, note.as_deref())
+        .map_err(|e| format!("Failed to update bookmark: {}", e))
+}
+
+#[command]
+pub async fn delete_meeting_bookmark(
+    bookmark_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    meetings::delete_meeting_bookmark(db.connection(), &bookmark_id)
+        .map_err(|e| format!("Failed to delete bookmark: {}", e))
+}
+
+#[command]
 pub async fn save_meeting_action_items(
     meeting_id: String,
     items_json: String,

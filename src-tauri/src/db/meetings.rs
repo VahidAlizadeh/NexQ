@@ -601,6 +601,51 @@ pub fn list_meeting_bookmarks(
     Ok(results)
 }
 
+/// Add a single bookmark to a meeting.
+pub fn add_meeting_bookmark(
+    conn: &Connection,
+    bookmark: &MeetingBookmark,
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "INSERT INTO meeting_bookmarks (id, meeting_id, timestamp_ms, segment_id, note, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![
+            bookmark.id,
+            bookmark.meeting_id,
+            bookmark.timestamp_ms,
+            bookmark.segment_id,
+            bookmark.note,
+            bookmark.created_at,
+        ],
+    )?;
+    Ok(())
+}
+
+/// Update a bookmark's note.
+pub fn update_meeting_bookmark_note(
+    conn: &Connection,
+    bookmark_id: &str,
+    note: Option<&str>,
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "UPDATE meeting_bookmarks SET note = ?1 WHERE id = ?2",
+        params![note, bookmark_id],
+    )?;
+    Ok(())
+}
+
+/// Delete a single bookmark.
+pub fn delete_meeting_bookmark(
+    conn: &Connection,
+    bookmark_id: &str,
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "DELETE FROM meeting_bookmarks WHERE id = ?1",
+        params![bookmark_id],
+    )?;
+    Ok(())
+}
+
 // ── Meeting action items CRUD ───────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -337,6 +337,18 @@ export async function saveMeetingBookmarks(meetingId: string, bookmarksJson: str
   return invoke("save_meeting_bookmarks", { meetingId, bookmarksJson });
 }
 
+export async function addMeetingBookmark(bookmarkJson: string): Promise<void> {
+  await invoke("add_meeting_bookmark", { bookmarkJson });
+}
+
+export async function updateMeetingBookmark(bookmarkId: string, note: string | null): Promise<void> {
+  await invoke("update_meeting_bookmark", { bookmarkId, note });
+}
+
+export async function deleteMeetingBookmark(bookmarkId: string): Promise<void> {
+  await invoke("delete_meeting_bookmark", { bookmarkId });
+}
+
 export async function saveMeetingActionItems(meetingId: string, itemsJson: string): Promise<void> {
   return invoke("save_meeting_action_items", { meetingId, itemsJson });
 }

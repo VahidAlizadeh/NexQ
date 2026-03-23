@@ -344,7 +344,18 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         const speakers = useSpeakerStore.getState().getAllSpeakers();
         if (speakers.length > 0) {
           const { saveMeetingSpeakers } = await import("../lib/ipc");
-          await saveMeetingSpeakers(meeting.id, JSON.stringify(speakers));
+          const transformed = speakers.map((s) => ({
+            id: crypto.randomUUID(),
+            meeting_id: meeting.id,
+            speaker_id: s.id,
+            display_name: s.display_name,
+            source: s.source,
+            color: s.color ?? null,
+            segment_count: s.stats.segment_count,
+            word_count: s.stats.word_count,
+            talk_time_ms: s.stats.talk_time_ms,
+          }));
+          await saveMeetingSpeakers(meeting.id, JSON.stringify(transformed));
           console.log(`[meetingStore] Persisted ${speakers.length} speaker(s) for ${meeting.id}`);
         }
       } catch (err) {
@@ -356,7 +367,8 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         const bookmarks = useBookmarkStore.getState().bookmarks;
         if (bookmarks.length > 0) {
           const { saveMeetingBookmarks } = await import("../lib/ipc");
-          await saveMeetingBookmarks(meeting.id, JSON.stringify(bookmarks));
+          const transformed = bookmarks.map((b) => ({ ...b, meeting_id: meeting.id }));
+          await saveMeetingBookmarks(meeting.id, JSON.stringify(transformed));
           console.log(`[meetingStore] Persisted ${bookmarks.length} bookmark(s) for ${meeting.id}`);
         }
       } catch (err) {
@@ -368,7 +380,8 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         const items = useActionItemStore.getState().items;
         if (items.length > 0) {
           const { saveMeetingActionItems } = await import("../lib/ipc");
-          await saveMeetingActionItems(meeting.id, JSON.stringify(items));
+          const transformed = items.map((item) => ({ ...item, meeting_id: meeting.id }));
+          await saveMeetingActionItems(meeting.id, JSON.stringify(transformed));
           console.log(`[meetingStore] Persisted ${items.length} action item(s) for ${meeting.id}`);
         }
       } catch (err) {
@@ -380,7 +393,8 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         const sections = useTopicSectionStore.getState().sections;
         if (sections.length > 0) {
           const { saveMeetingTopicSections } = await import("../lib/ipc");
-          await saveMeetingTopicSections(meeting.id, JSON.stringify(sections));
+          const transformed = sections.map((s) => ({ ...s, meeting_id: meeting.id }));
+          await saveMeetingTopicSections(meeting.id, JSON.stringify(transformed));
           console.log(`[meetingStore] Persisted ${sections.length} topic section(s) for ${meeting.id}`);
         }
       } catch (err) {

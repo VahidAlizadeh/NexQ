@@ -28,6 +28,7 @@ const MODE_COLORS: Record<
   },
   AskQuestion: { badge: "bg-destructive/20 text-destructive", dot: "bg-destructive" },
   MeetingSummary: { badge: "bg-primary/20 text-primary", dot: "bg-primary" },
+  ActionItemsExtraction: { badge: "bg-warning/20 text-warning", dot: "bg-warning" },
 };
 
 // -- Context source badges ---------------------------------------------------

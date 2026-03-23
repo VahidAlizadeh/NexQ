@@ -11,6 +11,7 @@ pub fn get_system_prompt(mode: &str) -> &'static str {
         "Recap" => RECAP_PROMPT,
         "AskQuestion" => ASK_QUESTION_PROMPT,
         "MeetingSummary" => MEETING_SUMMARY_PROMPT,
+        "ActionItemsExtraction" => ACTION_ITEMS_EXTRACTION_PROMPT,
         _ => ASSIST_PROMPT,
     }
 }
@@ -65,6 +66,16 @@ A 1-2 sentence high-level description of what the meeting covered.\n\
 - Unresolved points that need follow-up\n\
 \n\
 Be factual, concise, and base everything strictly on the transcript. Do not add speculation or interpretation.";
+
+pub const ACTION_ITEMS_EXTRACTION_PROMPT: &str = "\
+You are an AI assistant that extracts action items from meeting transcripts. \
+Analyze the transcript and identify all action items, tasks, follow-ups, and commitments made by participants.\n\
+\n\
+Return ONLY a valid JSON array with no other text, no markdown formatting, no code fences. \
+Each element must have exactly these fields:\n\
+- \"text\": string - Clear, concise description of the action item\n\
+- \"assignee_speaker_id\": string or null - The speaker_id of the person responsible (from the speaker list provided), or null if unclear\n\
+- \"timestamp_ms\": number - The approximate timestamp in milliseconds where the action item was discussed";
 
 pub const ASK_QUESTION_PROMPT: &str = "\
 The user has a specific question about the meeting or uploaded documents. Answer directly \

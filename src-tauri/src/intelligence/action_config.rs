@@ -202,6 +202,26 @@ impl Default for AllActionConfigs {
             },
         );
 
+        actions.insert(
+            "ActionItemsExtraction".to_string(),
+            ActionConfig {
+                id: "ActionItemsExtraction".to_string(),
+                name: "Actions".to_string(),
+                mode: "ActionItemsExtraction".to_string(),
+                visible: false, // Internal mode — not shown in overlay action bar
+                system_prompt: prompt_templates::ACTION_ITEMS_EXTRACTION_PROMPT.to_string(),
+                is_default_prompt: true,
+                include_transcript: true,
+                include_rag_chunks: false,
+                include_custom_instructions: false,
+                include_detected_question: false,
+                transcript_window_seconds: Some(0), // 0 = all transcript (need full meeting)
+                rag_top_k: None,
+                temperature: Some(0.1), // Low temperature for structured JSON output
+                is_built_in: true,
+            },
+        );
+
         Self {
             global_defaults: GlobalDefaults::default(),
             custom_instructions: String::new(),

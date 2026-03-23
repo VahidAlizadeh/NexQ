@@ -44,6 +44,14 @@ const DEFAULT_PROMPTS: Record<IntelligenceMode, string> = {
     "- Action Items\n" +
     "- Open Questions\n" +
     "Be factual, concise, and base everything strictly on the transcript.",
+  ActionItemsExtraction:
+    "You are an AI assistant that extracts action items from meeting transcripts. " +
+    "Analyze the transcript and identify all action items, tasks, follow-ups, and commitments made by participants.\n\n" +
+    "Return ONLY a valid JSON array with no other text, no markdown formatting, no code fences. " +
+    "Each element must have exactly these fields:\n" +
+    '- "text": string - Clear, concise description of the action item\n' +
+    '- "assignee_speaker_id": string or null - The speaker_id of the person responsible (from the speaker list provided), or null if unclear\n' +
+    '- "timestamp_ms": number - The approximate timestamp in milliseconds where the action item was discussed',
 };
 
 export function getSystemPromptForMode(mode: IntelligenceMode): string {

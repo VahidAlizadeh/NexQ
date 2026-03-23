@@ -108,6 +108,8 @@ export function getModeLabel(mode: IntelligenceMode): string {
       return "Ask";
     case "MeetingSummary":
       return "Summary";
+    case "ActionItemsExtraction":
+      return "Actions";
   }
 }
 
@@ -127,6 +129,8 @@ export function getModeShortcut(mode: IntelligenceMode): string {
     case "AskQuestion":
       return "Ctrl+5";
     case "MeetingSummary":
+      return "";
+    case "ActionItemsExtraction":
       return "";
   }
 }

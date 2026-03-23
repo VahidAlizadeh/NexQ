@@ -48,6 +48,8 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
   }, [searchInputRef]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; segmentIndex: number } | null>(null);
+  const [noteEdit, setNoteEdit] = useState<{ bookmarkId: string; note: string } | null>(null);
+  const noteInputRef = useRef<HTMLTextAreaElement>(null);
 
   const toElapsed = (ms: number) =>
     meetingStartTime ? Math.max(0, ms - meetingStartTime) : ms;
@@ -187,7 +189,6 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
     if (!meetingId || !onBookmarksChanged) return;
     let bm = seg.id ? bookmarkBySegment.get(seg.id) : undefined;
     if (!bm) {
-      // Create bookmark first, then prompt for note
       bm = {
         id: crypto.randomUUID(),
         timestamp_ms: seg.timestamp_ms,
@@ -203,21 +204,23 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
         return;
       }
     }
-    // Prompt for note
-    const note = window.prompt("Add a note to this bookmark:", bm.note ?? "");
-    if (note !== null) {
-      const trimmedNote = note.trim() || undefined;
-      try {
-        await updateMeetingBookmark(bm.id, trimmedNote ?? null);
-        onBookmarksChanged(
-          (bookmarks ?? []).map(b => b.id === bm!.id ? { ...b, note: trimmedNote } : b)
-        );
-      } catch (err) {
-        console.error("[TranscriptView] Update bookmark note failed:", err);
-        showToast("Failed to save note", "error");
-      }
-    }
+    setNoteEdit({ bookmarkId: bm.id, note: bm.note ?? "" });
   }, [meetingId, bookmarks, bookmarkBySegment, onBookmarksChanged]);
+
+  const handleSaveNote = useCallback(async () => {
+    if (!noteEdit || !onBookmarksChanged) return;
+    const trimmedNote = noteEdit.note.trim() || undefined;
+    try {
+      await updateMeetingBookmark(noteEdit.bookmarkId, trimmedNote ?? null);
+      onBookmarksChanged(
+        (bookmarks ?? []).map(b => b.id === noteEdit.bookmarkId ? { ...b, note: trimmedNote } : b)
+      );
+    } catch (err) {
+      console.error("[TranscriptView] Update bookmark note failed:", err);
+      showToast("Failed to save note", "error");
+    }
+    setNoteEdit(null);
+  }, [noteEdit, bookmarks, onBookmarksChanged]);
 
   const handleCopyText = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
@@ -404,6 +407,51 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
           )}
         </div>
       </div>
+
+      {/* Note editor modal */}
+      {noteEdit && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setNoteEdit(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-border/30 bg-card p-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold text-foreground mb-3">Bookmark Note</h3>
+            <textarea
+              ref={noteInputRef}
+              value={noteEdit.note}
+              onChange={(e) => setNoteEdit({ ...noteEdit, note: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSaveNote();
+                if (e.key === "Escape") setNoteEdit(null);
+              }}
+              placeholder="Add a note..."
+              rows={3}
+              autoFocus
+              className="w-full resize-none rounded-lg border border-border/30 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+            />
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground/40">Ctrl+Enter to save</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setNoteEdit(null)}
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveNote}
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,6 +17,54 @@ pub struct Meeting {
     pub ai_interactions: serde_json::Value,
     pub summary: Option<String>,
     pub config_snapshot: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub speakers: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub bookmarks: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub action_items: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub topic_sections: Option<serde_json::Value>,
+}
+
+/// Response struct that maps MeetingSpeaker back to frontend SpeakerIdentity format.
+#[derive(Debug, Clone, Serialize)]
+pub struct MeetingSpeakerResponse {
+    pub id: String,           // This is speaker_id (e.g. "speaker_0"), NOT the record UUID
+    pub display_name: String,
+    pub source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    pub stats: SpeakerStatsResponse,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SpeakerStatsResponse {
+    pub segment_count: i64,
+    pub word_count: i64,
+    pub talk_time_ms: i64,
+    pub last_spoke_ms: i64,
+}
+
+impl From<MeetingSpeaker> for MeetingSpeakerResponse {
+    fn from(s: MeetingSpeaker) -> Self {
+        MeetingSpeakerResponse {
+            id: s.speaker_id,
+            display_name: s.display_name,
+            source: s.source,
+            color: s.color,
+            stats: SpeakerStatsResponse {
+                segment_count: s.segment_count,
+                word_count: s.word_count,
+                talk_time_ms: s.talk_time_ms,
+                last_spoke_ms: 0,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,6 +128,10 @@ pub fn create_meeting(conn: &Connection, title: &str) -> Result<Meeting, Databas
         ai_interactions: serde_json::json!([]),
         summary: None,
         config_snapshot: None,
+        speakers: None,
+        bookmarks: None,
+        action_items: None,
+        topic_sections: None,
     })
 }
 
@@ -109,6 +161,10 @@ pub fn get_meeting(conn: &Connection, id: &str) -> Result<Meeting, DatabaseError
                 summary,
                 config_snapshot: config_str
                     .and_then(|s| serde_json::from_str(&s).ok()),
+                speakers: None,
+                bookmarks: None,
+                action_items: None,
+                topic_sections: None,
             })
         })
         .map_err(|e| match e {
@@ -120,10 +176,32 @@ pub fn get_meeting(conn: &Connection, id: &str) -> Result<Meeting, DatabaseError
 
     // Also fetch and merge transcript segments into the transcript array
     let segments = list_transcript_segments(conn, id)?;
+    let mut meeting = meeting;
     if !segments.is_empty() {
-        let mut meeting = meeting;
         meeting.transcript = serde_json::to_value(&segments).unwrap_or(serde_json::json!([]));
-        return Ok(meeting);
+    }
+
+    // Load feature tables
+    let speakers = list_meeting_speakers(conn, id)?;
+    if !speakers.is_empty() {
+        let speaker_responses: Vec<MeetingSpeakerResponse> =
+            speakers.into_iter().map(|s| s.into()).collect();
+        meeting.speakers = Some(serde_json::to_value(&speaker_responses).unwrap_or(serde_json::json!([])));
+    }
+
+    let bookmarks = list_meeting_bookmarks(conn, id)?;
+    if !bookmarks.is_empty() {
+        meeting.bookmarks = Some(serde_json::to_value(&bookmarks).unwrap_or(serde_json::json!([])));
+    }
+
+    let action_items = list_meeting_action_items(conn, id)?;
+    if !action_items.is_empty() {
+        meeting.action_items = Some(serde_json::to_value(&action_items).unwrap_or(serde_json::json!([])));
+    }
+
+    let topic_sections = list_meeting_topic_sections(conn, id)?;
+    if !topic_sections.is_empty() {
+        meeting.topic_sections = Some(serde_json::to_value(&topic_sections).unwrap_or(serde_json::json!([])));
     }
 
     Ok(meeting)

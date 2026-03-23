@@ -165,7 +165,15 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         )}
         {activeTab === "speakers" && <SpeakersTab meeting={meeting} />}
         {activeTab === "actions" && <ActionItemsTab meeting={meeting} />}
-        {activeTab === "bookmarks" && <BookmarksTab meeting={meeting} />}
+        {activeTab === "bookmarks" && (
+          <BookmarksTab
+            meeting={meeting}
+            onBookmarkUpdated={(bookmarks) =>
+              setMeeting((prev) => (prev ? { ...prev, bookmarks } : prev))
+            }
+            onNavigateToBookmark={() => setActiveTab("transcript")}
+          />
+        )}
       </div>
     </div>
   );

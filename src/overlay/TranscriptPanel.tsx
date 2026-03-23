@@ -33,6 +33,7 @@ export function TranscriptPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollAnimRef = useRef<number>(0);
+  const isAnimatingRef = useRef(false);
   const isSearchVisible = searchQuery.length > 0;
 
   // Momentum-based smooth scroll — exponential deceleration for a buttery feel
@@ -44,8 +45,12 @@ export function TranscriptPanel() {
     const target = el.scrollHeight - el.clientHeight;
     const start = el.scrollTop;
     const distance = target - start;
-    if (Math.abs(distance) < 2) return;
+    if (Math.abs(distance) < 2) {
+      isAnimatingRef.current = false;
+      return;
+    }
 
+    isAnimatingRef.current = true;
     const duration = Math.min(400, Math.max(150, Math.abs(distance) * 0.8));
     const startTime = performance.now();
 
@@ -55,14 +60,21 @@ export function TranscriptPanel() {
       // Exponential ease-out: fast start, gentle deceleration
       const eased = 1 - Math.pow(1 - progress, 3);
       el.scrollTop = start + distance * eased;
-      if (progress < 1) scrollAnimRef.current = requestAnimationFrame(step);
+      if (progress < 1) {
+        scrollAnimRef.current = requestAnimationFrame(step);
+      } else {
+        isAnimatingRef.current = false;
+      }
     };
     scrollAnimRef.current = requestAnimationFrame(step);
   }, []);
 
   // Cancel scroll animation on unmount
   useEffect(() => {
-    return () => cancelAnimationFrame(scrollAnimRef.current);
+    return () => {
+      cancelAnimationFrame(scrollAnimRef.current);
+      isAnimatingRef.current = false;
+    };
   }, []);
 
   // Auto-scroll to bottom when new segments arrive (if autoScroll is on)
@@ -72,9 +84,19 @@ export function TranscriptPanel() {
     }
   }, [segments, autoScroll, scrollToBottom]);
 
+  // Cancel programmatic animation when user manually scrolls (wheel/touch)
+  const cancelScrollAnimation = useCallback(() => {
+    if (isAnimatingRef.current) {
+      cancelAnimationFrame(scrollAnimRef.current);
+      isAnimatingRef.current = false;
+    }
+  }, []);
+
   // Detect manual scroll: if user scrolls up, pause auto-scroll.
   // If they scroll back to the bottom, resume it.
+  // Ignores scroll events during programmatic animation to prevent false triggers.
   const handleScroll = useCallback(() => {
+    if (isAnimatingRef.current) return;
     const el = scrollRef.current;
     if (!el) return;
 
@@ -212,7 +234,9 @@ export function TranscriptPanel() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="absolute inset-0 overflow-y-auto scroll-smooth px-1 py-1"
+        onWheel={cancelScrollAnimation}
+        onTouchMove={cancelScrollAnimation}
+        className="absolute inset-0 overflow-y-auto px-1 py-1"
       >
         {filteredSegments.map((seg) => (
           <TranscriptLine

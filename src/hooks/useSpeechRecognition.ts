@@ -14,6 +14,7 @@ import { useEffect, useRef } from "react";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useTranscriptStore } from "../stores/transcriptStore";
 import { useConfigStore } from "../stores/configStore";
+import { useSpeakerStore } from "../stores/speakerStore";
 import { pushTranscript, ensureIpolicyOverride } from "../lib/ipc";
 
 // Web Speech API types (not in all TS libs)
@@ -167,20 +168,26 @@ export function useSpeechRecognition() {
         if (result.isFinal) {
           segmentCounterRef.current += 1;
           const now = Date.now();
+          const speakerId = speakerLabel === "User" ? "you" : "them";
+          const wordCount = transcript.split(/\s+/).filter(Boolean).length;
+          useSpeakerStore.getState().updateStats(speakerId, wordCount, 0);
           updateInterimRef.current({
             id: segId,
             text: transcript,
             speaker: speakerLabel,
+            speaker_id: speakerId,
             timestamp_ms: now,
             is_final: true,
             confidence,
           });
           pushTranscript(transcript, speakerLabel, now, true).catch(() => {});
         } else {
+          const speakerId = speakerLabel === "User" ? "you" : "them";
           updateInterimRef.current({
             id: segId,
             text: transcript,
             speaker: speakerLabel,
+            speaker_id: speakerId,
             timestamp_ms: Date.now(),
             is_final: false,
             confidence: 0,

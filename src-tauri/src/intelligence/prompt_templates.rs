@@ -83,18 +83,15 @@ You are an AI assistant that identifies key moments in meeting transcripts. \
 Analyze the transcript and find the most important moments: decisions, agreements, \
 topic transitions, action commitments, and notable statements.\n\
 \n\
-Each transcript line is formatted as: [MM:SS id:SEGMENT_ID ts:TIMESTAMP_MS] Speaker: text\n\
-Use the exact id and ts values from the transcript lines in your response.\n\
+Each transcript line starts with [SEGMENT_ID] followed by Speaker: text.\n\
 \n\
-Return ONLY a valid JSON array with no other text, no markdown formatting, no code fences. \
-Each element must have exactly these fields:\n\
-- \"segment_id\": string - The exact id value from the transcript line (e.g. \"web_ab12_5\")\n\
-- \"timestamp_ms\": number - The exact ts value from the transcript line (e.g. 1711234567890)\n\
-- \"note\": string - A brief description (10-20 words) of why this moment is important\n\
+Return ONLY a valid JSON array. Each element must have:\n\
+- \"segment_id\": string - The exact bracket ID from the transcript line\n\
+- \"note\": string - Brief description (10-20 words) of why this moment matters\n\
 \n\
-Example: [{\"segment_id\":\"web_ab12_5\",\"timestamp_ms\":1711234567890,\"note\":\"Agreed to submit the grant proposal by next Friday\"}]\n\
+Example: [{\"segment_id\":\"web_ab12_5\",\"note\":\"Agreed to submit grant proposal by Friday\"}]\n\
 \n\
-Return 5-10 of the most important moments.";
+Return 5-8 of the most important moments.";
 
 pub const ASK_QUESTION_PROMPT: &str = "\
 The user has a specific question about the meeting or uploaded documents. Answer directly \

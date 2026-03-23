@@ -197,15 +197,21 @@ export function useBookmarkSuggestions(
       });
       cleanups.push(unToken);
 
-      // Prepare segments for prompt and later timestamp resolution
-      const segments = meeting.transcript
-        .filter((s) => s.is_final)
-        .map((s) => ({
-          id: s.id,
-          text: s.text,
-          speaker: s.speaker,
-          timestamp_ms: s.timestamp_ms,
-        }));
+      // Merge consecutive same-speaker segments to reduce prompt size
+      // (463 raw segments → ~100 merged blocks for a typical 1hr meeting)
+      const finals = meeting.transcript.filter((s) => s.is_final);
+      const merged: { id: string; text: string; speaker: string; timestamp_ms: number }[] = [];
+      for (const seg of finals) {
+        const last = merged.length > 0 ? merged[merged.length - 1] : null;
+        if (last && last.speaker === seg.speaker) {
+          last.text += " " + seg.text;
+        } else {
+          merged.push({ id: seg.id, text: seg.text, speaker: seg.speaker, timestamp_ms: seg.timestamp_ms });
+        }
+      }
+      // Send merged segments to LLM (compact), but keep all finals for timestamp lookup
+      const segments = merged;
+      const allSegments = finals.map((s) => ({ id: s.id, timestamp_ms: s.timestamp_ms }));
 
       const unEnd = await onStreamEnd(async () => {
         if (!isOurGeneration.current) return;
@@ -214,7 +220,7 @@ export function useBookmarkSuggestions(
         // Parse accumulated response into BookmarkSuggestion[]
         if (meeting && contentRef.current) {
           try {
-            const items = parseSuggestionsJSON(contentRef.current, segments);
+            const items = parseSuggestionsJSON(contentRef.current, allSegments);
             setSuggestions(items);
           } catch (err) {
             console.error(
@@ -252,7 +258,7 @@ export function useBookmarkSuggestions(
 
       const customQuestion =
         "Identify the most important moments in this meeting transcript. " +
-        "Use the exact id and ts values from each transcript line.";
+        "Return the segment_id from each transcript line.";
 
       await invoke("generate_assist", {
         mode: "BookmarkSuggestions",

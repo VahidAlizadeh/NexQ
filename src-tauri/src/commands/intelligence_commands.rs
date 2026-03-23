@@ -76,13 +76,8 @@ fn build_transcript_from_segments(segments_json: &str, window_seconds: u64, incl
         latest_ts.saturating_sub(window_seconds * 1000)
     };
 
-    let filtered: Vec<&Seg> = segments.iter()
+    segments.iter()
         .filter(|s| s.timestamp_ms >= cutoff_ms)
-        .collect();
-
-    let base_ts = filtered.first().map(|s| s.timestamp_ms).unwrap_or(0);
-
-    filtered.iter()
         .map(|s| {
             let label = match s.speaker.as_str() {
                 "User" => "You",
@@ -90,10 +85,7 @@ fn build_transcript_from_segments(segments_json: &str, window_seconds: u64, incl
                 other => other,
             };
             if include_segment_ids && !s.id.is_empty() {
-                let elapsed_s = s.timestamp_ms.saturating_sub(base_ts) / 1000;
-                let mm = elapsed_s / 60;
-                let ss = elapsed_s % 60;
-                format!("[{:02}:{:02} id:{} ts:{}] {}: {}", mm, ss, s.id, s.timestamp_ms, label, s.text)
+                format!("[{}] {}: {}", s.id, label, s.text)
             } else {
                 format!("[{}]: {}", label, s.text)
             }

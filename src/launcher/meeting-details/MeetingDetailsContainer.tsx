@@ -6,6 +6,7 @@ import { useMeetingStore } from "../../stores/meetingStore";
 import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
 import { useSummaryGeneration } from "../../hooks/useSummaryGeneration";
+import { useActionItemsExtraction } from "../../hooks/useActionItemsExtraction";
 import { showToast } from "../../stores/toastStore";
 import { MeetingHeader } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
@@ -70,6 +71,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const search = useTranscriptSearch(meeting?.transcript ?? []);
   const summaryGeneration = useSummaryGeneration(meeting, (summary) => {
     setMeeting((prev) => (prev ? { ...prev, summary } : prev));
+  });
+  const actionExtraction = useActionItemsExtraction(meeting, (items) => {
+    setMeeting((prev) => (prev ? { ...prev, action_items: items } : prev));
   });
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,7 +177,15 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
           />
         )}
         {activeTab === "speakers" && <SpeakersTab meeting={meeting} />}
-        {activeTab === "actions" && <ActionItemsTab meeting={meeting} />}
+        {activeTab === "actions" && (
+          <ActionItemsTab
+            meeting={meeting}
+            extraction={actionExtraction}
+            onItemsUpdated={(items) =>
+              setMeeting((prev) => (prev ? { ...prev, action_items: items } : prev))
+            }
+          />
+        )}
         {activeTab === "bookmarks" && (
           <BookmarksTab
             meeting={meeting}

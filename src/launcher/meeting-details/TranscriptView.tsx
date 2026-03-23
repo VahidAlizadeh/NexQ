@@ -1,12 +1,15 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from "react";
-import type { TranscriptSegment, SpeakerIdentity } from "../../lib/types";
+import type { TranscriptSegment, SpeakerIdentity, MeetingBookmark } from "../../lib/types";
 import type { TranscriptSearchState } from "../../hooks/useTranscriptSearch";
 import {
   formatTimestamp,
   getSpeakerLabel,
   getSpeakerColor,
 } from "../../lib/utils";
-import { FileText, Search, ChevronUp, ChevronDown, X } from "lucide-react";
+import { FileText, Search, ChevronUp, ChevronDown, X, Bookmark as BookmarkIcon } from "lucide-react";
+import { TranscriptContextMenu } from "../../overlay/TranscriptContextMenu";
+import { addMeetingBookmark, deleteMeetingBookmark, updateMeetingBookmark } from "../../lib/ipc";
+import { showToast } from "../../stores/toastStore";
 
 interface TranscriptViewProps {
   segments: TranscriptSegment[];
@@ -15,6 +18,12 @@ interface TranscriptViewProps {
   /** Saved speakers from meeting — used for post-meeting label/color resolution */
   speakers?: SpeakerIdentity[];
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
+  /** Bookmarks for this meeting — read from meeting data */
+  bookmarks?: MeetingBookmark[];
+  /** Meeting ID for IPC bookmark mutations */
+  meetingId?: string;
+  /** Callback to update parent state after bookmark mutations */
+  onBookmarksChanged?: (bookmarks: MeetingBookmark[]) => void;
 }
 
 // Speaker colors for timeline blocks
@@ -25,7 +34,7 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "hsl(var(--muted-foreground))",
 };
 
-export function TranscriptView({ segments, search, meetingStartTime, speakers, searchInputRef }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
   const localSearchInputRef = useRef<HTMLInputElement | null>(null);
   const setInputRef = useCallback((el: HTMLInputElement | null) => {
@@ -33,9 +42,21 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
     if (searchInputRef) (searchInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
   }, [searchInputRef]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; segmentIndex: number } | null>(null);
 
   const toElapsed = (ms: number) =>
     meetingStartTime ? Math.max(0, ms - meetingStartTime) : ms;
+
+  // Build bookmark lookup by segment_id
+  const bookmarkBySegment = useMemo(() => {
+    const map = new Map<string, MeetingBookmark>();
+    if (bookmarks) {
+      for (const b of bookmarks) {
+        if (b.segment_id) map.set(b.segment_id, b);
+      }
+    }
+    return map;
+  }, [bookmarks]);
 
   // Build speaker lookup from saved speakers for label/color resolution
   const speakerMap = useMemo(() => {
@@ -89,6 +110,81 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
     }
     return map;
   }, [search.matches]);
+
+  // Bookmark handlers (IPC-based for past meetings)
+  const handleToggleBookmark = useCallback(async (seg: TranscriptSegment) => {
+    if (!meetingId || !onBookmarksChanged) return;
+    const existing = seg.id ? bookmarkBySegment.get(seg.id) : undefined;
+    if (existing) {
+      try {
+        await deleteMeetingBookmark(existing.id);
+        onBookmarksChanged((bookmarks ?? []).filter(b => b.id !== existing.id));
+      } catch (err) {
+        console.error("[TranscriptView] Delete bookmark failed:", err);
+        showToast("Failed to remove bookmark", "error");
+      }
+    } else {
+      const newBookmark: MeetingBookmark = {
+        id: crypto.randomUUID(),
+        timestamp_ms: seg.timestamp_ms,
+        segment_id: seg.id,
+        created_at: new Date().toISOString(),
+      };
+      try {
+        await addMeetingBookmark(JSON.stringify({ ...newBookmark, meeting_id: meetingId }));
+        onBookmarksChanged([...(bookmarks ?? []), newBookmark]);
+      } catch (err) {
+        console.error("[TranscriptView] Add bookmark failed:", err);
+        showToast("Failed to add bookmark", "error");
+      }
+    }
+  }, [meetingId, bookmarks, bookmarkBySegment, onBookmarksChanged]);
+
+  const handleAddNote = useCallback(async (seg: TranscriptSegment) => {
+    if (!meetingId || !onBookmarksChanged) return;
+    let bm = seg.id ? bookmarkBySegment.get(seg.id) : undefined;
+    if (!bm) {
+      // Create bookmark first, then prompt for note
+      bm = {
+        id: crypto.randomUUID(),
+        timestamp_ms: seg.timestamp_ms,
+        segment_id: seg.id,
+        created_at: new Date().toISOString(),
+      };
+      try {
+        await addMeetingBookmark(JSON.stringify({ ...bm, meeting_id: meetingId }));
+        onBookmarksChanged([...(bookmarks ?? []), bm]);
+      } catch (err) {
+        console.error("[TranscriptView] Add bookmark for note failed:", err);
+        showToast("Failed to create bookmark", "error");
+        return;
+      }
+    }
+    // Prompt for note
+    const note = window.prompt("Add a note to this bookmark:", bm.note ?? "");
+    if (note !== null) {
+      const trimmedNote = note.trim() || undefined;
+      try {
+        await updateMeetingBookmark(bm.id, trimmedNote ?? null);
+        onBookmarksChanged(
+          (bookmarks ?? []).map(b => b.id === bm!.id ? { ...b, note: trimmedNote } : b)
+        );
+      } catch (err) {
+        console.error("[TranscriptView] Update bookmark note failed:", err);
+        showToast("Failed to save note", "error");
+      }
+    }
+  }, [meetingId, bookmarks, bookmarkBySegment, onBookmarksChanged]);
+
+  const handleCopyText = useCallback((text: string) => {
+    navigator.clipboard.writeText(text);
+    showToast("Copied to clipboard", "success");
+  }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, segmentIndex: number) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, segmentIndex });
+  }, []);
 
   const handleTimelineJump = (index: number) => {
     setSelectedIndex(index);
@@ -178,13 +274,16 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
             const offsets = segmentMatches.get(i);
             const isSearchMatch = i === activeMatchSegment;
             const isSelected = i === selectedIndex;
+            const segBookmark = segment.id ? bookmarkBySegment.get(segment.id) : undefined;
+            const isBookmarked = !!segBookmark;
 
             return (
               <div
                 key={segment.id || i}
                 ref={(el) => { segmentRefs.current[i] = el; }}
                 onClick={() => handleSegmentClick(i)}
-                className={`flex items-start gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all duration-100 border-l-2 ${
+                onContextMenu={meetingId ? (e) => handleContextMenu(e, i) : undefined}
+                className={`group relative flex items-start gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all duration-100 border-l-2 ${
                   segment.speaker === "User" ? "border-l-speaker-user/20" : "border-l-speaker-interviewer/20"
                 } ${
                   isSelected
@@ -201,6 +300,11 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
                   {formatTimestamp(toElapsed(segment.timestamp_ms))}
                 </span>
 
+                {/* Bookmarked indicator — subtle filled icon near speaker label */}
+                {isBookmarked && (
+                  <BookmarkIcon className="mt-1 h-2.5 w-2.5 shrink-0 fill-primary text-primary opacity-60" />
+                )}
+
                 {/* Speaker */}
                 <span
                   className={`shrink-0 pt-0.5 text-xs font-bold ${resolveSpeakerColorClass(segment)}`}
@@ -209,17 +313,52 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
                   {resolveSpeakerLabel(segment)}
                 </span>
 
-                {/* Text content */}
-                <span className={`flex-1 text-sm leading-relaxed ${
-                  isSelected ? "text-foreground" : "text-foreground/80"
-                }`}>
-                  {offsets
-                    ? highlightText(segment.text, search.query, offsets, isSearchMatch)
-                    : segment.text}
-                </span>
+                {/* Text content + bookmark note */}
+                <div className="flex-1 min-w-0">
+                  <span className={`text-sm leading-relaxed ${
+                    isSelected ? "text-foreground" : "text-foreground/80"
+                  }`}>
+                    {offsets
+                      ? highlightText(segment.text, search.query, offsets, isSearchMatch)
+                      : segment.text}
+                  </span>
+
+                  {/* Bookmark note — rendered below transcript text */}
+                  {isBookmarked && segBookmark?.note && (
+                    <p className="mt-0.5 text-[10px] italic text-muted-foreground/40 truncate">
+                      {segBookmark.note}
+                    </p>
+                  )}
+                </div>
+
+                {/* Hover bookmark icon — appears at right edge on hover */}
+                {meetingId && (
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleToggleBookmark(segment); }}
+                      className="rounded p-0.5 hover:bg-accent/50 transition-colors cursor-pointer"
+                      title={isBookmarked ? "Remove bookmark" : "Bookmark this line"}
+                    >
+                      <BookmarkIcon className={`h-3 w-3 ${isBookmarked ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
+
+          {/* Right-click context menu for bookmarks */}
+          {contextMenu && segments[contextMenu.segmentIndex] && (
+            <TranscriptContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              isBookmarked={!!(segments[contextMenu.segmentIndex].id && bookmarkBySegment.get(segments[contextMenu.segmentIndex].id!))}
+              onBookmark={() => handleToggleBookmark(segments[contextMenu.segmentIndex])}
+              onAddNote={() => handleAddNote(segments[contextMenu.segmentIndex])}
+              onCopy={() => handleCopyText(segments[contextMenu.segmentIndex].text)}
+              onClose={() => setContextMenu(null)}
+            />
+          )}
         </div>
       </div>
     </div>

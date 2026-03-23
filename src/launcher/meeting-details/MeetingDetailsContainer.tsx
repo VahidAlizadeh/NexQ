@@ -151,7 +151,16 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
       <div className="flex-1 overflow-y-auto" role="tabpanel">
         {activeTab === "transcript" && (
-          <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} speakers={meeting.speakers} searchInputRef={searchInputRef} />
+          <TranscriptView
+            segments={meeting.transcript}
+            search={search}
+            meetingStartTime={new Date(meeting.start_time).getTime()}
+            speakers={meeting.speakers}
+            searchInputRef={searchInputRef}
+            bookmarks={meeting.bookmarks}
+            meetingId={meeting.id}
+            onBookmarksChanged={(bookmarks) => setMeeting((prev) => prev ? { ...prev, bookmarks } : prev)}
+          />
         )}
         {activeTab === "summary" && (
           <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />

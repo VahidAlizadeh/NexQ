@@ -170,7 +170,7 @@ export function onSTTDebug(
   return listen<STTDebugEvent>("stt_debug", (e) => handler(e.payload));
 }
 
-// == TOPIC & ACTION ITEM DETECTION EVENTS ==
+// == TOPIC DETECTION EVENTS ==
 
 export function onTopicDetected(
   handler: (payload: import("./types").TopicSection) => void
@@ -180,13 +180,6 @@ export function onTopicDetected(
   );
 }
 
-export function onActionItemDetected(
-  handler: (payload: import("./types").ActionItem) => void
-): Promise<UnlistenFn> {
-  return listen<import("./types").ActionItem>("action_item_detected", (event) =>
-    handler(event.payload)
-  );
-}
 
 // == SPEAKER DETECTION EVENTS ==
 

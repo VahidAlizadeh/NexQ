@@ -12,13 +12,11 @@ import { AskInput } from "./AskInput";
 import { ServiceStatusBar } from "../components/ServiceStatusBar";
 import { DevLogPanel } from "../components/DevLogPanel";
 import { SpeakerStatsPanel } from "./SpeakerStatsPanel";
-import { ActionItemsPanel } from "./ActionItemsPanel";
 import { BookmarkToast } from "./BookmarkToast";
 import { BookmarkPanel } from "./BookmarkPanel";
 import { useBookmarkHotkey } from "../hooks/useBookmarkHotkey";
 import { useSpeakerDetection } from "../hooks/useSpeakerDetection";
 import { useTopicDetection } from "../hooks/useTopicDetection";
-import { useActionItemDetection } from "../hooks/useActionItemDetection";
 import { MODE_COLORS } from "../lib/speakerColors";
 import {
   GripHorizontal,
@@ -29,7 +27,6 @@ import {
   Terminal,
   BarChart3,
   Bookmark,
-  ClipboardList,
 } from "lucide-react";
 import { formatDuration } from "../lib/utils";
 
@@ -45,7 +42,6 @@ export function OverlayView() {
   const [askInputVisible, setAskInputVisible] = useState(false);
   const [devLogOpen, setDevLogOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const toggleLog = useCallLogStore((s) => s.toggleOpen);
   const logOpen = useCallLogStore((s) => s.isOpen);
@@ -57,9 +53,8 @@ export function OverlayView() {
   // Speaker detection from Deepgram diarization events
   useSpeakerDetection();
 
-  // Live topic & action item detection from backend events
+  // Live topic detection from backend events
   useTopicDetection();
-  useActionItemDetection();
 
   const handleEndMeeting = useCallback(async () => {
     try { await endMeetingFlow(); showToast("Meeting ended", "info"); }
@@ -118,7 +113,6 @@ export function OverlayView() {
         <div className="flex items-center gap-1">
           <HeaderBtn icon={<BarChart3 className="h-3.5 w-3.5" />} active={statsOpen} onClick={() => setStatsOpen(p => !p)} tooltip="Speaker Stats" />
           <HeaderBtn icon={<Bookmark className="h-3.5 w-3.5" />} active={bookmarksOpen} onClick={() => setBookmarksOpen(p => !p)} tooltip="Bookmarks (Ctrl+B to add)" />
-          <HeaderBtn icon={<ClipboardList className="h-3.5 w-3.5" />} active={actionsOpen} onClick={() => setActionsOpen(p => !p)} tooltip="Action Items" />
           <HeaderBtn icon={<Activity className="h-3.5 w-3.5" />} active={logOpen} onClick={toggleLog} tooltip="AI Call Log" />
           <HeaderBtn icon={<Terminal className="h-3.5 w-3.5" />} active={devLogOpen} onClick={() => setDevLogOpen(p => !p)} tooltip="Dev Log (Ctrl+Shift+L)" />
           <HeaderBtn icon={<Settings className="h-3.5 w-3.5" />} onClick={() => setCurrentView("settings")} tooltip="Settings" />
@@ -178,13 +172,10 @@ export function OverlayView() {
       {/* DevLog panel */}
       <DevLogPanel open={devLogOpen} onClose={() => setDevLogOpen(false)} />
 
-      {/* Speaker Stats + Action Items — adaptive two-column layout */}
-      {(statsOpen || actionsOpen) && (
-        <div className={`border-t border-border/20 px-3 py-2 ${
-          statsOpen && actionsOpen ? "grid grid-cols-2 gap-3" : ""
-        }`}>
-          {statsOpen && <SpeakerStatsPanel isOpen={statsOpen} />}
-          {actionsOpen && <ActionItemsPanel isOpen={actionsOpen} />}
+      {/* Speaker Stats */}
+      {statsOpen && (
+        <div className="border-t border-border/20 px-3 py-2">
+          <SpeakerStatsPanel isOpen={statsOpen} />
         </div>
       )}
 

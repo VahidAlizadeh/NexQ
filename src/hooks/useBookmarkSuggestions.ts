@@ -38,13 +38,21 @@ function parseSuggestionsJSON(
   raw: string,
   segments?: { id: string; timestamp_ms: number }[],
 ): BookmarkSuggestion[] {
-  // Strip markdown code fences
-  let cleaned = raw.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+  console.log("[bookmarkSuggestions] Raw LLM response:", raw.slice(0, 500));
+
+  // Strip thinking tags (Qwen3, DeepSeek, etc.) — handle both closed and unclosed
+  let cleaned = raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*/gi, "")       // Unclosed thinking tag — strip to end
+    .replace(/```(?:json)?\s*/g, "")
+    .replace(/```/g, "")
+    .trim();
 
   // Find the JSON array
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
   if (start === -1 || end === -1 || end <= start) {
+    console.error("[bookmarkSuggestions] No JSON array found. Cleaned:", cleaned.slice(0, 300));
     throw new Error("No JSON array found in response");
   }
 

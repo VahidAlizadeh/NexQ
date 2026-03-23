@@ -353,6 +353,14 @@ export async function saveMeetingActionItems(meetingId: string, itemsJson: strin
   return invoke("save_meeting_action_items", { meetingId, itemsJson });
 }
 
+export async function updateActionItem(itemId: string, completed: boolean): Promise<void> {
+  await invoke("update_action_item", { itemId, completed });
+}
+
+export async function deleteActionItem(itemId: string): Promise<void> {
+  await invoke("delete_action_item", { itemId });
+}
+
 export async function saveMeetingTopicSections(meetingId: string, sectionsJson: string): Promise<void> {
   return invoke("save_meeting_topic_sections", { meetingId, sectionsJson });
 }

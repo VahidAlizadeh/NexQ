@@ -432,6 +432,8 @@ pub fn run() {
             meeting_commands::update_meeting_bookmark,
             meeting_commands::delete_meeting_bookmark,
             meeting_commands::save_meeting_action_items,
+            meeting_commands::update_action_item,
+            meeting_commands::delete_action_item,
             meeting_commands::save_meeting_topic_sections,
             meeting_commands::rename_speaker,
             meeting_commands::update_meeting_mode,

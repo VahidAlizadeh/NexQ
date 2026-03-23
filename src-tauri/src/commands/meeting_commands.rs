@@ -410,6 +410,43 @@ pub async fn save_meeting_action_items(
 }
 
 #[command]
+pub async fn update_action_item(
+    item_id: String,
+    completed: bool,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    meetings::update_action_item_completed(db.connection(), &item_id, completed)
+        .map_err(|e| format!("Failed to update action item: {}", e))
+}
+
+#[command]
+pub async fn delete_action_item(
+    item_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state
+        .database
+        .as_ref()
+        .ok_or_else(|| "Database not initialized".to_string())?;
+
+    let db = db
+        .lock()
+        .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+    meetings::delete_action_item(db.connection(), &item_id)
+        .map_err(|e| format!("Failed to delete action item: {}", e))
+}
+
+#[command]
 pub async fn save_meeting_topic_sections(
     meeting_id: String,
     sections_json: String,

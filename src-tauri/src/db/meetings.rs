@@ -716,6 +716,31 @@ pub fn list_meeting_action_items(
     Ok(results)
 }
 
+/// Update completion status of a single action item.
+pub fn update_action_item_completed(
+    conn: &Connection,
+    item_id: &str,
+    completed: bool,
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "UPDATE meeting_action_items SET completed = ?1 WHERE id = ?2",
+        params![completed as i32, item_id],
+    )?;
+    Ok(())
+}
+
+/// Delete a single action item.
+pub fn delete_action_item(
+    conn: &Connection,
+    item_id: &str,
+) -> Result<(), DatabaseError> {
+    conn.execute(
+        "DELETE FROM meeting_action_items WHERE id = ?1",
+        params![item_id],
+    )?;
+    Ok(())
+}
+
 // ── Meeting topic sections CRUD ─────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

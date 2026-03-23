@@ -16,51 +16,53 @@ export function MeetingTabBar({ activeTab, setActiveTab, meeting }: MeetingTabBa
   const speakerCount = meeting.speakers?.length ?? 0;
 
   return (
-    <div className="relative flex items-center gap-1 border-b border-border/20 px-3 py-1.5 overflow-x-auto overflow-y-visible" role="tablist">
-      <TabButton
-        active={activeTab === "transcript"}
-        onClick={() => setActiveTab("transcript")}
-        icon={<FileText className="h-3.5 w-3.5" />}
-        label="Transcript"
-        count={meeting.transcript.length}
-      />
-      <TabButton
-        active={activeTab === "summary"}
-        onClick={() => setActiveTab("summary")}
-        icon={<Sparkles className="h-3.5 w-3.5" />}
-        label="Summary"
-        indicator={!!meeting.summary}
-      />
-      <TabButton
-        active={activeTab === "ai"}
-        onClick={() => setActiveTab("ai")}
-        icon={<MessageSquare className="h-3.5 w-3.5" />}
-        label="AI Log"
-        count={meeting.ai_interactions.length}
-      />
-      <TabButton
-        active={activeTab === "speakers"}
-        onClick={() => setActiveTab("speakers")}
-        icon={<Users className="h-3.5 w-3.5" />}
-        label="Speakers"
-        count={speakerCount > 0 ? speakerCount : undefined}
-      />
-      <TabButton
-        active={activeTab === "actions"}
-        onClick={() => setActiveTab("actions")}
-        icon={<ListTodo className="h-3.5 w-3.5" />}
-        label="Actions"
-        count={actionCount > 0 ? actionCount : undefined}
-      />
-      <TabButton
-        active={activeTab === "bookmarks"}
-        onClick={() => setActiveTab("bookmarks")}
-        icon={<Bookmark className="h-3.5 w-3.5" />}
-        label="Bookmarks"
-        count={bookmarkCount > 0 ? bookmarkCount : undefined}
-      />
+    <div className="relative flex items-center border-b border-border/20 px-3 py-1.5" role="tablist">
+      <div className="flex items-center gap-1 overflow-x-auto">
+        <TabButton
+          active={activeTab === "transcript"}
+          onClick={() => setActiveTab("transcript")}
+          icon={<FileText className="h-3.5 w-3.5" />}
+          label="Transcript"
+          count={meeting.transcript.length}
+        />
+        <TabButton
+          active={activeTab === "summary"}
+          onClick={() => setActiveTab("summary")}
+          icon={<Sparkles className="h-3.5 w-3.5" />}
+          label="Summary"
+          indicator={!!meeting.summary}
+        />
+        <TabButton
+          active={activeTab === "ai"}
+          onClick={() => setActiveTab("ai")}
+          icon={<MessageSquare className="h-3.5 w-3.5" />}
+          label="AI Log"
+          count={meeting.ai_interactions.length}
+        />
+        <TabButton
+          active={activeTab === "speakers"}
+          onClick={() => setActiveTab("speakers")}
+          icon={<Users className="h-3.5 w-3.5" />}
+          label="Speakers"
+          count={speakerCount > 0 ? speakerCount : undefined}
+        />
+        <TabButton
+          active={activeTab === "actions"}
+          onClick={() => setActiveTab("actions")}
+          icon={<ListTodo className="h-3.5 w-3.5" />}
+          label="Actions"
+          count={actionCount > 0 ? actionCount : undefined}
+        />
+        <TabButton
+          active={activeTab === "bookmarks"}
+          onClick={() => setActiveTab("bookmarks")}
+          icon={<Bookmark className="h-3.5 w-3.5" />}
+          label="Bookmarks"
+          count={bookmarkCount > 0 ? bookmarkCount : undefined}
+        />
+      </div>
 
-      {/* Spacer + Export */}
+      {/* Spacer + Export — OUTSIDE the overflow container */}
       <div className="ml-auto flex items-center pl-2">
         <ExportDropdown meeting={meeting} />
       </div>

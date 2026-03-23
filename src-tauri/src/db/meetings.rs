@@ -310,9 +310,15 @@ pub fn update_meeting(
     Ok(())
 }
 
-/// Delete a meeting and all its transcript segments (cascading via FK).
+/// Delete a meeting and all its related data (feature tables + segments).
 pub fn delete_meeting(conn: &Connection, id: &str) -> Result<(), DatabaseError> {
-    // Delete segments first (in case FK cascade isn't working without PRAGMA)
+    // Delete from feature tables first
+    conn.execute("DELETE FROM meeting_speakers WHERE meeting_id = ?1", params![id])?;
+    conn.execute("DELETE FROM meeting_bookmarks WHERE meeting_id = ?1", params![id])?;
+    conn.execute("DELETE FROM meeting_action_items WHERE meeting_id = ?1", params![id])?;
+    conn.execute("DELETE FROM meeting_topic_sections WHERE meeting_id = ?1", params![id])?;
+
+    // Then existing deletes (segments + meeting)
     conn.execute(
         "DELETE FROM transcript_segments WHERE meeting_id = ?1",
         params![id],

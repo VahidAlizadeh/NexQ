@@ -1,10 +1,12 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { Meeting, SpeakerIdentity } from "../../lib/types";
 import { Users, Mic, Volume2, Check, X, Pencil } from "lucide-react";
 import { formatDurationLong } from "../../lib/utils";
+import { SpeakerTimeline } from "./SpeakerTimeline";
 
 interface SpeakersTabProps {
   meeting: Meeting;
+  onSegmentClick?: (segmentIndex: number) => void;
 }
 
 const SPEAKER_COLORS = [
@@ -198,7 +200,7 @@ function syntheticSpeakersFromTranscript(meeting: Meeting): SpeakerIdentity[] {
   }));
 }
 
-export function SpeakersTab({ meeting }: SpeakersTabProps) {
+export function SpeakersTab({ meeting, onSegmentClick }: SpeakersTabProps) {
   // Use stored speakers if available, otherwise synthesise from transcript
   const [speakersState, setSpeakersState] = useState<SpeakerIdentity[]>(() => {
     if (meeting.speakers && meeting.speakers.length > 0) return meeting.speakers;
@@ -212,6 +214,23 @@ export function SpeakersTab({ meeting }: SpeakersTabProps) {
     );
     // Note: persisting to DB requires a future IPC command (Task 23+)
   }, []);
+
+  // Compute meeting timing for the temporal timeline
+  const meetingStartMs = useMemo(
+    () => new Date(meeting.start_time).getTime(),
+    [meeting.start_time]
+  );
+
+  const meetingDurationMs = useMemo(() => {
+    if (meeting.duration_seconds) return meeting.duration_seconds * 1000;
+    // Fallback: derive from transcript timestamps
+    if (meeting.transcript.length >= 2) {
+      const first = meeting.transcript[0].timestamp_ms;
+      const last = meeting.transcript[meeting.transcript.length - 1].timestamp_ms;
+      if (last > first) return last - first;
+    }
+    return 0;
+  }, [meeting.duration_seconds, meeting.transcript]);
 
   if (speakersState.length === 0) {
     return (
@@ -227,6 +246,17 @@ export function SpeakersTab({ meeting }: SpeakersTabProps) {
 
   return (
     <div className="p-3">
+      {/* Temporal timeline */}
+      {meeting.transcript.length >= 2 && meetingDurationMs > 0 && (
+        <SpeakerTimeline
+          segments={meeting.transcript}
+          speakers={speakersState}
+          meetingStartMs={meetingStartMs}
+          meetingDurationMs={meetingDurationMs}
+          onSegmentClick={onSegmentClick}
+        />
+      )}
+
       <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
         {speakersState.length} Speaker{speakersState.length !== 1 ? "s" : ""}
       </div>

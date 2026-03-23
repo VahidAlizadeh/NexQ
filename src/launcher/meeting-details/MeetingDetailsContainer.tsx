@@ -155,7 +155,12 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
             onToggle={(id) => setExpandedInteraction(expandedInteraction === id ? null : id)}
           />
         )}
-        {activeTab === "speakers" && <SpeakersTab meeting={meeting} />}
+        {activeTab === "speakers" && (
+          <SpeakersTab
+            meeting={meeting}
+            onSegmentClick={() => setActiveTab("transcript")}
+          />
+        )}
         {activeTab === "actions" && (
           <ActionItemsTab
             meeting={meeting}

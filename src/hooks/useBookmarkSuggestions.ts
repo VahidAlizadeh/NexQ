@@ -34,7 +34,10 @@ export interface BookmarkSuggestionsState {
 // Defensive JSON parsing — strips markdown fences, finds the array, and
 // normalises each item into a proper BookmarkSuggestion.
 // ---------------------------------------------------------------------------
-function parseSuggestionsJSON(raw: string): BookmarkSuggestion[] {
+function parseSuggestionsJSON(
+  raw: string,
+  segments?: { id: string; timestamp_ms: number }[],
+): BookmarkSuggestion[] {
   // Strip markdown code fences
   let cleaned = raw.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
 
@@ -50,11 +53,24 @@ function parseSuggestionsJSON(raw: string): BookmarkSuggestion[] {
 
   if (!Array.isArray(parsed)) throw new Error("Response is not an array");
 
-  return parsed.map((item: Record<string, unknown>) => ({
-    timestamp_ms: (item.timestamp_ms as number) ?? 0,
-    segment_id: (item.segment_id as string) ?? undefined,
-    note: (item.note as string) ?? "",
-  }));
+  // Build segment lookup for timestamp resolution
+  const segMap = new Map<string, number>();
+  if (segments) {
+    for (const s of segments) segMap.set(s.id, s.timestamp_ms);
+  }
+
+  return parsed
+    .map((item: Record<string, unknown>) => {
+      const segId = (item.segment_id as string) || undefined;
+      let tsMs = typeof item.timestamp_ms === "number" ? item.timestamp_ms : 0;
+      // Resolve timestamp from segment_id when missing or zero
+      if ((!tsMs || tsMs === 0) && segId && segMap.has(segId)) {
+        tsMs = segMap.get(segId)!;
+      }
+      const note = ((item.note ?? item.description ?? item.reason ?? "") as string).trim();
+      return { timestamp_ms: tsMs, segment_id: segId, note };
+    })
+    .filter((s) => s.note.length > 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -181,6 +197,16 @@ export function useBookmarkSuggestions(
       });
       cleanups.push(unToken);
 
+      // Prepare segments for prompt and later timestamp resolution
+      const segments = meeting.transcript
+        .filter((s) => s.is_final)
+        .map((s) => ({
+          id: s.id,
+          text: s.text,
+          speaker: s.speaker,
+          timestamp_ms: s.timestamp_ms,
+        }));
+
       const unEnd = await onStreamEnd(async () => {
         if (!isOurGeneration.current) return;
         isOurGeneration.current = false;
@@ -188,7 +214,7 @@ export function useBookmarkSuggestions(
         // Parse accumulated response into BookmarkSuggestion[]
         if (meeting && contentRef.current) {
           try {
-            const items = parseSuggestionsJSON(contentRef.current);
+            const items = parseSuggestionsJSON(contentRef.current, segments);
             setSuggestions(items);
           } catch (err) {
             console.error(
@@ -224,19 +250,18 @@ export function useBookmarkSuggestions(
 
       unlistenersRef.current.push(...cleanups);
 
-      // Build custom question for the LLM
-      const customQuestion =
-        "Identify the most important moments in this meeting. Return ONLY a JSON array.";
+      // Build detailed prompt that specifies the exact JSON schema
+      const customQuestion = `Analyze this meeting transcript and identify 5-8 key moments worth bookmarking.
 
-      // Pass the full transcript (all segments) to the backend.
-      const segments = meeting.transcript
-        .filter((s) => s.is_final)
-        .map((s) => ({
-          id: s.id,
-          text: s.text,
-          speaker: s.speaker,
-          timestamp_ms: s.timestamp_ms,
-        }));
+Return a JSON array where each item has these exact fields:
+- "segment_id": the exact "id" value from the transcript segment
+- "timestamp_ms": the exact "timestamp_ms" value from that segment
+- "note": a concise description (8-15 words) of why this moment matters
+
+Good bookmarks highlight: decisions made, action items assigned, important questions, key insights, topic transitions, or commitments.
+
+Return ONLY the JSON array, no other text.
+Example: [{"segment_id":"web_abc_1","timestamp_ms":1711234567890,"note":"Agreed to submit proposal by Friday deadline"}]`;
 
       await invoke("generate_assist", {
         mode: "BookmarkSuggestions",

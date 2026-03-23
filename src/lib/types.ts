@@ -114,6 +114,7 @@ export interface SpeakerStats {
 export interface MeetingBookmark {
   id: string;
   timestamp_ms: number;
+  segment_id?: string;   // Optional anchor to a specific transcript segment
   note?: string;
   created_at: string;
 }

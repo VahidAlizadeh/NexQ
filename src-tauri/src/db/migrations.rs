@@ -9,6 +9,7 @@ pub fn run(conn: &Connection) -> Result<(), rusqlite::Error> {
     v1_schema(conn)?;
     v2_rag_schema(conn)?;
     v3_meeting_mode_schema(conn)?;
+    v4_bookmark_segment_id(conn)?;
 
     log::info!("Database migrations completed successfully");
     Ok(())
@@ -159,6 +160,20 @@ fn v2_rag_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
                 INSERT INTO rag_fts(rowid, text) VALUES (new.rowid, new.text);
             END;",
         )?;
+    }
+
+    Ok(())
+}
+
+/// Schema v4: Add segment_id to meeting_bookmarks for segment-anchored bookmarks.
+fn v4_bookmark_segment_id(conn: &Connection) -> Result<(), rusqlite::Error> {
+    if let Err(e) =
+        conn.execute_batch("ALTER TABLE meeting_bookmarks ADD COLUMN segment_id TEXT")
+    {
+        let msg = e.to_string();
+        if !msg.contains("duplicate column") {
+            log::warn!("ALTER TABLE meeting_bookmarks warning: {}", msg);
+        }
     }
 
     Ok(())

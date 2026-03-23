@@ -537,6 +537,8 @@ pub struct MeetingBookmark {
     pub id: String,
     pub meeting_id: String,
     pub timestamp_ms: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub segment_id: Option<String>,
     pub note: Option<String>,
     pub created_at: String,
 }
@@ -553,8 +555,8 @@ pub fn save_meeting_bookmarks(
     )?;
 
     let mut stmt = conn.prepare(
-        "INSERT INTO meeting_bookmarks (id, meeting_id, timestamp_ms, note, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5)",
+        "INSERT INTO meeting_bookmarks (id, meeting_id, timestamp_ms, segment_id, note, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
     )?;
 
     for b in bookmarks {
@@ -562,6 +564,7 @@ pub fn save_meeting_bookmarks(
             b.id,
             meeting_id,
             b.timestamp_ms,
+            b.segment_id,
             b.note,
             b.created_at,
         ])?;
@@ -576,7 +579,7 @@ pub fn list_meeting_bookmarks(
     meeting_id: &str,
 ) -> Result<Vec<MeetingBookmark>, DatabaseError> {
     let mut stmt = conn.prepare(
-        "SELECT id, meeting_id, timestamp_ms, note, created_at
+        "SELECT id, meeting_id, timestamp_ms, segment_id, note, created_at
          FROM meeting_bookmarks WHERE meeting_id = ?1 ORDER BY timestamp_ms ASC",
     )?;
 
@@ -585,8 +588,9 @@ pub fn list_meeting_bookmarks(
             id: row.get(0)?,
             meeting_id: row.get(1)?,
             timestamp_ms: row.get(2)?,
-            note: row.get(3)?,
-            created_at: row.get(4)?,
+            segment_id: row.get(3)?,
+            note: row.get(4)?,
+            created_at: row.get(5)?,
         })
     })?;
 

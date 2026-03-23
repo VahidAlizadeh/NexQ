@@ -7,7 +7,7 @@ import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
 import { useSummaryGeneration } from "../../hooks/useSummaryGeneration";
 import { useActionItemsExtraction } from "../../hooks/useActionItemsExtraction";
-import { showToast } from "../../stores/toastStore";
+import { exportMeetingAsMarkdown } from "../../lib/export";
 import { MeetingHeader } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
 import { TranscriptView } from "./TranscriptView";
@@ -16,12 +16,6 @@ import { AIInteractionLog } from "./AIInteractionLog";
 import { SpeakersTab } from "./SpeakersTab";
 import { ActionItemsTab } from "./ActionItemsTab";
 import { BookmarksTab } from "./BookmarksTab";
-import {
-  formatTimestamp,
-  formatDurationLong,
-  getSpeakerLabel,
-  getModeLabel,
-} from "../../lib/utils";
 import { Loader2 } from "lucide-react";
 
 interface MeetingDetailsProps {
@@ -102,22 +96,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   // Export
   const handleExport = useCallback(async () => {
     if (!meeting) return;
-    try {
-      const md = meetingToMarkdown(meeting);
-      const { save } = await import("@tauri-apps/plugin-dialog");
-      const filePath = await save({
-        defaultPath: `${meeting.title.replace(/[^a-zA-Z0-9 ]/g, "").trim()}.md`,
-        filters: [{ name: "Markdown", extensions: ["md"] }],
-      });
-      if (filePath) {
-        const { writeTextFile } = await import("@tauri-apps/plugin-fs");
-        await writeTextFile(filePath, md);
-        showToast("Meeting exported", "success");
-      }
-    } catch (err) {
-      console.error("[MeetingDetails] Export failed:", err);
-      showToast("Couldn't export transcript — check disk space", "error");
-    }
+    await exportMeetingAsMarkdown(meeting);
   }, [meeting]);
 
   const handleTitleChanged = useCallback((title: string) => {
@@ -198,26 +177,4 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
       </div>
     </div>
   );
-}
-
-function meetingToMarkdown(meeting: Meeting): string {
-  let md = `# ${meeting.title}\n\n`;
-  md += `**Date:** ${new Date(meeting.start_time).toLocaleString()}\n`;
-  if (meeting.duration_seconds) md += `**Duration:** ${formatDurationLong(meeting.duration_seconds * 1000)}\n`;
-  md += `**Segments:** ${meeting.transcript.length}\n\n`;
-  if (meeting.summary) md += `## Summary\n\n${meeting.summary}\n\n`;
-  if (meeting.transcript.length > 0) {
-    const meetingStart = new Date(meeting.start_time).getTime();
-    md += `## Transcript\n\n`;
-    for (const seg of meeting.transcript) {
-      md += `**[${formatTimestamp(Math.max(0, seg.timestamp_ms - meetingStart))}] ${getSpeakerLabel(seg.speaker)}:** ${seg.text}\n\n`;
-    }
-  }
-  if (meeting.ai_interactions.length > 0) {
-    md += `## AI Interactions\n\n`;
-    for (const ai of meeting.ai_interactions) {
-      md += `### ${getModeLabel(ai.mode)} (${ai.provider}/${ai.model})\n\n${ai.response}\n\n---\n\n`;
-    }
-  }
-  return md;
 }

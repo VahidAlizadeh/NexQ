@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useScenarioStore } from "../stores/scenarioStore";
 import { useCallLogStore } from "../stores/callLogStore";
@@ -15,6 +15,8 @@ import { SpeakerStatsPanel } from "./SpeakerStatsPanel";
 import { BookmarkToast } from "./BookmarkToast";
 import { BookmarkPanel } from "./BookmarkPanel";
 import { useBookmarkHotkey } from "../hooks/useBookmarkHotkey";
+import { useMeetingShortcuts } from "../hooks/useMeetingShortcuts";
+import { useConfigStore } from "../stores/configStore";
 import { useSpeakerDetection } from "../hooks/useSpeakerDetection";
 import { useTopicDetection } from "../hooks/useTopicDetection";
 import { MODE_COLORS } from "../lib/speakerColors";
@@ -47,8 +49,26 @@ export function OverlayView() {
   const logOpen = useCallLogStore((s) => s.isOpen);
   const autoTrigger = useAIActionsStore((s) => s.configs.globalDefaults.autoTrigger);
 
-  // Bookmark hotkey (Ctrl+B)
-  useBookmarkHotkey();
+  // Bookmark hotkey (Ctrl+B) — also returns addBookmarkAtNow for shortcut hook
+  const addBookmarkAtNow = useBookmarkHotkey();
+
+  // Consolidated keyboard shortcuts for live meeting
+  const shortcutActions = useMemo(
+    () => ({
+      addBookmark: addBookmarkAtNow,
+      toggleStats: () => setStatsOpen((p) => !p),
+      toggleBookmarks: () => setBookmarksOpen((p) => !p),
+      toggleMute: () => useConfigStore.getState().toggleMuteYou(),
+      closeAllPanels: () => {
+        setStatsOpen(false);
+        setBookmarksOpen(false);
+        setDevLogOpen(false);
+      },
+      toggleDevLog: () => setDevLogOpen((p) => !p),
+    }),
+    [addBookmarkAtNow],
+  );
+  useMeetingShortcuts(shortcutActions);
 
   // Speaker detection from Deepgram diarization events
   useSpeakerDetection();
@@ -60,17 +80,6 @@ export function OverlayView() {
     try { await endMeetingFlow(); showToast("Meeting ended", "info"); }
     catch (err) { showToast(err instanceof Error ? err.message : "Couldn't end meeting", "error"); }
   }, [endMeetingFlow]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "L") {
-        e.preventDefault();
-        setDevLogOpen((p) => !p);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
 
   const meetingTitle = activeMeeting?.title || "NexQ";
 
@@ -111,8 +120,8 @@ export function OverlayView() {
         </div>
 
         <div className="flex items-center gap-1">
-          <HeaderBtn icon={<BarChart3 className="h-3.5 w-3.5" />} active={statsOpen} onClick={() => setStatsOpen(p => !p)} tooltip="Speaker Stats" />
-          <HeaderBtn icon={<Bookmark className="h-3.5 w-3.5" />} active={bookmarksOpen} onClick={() => setBookmarksOpen(p => !p)} tooltip="Bookmarks (Ctrl+B to add)" />
+          <HeaderBtn icon={<BarChart3 className="h-3.5 w-3.5" />} active={statsOpen} onClick={() => setStatsOpen(p => !p)} tooltip="Speaker Stats (S)" />
+          <HeaderBtn icon={<Bookmark className="h-3.5 w-3.5" />} active={bookmarksOpen} onClick={() => setBookmarksOpen(p => !p)} tooltip="Bookmarks (K)" />
           <HeaderBtn icon={<Activity className="h-3.5 w-3.5" />} active={logOpen} onClick={toggleLog} tooltip="AI Call Log" />
           <HeaderBtn icon={<Terminal className="h-3.5 w-3.5" />} active={devLogOpen} onClick={() => setDevLogOpen(p => !p)} tooltip="Dev Log (Ctrl+Shift+L)" />
           <HeaderBtn icon={<Settings className="h-3.5 w-3.5" />} onClick={() => setCurrentView("settings")} tooltip="Settings" />

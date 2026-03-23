@@ -2,9 +2,29 @@
 // NexQ Export Utilities — multi-format meeting export
 // ============================================================================
 
-import type { Meeting, TranscriptSegment, AIScenario } from "./types";
+import type { Meeting, TranscriptSegment, AIScenario, SpeakerIdentity } from "./types";
 import { formatTimestamp, formatDurationLong, getSpeakerLabel, getModeLabel } from "./utils";
 import { showToast } from "../stores/toastStore";
+
+// ── Speaker resolution ───────────────────────────────────────────────────────
+
+function buildSpeakerMap(speakers?: SpeakerIdentity[]): Map<string, SpeakerIdentity> | null {
+  if (!speakers || speakers.length === 0) return null;
+  const map = new Map<string, SpeakerIdentity>();
+  for (const s of speakers) map.set(s.id, s);
+  return map;
+}
+
+function resolveSpeaker(
+  seg: TranscriptSegment,
+  speakerMap: Map<string, SpeakerIdentity> | null
+): string {
+  if (speakerMap && seg.speaker_id) {
+    const s = speakerMap.get(seg.speaker_id);
+    if (s) return s.display_name;
+  }
+  return getSpeakerLabel(seg.speaker);
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -24,6 +44,7 @@ function safeFilename(title: string): string {
 
 export function exportToMarkdown(meeting: Meeting): string {
   const startMs = meetingStartMs(meeting);
+  const speakerMap = buildSpeakerMap(meeting.speakers);
   let md = `# ${meeting.title}\n\n`;
   md += `**Date:** ${new Date(meeting.start_time).toLocaleString()}\n`;
   if (meeting.duration_seconds) {
@@ -49,10 +70,20 @@ export function exportToMarkdown(meeting: Meeting): string {
     md += "\n";
   }
 
+  if (meeting.bookmarks && meeting.bookmarks.length > 0) {
+    md += `## Bookmarks\n\n`;
+    const sortedBookmarks = [...meeting.bookmarks].sort((a, b) => a.timestamp_ms - b.timestamp_ms);
+    for (const b of sortedBookmarks) {
+      const ts = formatTimestamp(Math.max(0, b.timestamp_ms - startMs));
+      md += b.note ? `- **[${ts}]** ${b.note}\n` : `- **[${ts}]** *(no note)*\n`;
+    }
+    md += "\n";
+  }
+
   if (meeting.transcript.length > 0) {
     md += `## Transcript\n\n`;
     for (const seg of meeting.transcript) {
-      md += `**[${segmentTime(seg, startMs)}] ${getSpeakerLabel(seg.speaker)}:** ${seg.text}\n\n`;
+      md += `**[${segmentTime(seg, startMs)}] ${resolveSpeaker(seg, speakerMap)}:** ${seg.text}\n\n`;
     }
   }
 
@@ -82,7 +113,8 @@ function msToSrtTime(ms: number): string {
   );
 }
 
-export function exportToSRT(segments: TranscriptSegment[], startMs: number = 0): string {
+export function exportToSRT(segments: TranscriptSegment[], startMs: number = 0, speakers?: SpeakerIdentity[]): string {
+  const speakerMap = buildSpeakerMap(speakers);
   const lines: string[] = [];
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
@@ -95,7 +127,7 @@ export function exportToSRT(segments: TranscriptSegment[], startMs: number = 0):
 
     lines.push(`${i + 1}`);
     lines.push(`${msToSrtTime(segStart)} --> ${msToSrtTime(segEnd)}`);
-    lines.push(`${getSpeakerLabel(seg.speaker)}: ${seg.text}`);
+    lines.push(`${resolveSpeaker(seg, speakerMap)}: ${seg.text}`);
     lines.push("");
   }
   return lines.join("\n");
@@ -176,6 +208,7 @@ export function exportStudyNotes(meeting: Meeting): string {
 
 export function exportMeetingMinutes(meeting: Meeting): string {
   const startMs = meetingStartMs(meeting);
+  const speakerMap = buildSpeakerMap(meeting.speakers);
   let md = `# Meeting Minutes — ${meeting.title}\n\n`;
   md += `**Date:** ${new Date(meeting.start_time).toLocaleString()}\n`;
   if (meeting.duration_seconds) {
@@ -199,13 +232,13 @@ export function exportMeetingMinutes(meeting: Meeting): string {
         (s) => s.timestamp_ms >= topic.start_ms && s.timestamp_ms < topicEnd
       );
       for (const seg of topicSegs) {
-        md += `**${getSpeakerLabel(seg.speaker)}** *(${segmentTime(seg, startMs)})*: ${seg.text}\n\n`;
+        md += `**${resolveSpeaker(seg, speakerMap)}** *(${segmentTime(seg, startMs)})*: ${seg.text}\n\n`;
       }
     }
   } else if (meeting.transcript.length > 0) {
     md += `## Discussion\n\n`;
     for (const seg of meeting.transcript) {
-      md += `**${getSpeakerLabel(seg.speaker)}** *(${segmentTime(seg, startMs)})*: ${seg.text}\n\n`;
+      md += `**${resolveSpeaker(seg, speakerMap)}** *(${segmentTime(seg, startMs)})*: ${seg.text}\n\n`;
     }
   }
 
@@ -287,7 +320,7 @@ export async function exportMeetingAsSRT(meeting: Meeting): Promise<boolean> {
     defaultName: meeting.title,
     extension: "srt",
     filterLabel: "SRT Subtitles",
-    content: exportToSRT(meeting.transcript, startMs),
+    content: exportToSRT(meeting.transcript, startMs, meeting.speakers),
   });
 }
 

@@ -6,6 +6,7 @@ import {
   getSpeakerLabel,
   getSpeakerColor,
 } from "../../lib/utils";
+import { mergeConsecutiveSegments } from "../../lib/mergeSegments";
 import { FileText, Search, ChevronUp, ChevronDown, X, Bookmark as BookmarkIcon } from "lucide-react";
 import { TranscriptContextMenu } from "../../overlay/TranscriptContextMenu";
 import { addMeetingBookmark, deleteMeetingBookmark, updateMeetingBookmark } from "../../lib/ipc";
@@ -66,6 +67,26 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
     return map;
   }, [speakers]);
 
+  // Merge consecutive same-speaker segments for cleaner display
+  const mergedSegments = useMemo(
+    () => mergeConsecutiveSegments(segments),
+    [segments]
+  );
+
+  // Map raw segment indices → merged segment indices (for search compatibility)
+  const rawToMergedIndex = useMemo(() => {
+    const map = new Map<number, number>();
+    let rawIdx = 0;
+    for (let mi = 0; mi < mergedSegments.length; mi++) {
+      const ms = mergedSegments[mi];
+      for (let k = 0; k < ms.mergedCount; k++) {
+        map.set(rawIdx, mi);
+        rawIdx++;
+      }
+    }
+    return map;
+  }, [mergedSegments]);
+
   const resolveSpeakerLabel = (seg: TranscriptSegment): string => {
     if (speakerMap && seg.speaker_id) {
       const s = speakerMap.get(seg.speaker_id);
@@ -90,26 +111,29 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
     return undefined;
   };
 
-  // Search: scroll to match
+  // Search: scroll to match (remap raw index → merged index)
   useEffect(() => {
     if (search.totalMatches === 0) return;
     const match = search.matches[search.currentMatchIndex];
     if (!match) return;
-    segmentRefs.current[match.segmentIndex]?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [search.currentMatchIndex, search.matches, search.totalMatches]);
+    const mergedIdx = rawToMergedIndex.get(match.segmentIndex) ?? match.segmentIndex;
+    segmentRefs.current[mergedIdx]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [search.currentMatchIndex, search.matches, search.totalMatches, rawToMergedIndex]);
 
   const activeMatchSegment = search.totalMatches > 0
-    ? search.matches[search.currentMatchIndex]?.segmentIndex ?? -1
+    ? rawToMergedIndex.get(search.matches[search.currentMatchIndex]?.segmentIndex ?? -1) ?? -1
     : -1;
 
   const segmentMatches = useMemo(() => {
     const map = new Map<number, number[]>();
     for (const m of search.matches) {
-      if (!map.has(m.segmentIndex)) map.set(m.segmentIndex, []);
-      map.get(m.segmentIndex)!.push(m.startOffset);
+      // Remap raw segment index to merged segment index
+      const mergedIdx = rawToMergedIndex.get(m.segmentIndex) ?? m.segmentIndex;
+      if (!map.has(mergedIdx)) map.set(mergedIdx, []);
+      map.get(mergedIdx)!.push(m.startOffset);
     }
     return map;
-  }, [search.matches]);
+  }, [search.matches, rawToMergedIndex]);
 
   // Bookmark handlers (IPC-based for past meetings)
   const handleToggleBookmark = useCallback(async (seg: TranscriptSegment) => {
@@ -270,7 +294,7 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
       {/* Transcript rows */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border/20">
         <div className="px-4 py-2">
-          {segments.map((segment, i) => {
+          {mergedSegments.map((segment, i) => {
             const offsets = segmentMatches.get(i);
             const isSearchMatch = i === activeMatchSegment;
             const isSelected = i === selectedIndex;
@@ -348,14 +372,14 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
           })}
 
           {/* Right-click context menu for bookmarks */}
-          {contextMenu && segments[contextMenu.segmentIndex] && (
+          {contextMenu && mergedSegments[contextMenu.segmentIndex] && (
             <TranscriptContextMenu
               x={contextMenu.x}
               y={contextMenu.y}
-              isBookmarked={!!(segments[contextMenu.segmentIndex].id && bookmarkBySegment.get(segments[contextMenu.segmentIndex].id!))}
-              onBookmark={() => handleToggleBookmark(segments[contextMenu.segmentIndex])}
-              onAddNote={() => handleAddNote(segments[contextMenu.segmentIndex])}
-              onCopy={() => handleCopyText(segments[contextMenu.segmentIndex].text)}
+              isBookmarked={!!(mergedSegments[contextMenu.segmentIndex].id && bookmarkBySegment.get(mergedSegments[contextMenu.segmentIndex].id!))}
+              onBookmark={() => handleToggleBookmark(mergedSegments[contextMenu.segmentIndex])}
+              onAddNote={() => handleAddNote(mergedSegments[contextMenu.segmentIndex])}
+              onCopy={() => handleCopyText(mergedSegments[contextMenu.segmentIndex].text)}
               onClose={() => setContextMenu(null)}
             />
           )}

@@ -1,13 +1,14 @@
 // Sub-PRD 4: Rolling live transcript with auto-scroll and search
 // Displays transcript segments with auto-scroll behavior and search/filter.
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranscriptStore } from "../stores/transcriptStore";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useAudioLevel } from "../hooks/useAudioLevel";
 import { useConfigStore } from "../stores/configStore";
 import { TranscriptLine } from "./TranscriptLine";
 import { SpeakerNamingBanner } from "./SpeakerNamingBanner";
+import { mergeConsecutiveSegments } from "../lib/mergeSegments";
 import { Mic, MicOff, Volume2, VolumeX, Search, X, Radio } from "lucide-react";
 
 export function TranscriptPanel() {
@@ -87,12 +88,19 @@ export function TranscriptPanel() {
     }
   }, [autoScroll, setAutoScroll]);
 
-  // Filter segments by search query
+  // Merge consecutive same-speaker finals, keep interims separate at the end
+  const mergedSegments = useMemo(() => {
+    const finals = segments.filter((s) => s.is_final);
+    const interims = segments.filter((s) => !s.is_final);
+    return [...mergeConsecutiveSegments(finals), ...interims];
+  }, [segments]);
+
+  // Filter merged segments by search query
   const filteredSegments = searchQuery.trim()
-    ? segments.filter((s) =>
+    ? mergedSegments.filter((s) =>
         s.text.toLowerCase().includes(searchQuery.trim().toLowerCase())
       )
-    : segments;
+    : mergedSegments;
 
   // Count search matches
   const matchCount = searchQuery.trim()

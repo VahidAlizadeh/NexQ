@@ -69,15 +69,15 @@ export function MeetingTabBar({ activeTab, setActiveTab, meeting, onGenerateSumm
       {/* Spacer + AI Actions + Export — OUTSIDE the overflow container */}
       <div className="ml-auto flex items-center gap-1 pl-2">
         {/* AI Actions */}
-        {onGenerateSummary && !meeting.summary && (
+        {onGenerateSummary && (
           <button
             onClick={onGenerateSummary}
             disabled={isSummaryGenerating || meeting.transcript.length === 0}
             className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-30 cursor-pointer"
-            title="Generate AI summary"
+            title={meeting.summary ? "Regenerate AI summary" : "Generate AI summary"}
           >
             {isSummaryGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-            Summary
+            {meeting.summary ? "Regenerate Summary" : "Generate Summary"}
           </button>
         )}
         {onSuggestBookmarks && (
@@ -87,8 +87,8 @@ export function MeetingTabBar({ activeTab, setActiveTab, meeting, onGenerateSumm
             className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-30 cursor-pointer"
             title="AI bookmark suggestions"
           >
-            {isBookmarksSuggesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bookmark className="h-3 w-3" />}
-            Bookmarks
+            {isBookmarksSuggesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            Suggest Bookmarks
           </button>
         )}
         <div className="mx-1 h-4 w-px bg-border/20" />

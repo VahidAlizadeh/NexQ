@@ -145,7 +145,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         meeting={meeting}
         onGenerateSummary={() => {
           setActiveTab("summary");
-          if (!meeting.summary && !summaryGeneration.isGenerating) {
+          if (!summaryGeneration.isGenerating) {
             summaryGeneration.generate();
           }
         }}

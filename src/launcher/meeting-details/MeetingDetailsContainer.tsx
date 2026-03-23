@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Meeting } from "../../lib/types";
 import { getMeeting } from "../../lib/ipc";
 import { onTranscriptFinal } from "../../lib/events";
@@ -71,6 +71,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const summaryGeneration = useSummaryGeneration(meeting, (summary) => {
     setMeeting((prev) => (prev ? { ...prev, summary } : prev));
   });
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -78,7 +79,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
       if ((e.ctrlKey || e.metaKey) && e.key === "f") {
         if (activeTab === "transcript") {
           e.preventDefault();
-          search.open();
+          searchInputRef.current?.focus();
         }
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -89,11 +90,10 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
           }
         }
       }
-      if (e.key === "Escape" && search.isOpen) search.close();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [activeTab, search, summaryGeneration, meeting]);
+  }, [activeTab, summaryGeneration, meeting]);
 
   // Export
   const handleExport = useCallback(async () => {
@@ -151,7 +151,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
       <div className="flex-1 overflow-y-auto" role="tabpanel">
         {activeTab === "transcript" && (
-          <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} speakers={meeting.speakers} />
+          <TranscriptView segments={meeting.transcript} search={search} meetingStartTime={new Date(meeting.start_time).getTime()} speakers={meeting.speakers} searchInputRef={searchInputRef} />
         )}
         {activeTab === "summary" && (
           <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />

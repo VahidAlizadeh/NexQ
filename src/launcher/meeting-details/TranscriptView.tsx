@@ -1,13 +1,12 @@
-import { useRef, useEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import type { TranscriptSegment, SpeakerIdentity } from "../../lib/types";
 import type { TranscriptSearchState } from "../../hooks/useTranscriptSearch";
-import { TranscriptSearch } from "./TranscriptSearch";
 import {
   formatTimestamp,
   getSpeakerLabel,
   getSpeakerColor,
 } from "../../lib/utils";
-import { FileText } from "lucide-react";
+import { FileText, Search, ChevronUp, ChevronDown, X } from "lucide-react";
 
 interface TranscriptViewProps {
   segments: TranscriptSegment[];
@@ -15,6 +14,7 @@ interface TranscriptViewProps {
   meetingStartTime?: number;
   /** Saved speakers from meeting — used for post-meeting label/color resolution */
   speakers?: SpeakerIdentity[];
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 // Speaker colors for timeline blocks
@@ -25,8 +25,13 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "hsl(var(--muted-foreground))",
 };
 
-export function TranscriptView({ segments, search, meetingStartTime, speakers }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime, speakers, searchInputRef }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const localSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const setInputRef = useCallback((el: HTMLInputElement | null) => {
+    localSearchInputRef.current = el;
+    if (searchInputRef) (searchInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+  }, [searchInputRef]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const toElapsed = (ms: number) =>
@@ -105,8 +110,58 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers }:
 
   return (
     <div className="relative flex h-full flex-col">
-      {/* Search overlay */}
-      <TranscriptSearch search={search} />
+      {/* Always-visible search bar */}
+      <div className="flex items-center gap-2 rounded-lg bg-muted/20 mx-1 mt-1 mb-1.5 px-2.5 py-1.5">
+        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+        <input
+          ref={setInputRef}
+          type="text"
+          value={search.query}
+          onChange={(e) => search.setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              if (e.shiftKey) search.prevMatch();
+              else search.nextMatch();
+            }
+          }}
+          placeholder="Search transcript..."
+          maxLength={200}
+          aria-label="Search transcript"
+          className="flex-1 bg-transparent text-xs text-foreground/90 placeholder:text-muted-foreground/50 outline-none"
+        />
+        {search.query && search.totalMatches > 0 && (
+          <span className="shrink-0 text-xs tabular-nums font-medium text-muted-foreground/60">
+            {search.currentMatchIndex + 1} of {search.totalMatches}
+          </span>
+        )}
+        {search.query && search.totalMatches === 0 && (
+          <span className="shrink-0 text-xs text-red-400/60">No matches</span>
+        )}
+        {search.query && (
+          <div className="flex items-center gap-0.5 border-l border-border/20 pl-2">
+            <button
+              onClick={search.prevMatch}
+              disabled={search.totalMatches === 0}
+              className="rounded-md p-1 text-muted-foreground/50 hover:bg-secondary hover:text-foreground disabled:opacity-25 cursor-pointer"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={search.nextMatch}
+              disabled={search.totalMatches === 0}
+              className="rounded-md p-1 text-muted-foreground/50 hover:bg-secondary hover:text-foreground disabled:opacity-25 cursor-pointer"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => search.setQuery("")}
+              className="rounded-md p-1 text-muted-foreground/50 hover:bg-secondary hover:text-foreground cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Timeline */}
       <TimelineScrubber

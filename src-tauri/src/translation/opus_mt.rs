@@ -19,6 +19,15 @@ struct LoadedModel {
     tokenizer: tokenizers::Tokenizer,
     eos_token_id: i64,
     decoder_start_token_id: i64,
+    /// Decoder input names that require past_key_values (empty tensors for no-cache mode).
+    /// Discovered at load time by inspecting session.inputs().
+    past_kv_names: Vec<String>,
+    /// Number of attention heads (from config.json or input shape).
+    num_heads: usize,
+    /// Dimension per head (d_model / num_heads).
+    head_dim: usize,
+    /// Whether the decoder expects a use_cache_branch input.
+    has_use_cache_branch: bool,
 }
 
 pub struct OpusMtTranslator {
@@ -95,15 +104,34 @@ fn ensure_loaded_blocking(
     let decoder = load_onnx_session(&decoder_path)?;
     log_session_io("Decoder", &decoder);
 
+    // Discover decoder inputs: find past_key_values and use_cache_branch
+    let mut past_kv_names = Vec::new();
+    let mut has_use_cache_branch = false;
+    for input in decoder.inputs() {
+        let name = input.name().to_string();
+        if name.contains("past_key_values") {
+            past_kv_names.push(name);
+        } else if name == "use_cache_branch" {
+            has_use_cache_branch = true;
+        }
+    }
+    log::info!("Decoder past_kv inputs: {} found, use_cache_branch: {}", past_kv_names.len(), has_use_cache_branch);
+
+    // Read model config for attention dimensions
+    let config_path = model_dir.join("config.json");
+    let (num_heads, head_dim) = read_model_config(&config_path);
+
     log::info!("Loading OPUS-MT tokenizer: {}", tokenizer_path.display());
     let tokenizer = load_tokenizer(&tokenizer_path)?;
 
     let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
-    log::info!("OPUS-MT model ready: {} (eos={}, dec_start={})", model_id, eos_token_id, decoder_start_token_id);
+    log::info!("OPUS-MT model ready: {} (eos={}, dec_start={}, heads={}, head_dim={})",
+        model_id, eos_token_id, decoder_start_token_id, num_heads, head_dim);
 
     let mut guard = loaded.lock().map_err(|_| "Model lock error".to_string())?;
     *guard = Some((model_id.to_string(), LoadedModel {
         encoder, decoder, tokenizer, eos_token_id, decoder_start_token_id,
+        past_kv_names, num_heads, head_dim, has_use_cache_branch,
     }));
 
     Ok(())
@@ -274,6 +302,19 @@ fn load_tokenizer(path: &std::path::Path) -> Result<tokenizers::Tokenizer, Strin
         .map_err(|e| format!("Tokenizer load failed: {}", e))
 }
 
+/// Read num_heads and head_dim from config.json. Falls back to MarianMT defaults.
+fn read_model_config(config_path: &std::path::Path) -> (usize, usize) {
+    if let Ok(raw) = std::fs::read_to_string(config_path) {
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&raw) {
+            let d_model = json.get("d_model").and_then(|v| v.as_u64()).unwrap_or(512) as usize;
+            let num_heads = json.get("decoder_attention_heads").and_then(|v| v.as_u64()).unwrap_or(8) as usize;
+            let head_dim = if num_heads > 0 { d_model / num_heads } else { 64 };
+            return (num_heads, head_dim);
+        }
+    }
+    (8, 64) // MarianMT defaults
+}
+
 fn extract_special_tokens(tokenizer: &tokenizers::Tokenizer) -> (i64, i64) {
     let eos_id = tokenizer
         .token_to_id("</s>")
@@ -360,7 +401,7 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
         let dec_hidden_tensor = ort::value::Tensor::from_array(encoder_hidden.clone())
             .map_err(|e| format!("Decoder hidden_states tensor: {}", e))?;
 
-        let decoder_inputs: Vec<(
+        let mut decoder_inputs: Vec<(
             std::borrow::Cow<'_, str>,
             ort::session::SessionInputValue<'_>,
         )> = vec![
@@ -368,6 +409,25 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
             ("encoder_attention_mask".into(), dec_mask_tensor.into()),
             ("encoder_hidden_states".into(), dec_hidden_tensor.into()),
         ];
+
+        // Merged decoder: provide use_cache_branch=false and empty past_key_values
+        if model.has_use_cache_branch {
+            let cache_flag = ndarray::Array1::from_vec(vec![false]);
+            let cache_tensor = ort::value::Tensor::from_array(cache_flag)
+                .map_err(|e| format!("use_cache_branch tensor: {}", e))?;
+            decoder_inputs.push(("use_cache_branch".into(), cache_tensor.into()));
+        }
+
+        // Provide empty past_key_values tensors (shape [1, num_heads, 0, head_dim])
+        let empty_kv_vecs: Vec<ndarray::ArrayD<f32>> = model.past_kv_names.iter().map(|_| {
+            ndarray::ArrayD::zeros(ndarray::IxDyn(&[1, model.num_heads, 0, model.head_dim]))
+        }).collect();
+
+        for (name, arr) in model.past_kv_names.iter().zip(empty_kv_vecs.into_iter()) {
+            let tensor = ort::value::Tensor::from_array(arr)
+                .map_err(|e| format!("past_kv tensor '{}': {}", name, e))?;
+            decoder_inputs.push((name.clone().into(), tensor.into()));
+        }
 
         let decoder_outputs = model
             .decoder

@@ -27,6 +27,9 @@ import {
   Zap,
   Info,
 } from "lucide-react";
+import { OpusMtModelManager } from "./OpusMtModelManager";
+import { listOpusMtModels } from "../lib/ipc";
+import type { OpusMtModelStatus } from "../lib/types";
 
 // ── Provider definitions ──
 
@@ -210,8 +213,20 @@ export function TranslationSettings() {
   const [keyStatusMap, setKeyStatusMap] = useState<Record<string, boolean>>({});
   const [availableLanguages, setAvailableLanguages] = useState<TranslationLanguage[]>([]);
   const [testedProviders, setTestedProviders] = useState<Set<string>>(new Set());
+  const [opusMtModels, setOpusMtModels] = useState<OpusMtModelStatus[]>([]);
 
   const currentProviderOption = ALL_PROVIDERS.find((p) => p.value === selectedProvider);
+
+  // ── Load OPUS-MT model status for badge display ──
+
+  useEffect(() => {
+    listOpusMtModels()
+      .then(setOpusMtModels)
+      .catch(() => {});
+  }, []);
+
+  const opusMtDownloadedCount = opusMtModels.filter((m) => m.is_downloaded).length;
+  const opusMtHasActive = opusMtModels.some((m) => m.is_active);
 
   // ── Check which cloud providers have stored keys (for badge display) ──
 
@@ -288,7 +303,12 @@ export function TranslationSettings() {
       if (p.value === "llm") {
         return { text: "Available", variant: "available" };
       }
-      // OPUS-MT — not ready until models are downloaded
+      // OPUS-MT — dynamic badge based on model presence
+      if (p.value === "opus-mt") {
+        if (opusMtHasActive) return { text: "Ready", variant: "ready" };
+        if (opusMtDownloadedCount > 0) return { text: `${opusMtDownloadedCount} Models`, variant: "available" };
+        return { text: "No Models", variant: "no-key" };
+      }
       return { text: "Not Ready", variant: "no-key" };
     }
     // Cloud providers
@@ -361,12 +381,6 @@ export function TranslationSettings() {
   }, [apiKey, azureRegion, selectedProvider, currentProviderOption, setStoreProvider]);
 
   const handleTestLocal = useCallback(async () => {
-    // OPUS-MT: show friendly message instead of raw error
-    if (selectedProvider === "opus-mt") {
-      setConnectionStatus("error");
-      setStatusMessage("OPUS-MT models are not yet available. Model download support coming soon.");
-      return;
-    }
 
     setConnectionStatus("testing");
     setStatusMessage("Testing...");
@@ -412,6 +426,21 @@ export function TranslationSettings() {
   // If the provider returned additional languages not in the defaults, merge them in.
 
   const languageOptions = (() => {
+    // When OPUS-MT is the active provider, filter to downloaded model languages
+    if (provider === "opus-mt" && opusMtModels.length > 0) {
+      const downloadedTargets = new Set<string>();
+      for (const m of opusMtModels) {
+        if (m.is_downloaded) {
+          downloadedTargets.add(m.definition.target_lang);
+        }
+      }
+      if (downloadedTargets.size > 0) {
+        return DEFAULT_TARGET_LANGUAGES
+          .filter((l) => downloadedTargets.has(l.code))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+
     const base = [...DEFAULT_TARGET_LANGUAGES];
     if (availableLanguages.length > 0) {
       const existingCodes = new Set(base.map((l) => l.code));
@@ -429,10 +458,10 @@ export function TranslationSettings() {
   const isLlm = selectedProvider === "llm";
 
   // ── "Make Active" gating logic ──
-  // Cloud: only after successful test. OPUS-MT: never (stub). LLM: always allowed.
+  // Cloud: only after successful test. OPUS-MT: when model is active. LLM: always allowed.
   const canMakeActive = (() => {
     if (selectedProvider === provider) return false; // already active
-    if (isOpusMt) return false; // OPUS-MT not functional yet
+    if (isOpusMt) return opusMtHasActive; // OPUS-MT: allowed when a model is activated
     if (isCloud) return testedProviders.has(selectedProvider); // cloud: must test first
     if (isLlm) return true; // LLM: always available
     return false;
@@ -642,49 +671,8 @@ export function TranslationSettings() {
             </div>
           )}
 
-          {/* ── OPUS-MT info panel (stub — models not available) ── */}
-          {isOpusMt && (
-            <div className="rounded-xl border border-border/30 bg-card/50 p-4">
-              <h3 className="mb-3 text-sm font-semibold text-primary/80">OPUS-MT</h3>
-              <div className="flex items-start gap-2.5 rounded-lg border border-info/20 bg-info/5 px-3.5 py-3">
-                <Info className="h-4 w-4 text-info shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-foreground">
-                    OPUS-MT uses locally downloaded translation models.
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Model download support is coming in a future update. Once available, models will run fully offline with no API key required.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  onClick={handleTestLocal}
-                  disabled={connectionStatus === "testing"}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-4 py-2 text-sm font-medium text-foreground transition-all duration-150 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                >
-                  {connectionStatus === "testing" ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Wifi className="h-3.5 w-3.5" />
-                  )}
-                  Test Connection
-                </button>
-                {connectionStatus === "error" && (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Info className="h-3.5 w-3.5" />
-                    <span className="text-xs">{statusMessage}</span>
-                  </div>
-                )}
-                {connectionStatus === "success" && (
-                  <div className="flex items-center gap-1 text-success">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    <span className="text-xs">{statusMessage}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* ── OPUS-MT Model Manager ── */}
+          {isOpusMt && <OpusMtModelManager />}
 
           {/* ── LLM local provider — Test Connection ── */}
           {isLlm && (

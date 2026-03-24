@@ -27,6 +27,7 @@ import type {
   TranslationResult,
   TranslationLanguage,
   TranslationConnectionStatus,
+  OpusMtModelStatus,
 } from "./types";
 
 // == IPC: Audio (Sub-PRD 3) ==
@@ -606,4 +607,27 @@ export async function getMeetingTranslations(meetingId: string, targetLang: stri
 
 export async function exportTranslatedTranscript(meetingId: string, targetLang: string, format: string): Promise<string> {
   return invoke<string>("export_translated_transcript", { meeting_id: meetingId, target_lang: targetLang, format });
+}
+
+// == IPC: OPUS-MT Models ==
+
+export async function listOpusMtModels(): Promise<OpusMtModelStatus[]> {
+  const result = await invoke<string>("list_opus_mt_models");
+  return JSON.parse(result);
+}
+
+export async function downloadOpusMtModel(modelId: string): Promise<void> {
+  return invoke("download_opus_mt_model", { modelId });
+}
+
+export async function cancelOpusMtDownload(modelId: string): Promise<void> {
+  return invoke("cancel_opus_mt_download", { modelId });
+}
+
+export async function deleteOpusMtModel(modelId: string): Promise<void> {
+  return invoke("delete_opus_mt_model", { modelId });
+}
+
+export async function activateOpusMtModel(modelId: string): Promise<void> {
+  return invoke("activate_opus_mt_model", { modelId });
 }

@@ -715,3 +715,26 @@ export interface TranslationConfig {
   selectionToolbarEnabled: boolean;
   cacheEnabled: boolean;
 }
+
+// == OPUS-MT Models ==
+
+export interface OpusMtModelDefinition {
+  model_id: string;
+  display_name: string;
+  source_lang: string;
+  source_name: string;
+  target_lang: string;
+  target_name: string;
+  size_bytes: number;
+  encoder_url: string;
+  decoder_url: string;
+  tokenizer_url: string;
+  config_url: string;
+  quality_rating: number;
+}
+
+export interface OpusMtModelStatus {
+  definition: OpusMtModelDefinition;
+  is_downloaded: boolean;
+  is_active: boolean;
+}

@@ -3,6 +3,8 @@ pub mod microsoft;
 pub mod google;
 pub mod deepl;
 pub mod opus_mt;
+pub mod opus_mt_registry;
+pub mod opus_mt_manager;
 pub mod llm_provider;
 
 use async_trait::async_trait;
@@ -188,6 +190,9 @@ pub struct TranslationRouter {
     microsoft_region: Option<String>,
     google_api_key: Option<String>,
     deepl_api_key: Option<String>,
+    // OPUS-MT models directory and active model
+    opus_mt_models_dir: Option<std::path::PathBuf>,
+    opus_mt_active_model_id: Option<String>,
 }
 
 impl TranslationRouter {
@@ -201,6 +206,8 @@ impl TranslationRouter {
             microsoft_region: None,
             google_api_key: None,
             deepl_api_key: None,
+            opus_mt_models_dir: None,
+            opus_mt_active_model_id: None,
         }
     }
 
@@ -219,6 +226,14 @@ impl TranslationRouter {
 
     pub fn set_deepl_credentials(&mut self, key: String) {
         self.deepl_api_key = Some(key);
+    }
+
+    pub fn set_opus_mt_models_dir(&mut self, path: std::path::PathBuf) {
+        self.opus_mt_models_dir = Some(path);
+    }
+
+    pub fn set_opus_mt_active_model(&mut self, model_id: Option<String>) {
+        self.opus_mt_active_model_id = model_id;
     }
 
     pub fn set_provider(
@@ -243,7 +258,17 @@ impl TranslationRouter {
                 Box::new(deepl::DeepLTranslator::new(key))
             }
             TranslationProviderType::OpusMt => {
-                Box::new(opus_mt::OpusMtTranslator::new())
+                let mut translator = opus_mt::OpusMtTranslator::new();
+                if let Some(dir) = &self.opus_mt_models_dir {
+                    translator.set_models_dir(dir.clone());
+                }
+                // Pre-load the active model so translate() works immediately
+                if let Some(active_id) = &self.opus_mt_active_model_id {
+                    if let Err(e) = translator.load_model(active_id) {
+                        log::warn!("Failed to pre-load OPUS-MT model {}: {}", active_id, e);
+                    }
+                }
+                Box::new(translator)
             }
             TranslationProviderType::Llm => {
                 Box::new(llm_provider::LlmTranslator::new())

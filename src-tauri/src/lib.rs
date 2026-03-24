@@ -44,6 +44,8 @@ use commands::rag_commands;
 use commands::recording_commands;
 // == MODULE COMMANDS: translation ==
 use commands::translation_commands;
+// == MODULE COMMANDS: translation models ==
+use commands::translation_model_commands;
 
 /// Show the launcher window and hide the overlay window.
 fn show_launcher(app: &tauri::AppHandle) {
@@ -238,9 +240,24 @@ pub fn run() {
             log::info!("Intelligence engine initialized");
 
             // -- Initialize TranslationRouter --
-            let translation_router = translation::TranslationRouter::new();
+            let opus_mt_dir = app_data_dir.join("models").join("opus_mt");
+            let mut translation_router = translation::TranslationRouter::new();
+            translation_router.set_opus_mt_models_dir(opus_mt_dir.clone());
             app_state.translation = Some(Arc::new(Mutex::new(translation_router)));
             log::info!("Translation router initialized");
+
+            // -- Initialize OPUS-MT ModelManager --
+            let opus_mt_mgr = translation::opus_mt_manager::OpusMtManager::new(opus_mt_dir);
+            // Sync the active model ID to the translation router
+            if let Some(active_id) = opus_mt_mgr.active_model_id() {
+                if let Some(tr) = &app_state.translation {
+                    if let Ok(mut router) = tr.lock() {
+                        router.set_opus_mt_active_model(Some(active_id.to_string()));
+                    }
+                }
+            }
+            app_state.opus_mt_manager = Some(Arc::new(Mutex::new(opus_mt_mgr)));
+            log::info!("OPUS-MT model manager initialized");
 
             app.manage(app_state);
 
@@ -484,6 +501,12 @@ pub fn run() {
             translation_commands::get_translation_languages,
             translation_commands::get_meeting_translations,
             translation_commands::export_translated_transcript,
+            // == COMMANDS: translation models ==
+            translation_model_commands::list_opus_mt_models,
+            translation_model_commands::download_opus_mt_model,
+            translation_model_commands::cancel_opus_mt_download,
+            translation_model_commands::delete_opus_mt_model,
+            translation_model_commands::activate_opus_mt_model,
         ])
         .run(tauri::generate_context!())
         .expect("error while running NexQ");

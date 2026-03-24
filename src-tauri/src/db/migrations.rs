@@ -11,6 +11,7 @@ pub fn run(conn: &Connection) -> Result<(), rusqlite::Error> {
     v3_meeting_mode_schema(conn)?;
     v4_bookmark_segment_id(conn)?;
     v5_recording_columns(conn)?;
+    v6_translation_schema(conn)?;
 
     log::info!("Database migrations completed successfully");
     Ok(())
@@ -199,6 +200,30 @@ fn v5_recording_columns(conn: &Connection) -> Result<(), rusqlite::Error> {
             }
         }
     }
+    Ok(())
+}
+
+/// Schema v6: Translation cache — stores translated transcript segments.
+fn v6_translation_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS transcript_translations (
+            id              TEXT PRIMARY KEY NOT NULL,
+            segment_id      TEXT NOT NULL,
+            meeting_id      TEXT NOT NULL,
+            source_lang     TEXT NOT NULL,
+            target_lang     TEXT NOT NULL,
+            original_text   TEXT NOT NULL,
+            translated_text TEXT NOT NULL,
+            provider        TEXT NOT NULL,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(segment_id, target_lang)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_translations_meeting
+            ON transcript_translations(meeting_id, target_lang);
+        ",
+    )?;
     Ok(())
 }
 

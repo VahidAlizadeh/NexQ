@@ -2,6 +2,7 @@ pub mod context;
 pub mod meetings;
 pub mod migrations;
 pub mod rag;
+pub mod translation;
 
 use rusqlite::Connection;
 use std::path::PathBuf;

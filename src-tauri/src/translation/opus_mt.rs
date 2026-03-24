@@ -52,84 +52,62 @@ impl OpusMtTranslator {
         self.active_model_id = model_id;
     }
 
-    /// Attempt to load a model from disk. Called lazily from translate().
-    /// Returns the loaded model under the lock, or an error.
-    fn ensure_loaded(&self) -> Result<(), String> {
-        let model_id = self.active_model_id.as_deref()
-            .ok_or("No OPUS-MT model activated. Activate a model in Settings → Translation.")?;
+}
 
-        // Check if already loaded
-        {
-            let guard = self.loaded.lock()
-                .map_err(|_| "OPUS-MT model lock error".to_string())?;
-            if let Some((loaded_id, _)) = guard.as_ref() {
-                if loaded_id == model_id {
-                    return Ok(());
-                }
+// ── Model loading (runs on a blocking thread, NOT in async context) ──
+
+/// Load the ONNX model if not already loaded. Must run on a blocking thread.
+fn ensure_loaded_blocking(
+    loaded: &StdMutex<Option<(String, LoadedModel)>>,
+    models_dir: &Option<PathBuf>,
+    active_model_id: Option<&str>,
+) -> Result<(), String> {
+    let model_id = active_model_id
+        .ok_or("No OPUS-MT model activated. Activate a model in Settings → Translation.")?;
+
+    // Check if already loaded
+    {
+        let guard = loaded.lock().map_err(|_| "Model lock error".to_string())?;
+        if let Some((loaded_id, _)) = guard.as_ref() {
+            if loaded_id == model_id {
+                return Ok(());
             }
         }
-
-        // Need to load — do the heavy work OUTSIDE any external lock
-        let models_dir = self.models_dir.as_ref()
-            .ok_or("OPUS-MT models directory not configured")?;
-
-        let model_dir = models_dir.join(model_id);
-        if !model_dir.is_dir() {
-            return Err(format!("Model directory not found: {}", model_dir.display()));
-        }
-
-        let encoder_path = model_dir.join("encoder_model.onnx");
-        let decoder_path = model_dir.join("decoder_model_merged.onnx");
-        let tokenizer_path = model_dir.join("tokenizer.json");
-
-        if !encoder_path.exists() || !decoder_path.exists() || !tokenizer_path.exists() {
-            return Err(format!("Model files missing in {}", model_dir.display()));
-        }
-
-        log::info!("Loading OPUS-MT model: {} from {}", model_id, model_dir.display());
-
-        // Use catch_unwind to prevent panics from poisoning the router mutex
-        // Load each component separately to get clear error messages
-        log::info!("Loading encoder from: {}", encoder_path.display());
-        let encoder = match load_onnx_session(&encoder_path) {
-            Ok(s) => s,
-            Err(e) => return Err(format!("Encoder load failed: {}", e)),
-        };
-        log_session_io("Encoder", &encoder);
-
-        log::info!("Loading decoder from: {}", decoder_path.display());
-        let decoder = match load_onnx_session(&decoder_path) {
-            Ok(s) => s,
-            Err(e) => return Err(format!("Decoder load failed: {}", e)),
-        };
-        log_session_io("Decoder", &decoder);
-
-        log::info!("Loading tokenizer from: {}", tokenizer_path.display());
-        let tokenizer = tokenizers::Tokenizer::from_file(&tokenizer_path)
-            .map_err(|e| format!("Tokenizer load failed: {}", e))?;
-
-        let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
-
-        log::info!(
-            "OPUS-MT model loaded: {} (eos={}, dec_start={})",
-            model_id, eos_token_id, decoder_start_token_id
-        );
-
-        let loaded_model = LoadedModel {
-            encoder,
-            decoder,
-            tokenizer,
-            eos_token_id,
-            decoder_start_token_id,
-        };
-
-        // Store the loaded model
-        let mut guard = self.loaded.lock()
-            .map_err(|_| "OPUS-MT model lock error".to_string())?;
-        *guard = Some((model_id.to_string(), loaded_model));
-
-        Ok(())
     }
+
+    let models_dir = models_dir.as_ref()
+        .ok_or("OPUS-MT models directory not configured")?;
+
+    let model_dir = models_dir.join(model_id);
+    let encoder_path = model_dir.join("encoder_model.onnx");
+    let decoder_path = model_dir.join("decoder_model_merged.onnx");
+    let tokenizer_path = model_dir.join("tokenizer.json");
+
+    if !encoder_path.exists() || !decoder_path.exists() || !tokenizer_path.exists() {
+        return Err(format!("Model files missing in {}", model_dir.display()));
+    }
+
+    log::info!("Loading OPUS-MT encoder: {}", encoder_path.display());
+    let encoder = load_onnx_session(&encoder_path)?;
+    log_session_io("Encoder", &encoder);
+
+    log::info!("Loading OPUS-MT decoder: {}", decoder_path.display());
+    let decoder = load_onnx_session(&decoder_path)?;
+    log_session_io("Decoder", &decoder);
+
+    log::info!("Loading OPUS-MT tokenizer: {}", tokenizer_path.display());
+    let tokenizer = tokenizers::Tokenizer::from_file(&tokenizer_path)
+        .map_err(|e| format!("Tokenizer load failed: {}", e))?;
+
+    let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
+    log::info!("OPUS-MT model ready: {} (eos={}, dec_start={})", model_id, eos_token_id, decoder_start_token_id);
+
+    let mut guard = loaded.lock().map_err(|_| "Model lock error".to_string())?;
+    *guard = Some((model_id.to_string(), LoadedModel {
+        encoder, decoder, tokenizer, eos_token_id, decoder_start_token_id,
+    }));
+
+    Ok(())
 }
 
 #[async_trait]
@@ -141,25 +119,24 @@ impl TranslationProvider for OpusMtTranslator {
     async fn translate(
         &self,
         text: &str,
-        source: Option<&str>,
-        target: &str,
+        _source: Option<&str>,
+        _target: &str,
     ) -> Result<String, TranslationError> {
-        // Lazy-load the model on first translate call
-        self.ensure_loaded()
-            .map_err(|e| TranslationError::NotConfigured(e))?;
-
-        // Use whatever model is loaded — the active model determines the translation direction.
-        // The user explicitly chose this pair when they activated the model.
         let text_owned = text.to_string();
+        let models_dir = self.models_dir.clone();
+        let active_model_id = self.active_model_id.clone();
 
-        // Clone the Mutex Arc to move into the blocking thread
-        // We need to extract the loaded model lock in the blocking thread
-        let loaded_ptr = &self.loaded as *const StdMutex<Option<(String, LoadedModel)>>;
         // Safety: the OpusMtTranslator lives behind an Arc in the router,
         // and we await the spawn_blocking result before returning.
+        let loaded_ptr = &self.loaded as *const StdMutex<Option<(String, LoadedModel)>>;
         let loaded_ref = unsafe { &*loaded_ptr };
 
+        // ALL heavy work (model loading + inference) runs in a blocking thread.
+        // ORT's native C++ code can crash if called from a tokio async context.
         let result = tokio::task::spawn_blocking(move || {
+            // Lazy-load model if needed (inside blocking thread, safe for ORT)
+            ensure_loaded_blocking(loaded_ref, &models_dir, active_model_id.as_deref())?;
+
             let mut guard = loaded_ref.lock()
                 .map_err(|_| "Model lock error during inference".to_string())?;
             let (_, model) = guard.as_mut()

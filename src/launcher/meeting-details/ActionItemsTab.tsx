@@ -35,7 +35,13 @@ function ActionItemRow({
   meetingStartMs: number;
   onToggle: (id: string, completed: boolean) => void;
 }) {
-  const relativeMs = Math.max(0, item.timestamp_ms - meetingStartMs);
+  // Only show timestamp if it's a real value (not 0 or nonsensical)
+  const relativeMs = item.timestamp_ms > meetingStartMs
+    ? item.timestamp_ms - meetingStartMs
+    : 0;
+  const hasTimestamp = relativeMs > 0;
+  const hasAssignee = !!assignee;
+  const showMeta = hasTimestamp || hasAssignee;
 
   return (
     <div
@@ -58,30 +64,29 @@ function ActionItemRow({
 
       <div className="min-w-0 flex-1">
         <p
-          className={`text-xs leading-relaxed text-foreground/80 ${
+          className={`text-sm leading-relaxed text-foreground/80 ${
             item.completed ? "line-through text-muted-foreground/50" : ""
           }`}
         >
           {item.text}
         </p>
-        <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground/40">
-          <span className="tabular-nums">{formatTimestamp(relativeMs)}</span>
-          <span>&middot;</span>
-          {assignee ? (
-            <span className="flex items-center gap-1 font-medium text-muted-foreground/60">
-              <span
-                className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: assignee.color ?? "#6b7280" }}
-              />
-              {assignee.display_name}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-muted-foreground/30">
-              <User className="h-2.5 w-2.5" />
-              Unassigned
-            </span>
-          )}
-        </div>
+        {showMeta && (
+          <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground/40">
+            {hasTimestamp && (
+              <span className="tabular-nums">{formatTimestamp(relativeMs)}</span>
+            )}
+            {hasTimestamp && hasAssignee && <span>&middot;</span>}
+            {hasAssignee && (
+              <span className="flex items-center gap-1 font-medium text-muted-foreground/60">
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: assignee.color ?? "#6b7280" }}
+                />
+                {assignee.display_name}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

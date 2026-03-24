@@ -24,12 +24,14 @@ import {
   Theater,
   Volume2,
   BarChart2,
+  Globe,
 } from "lucide-react";
 import { ContextStrategySettings } from "./ContextStrategySettings";
 import { AIActionsSettings } from "./AIActionsSettings";
+import { TranslationSettings } from "./TranslationSettings";
 import { Sparkles } from "lucide-react";
 
-type SettingsTab = "meeting_audio" | "llm" | "stt" | "ai_actions" | "context_strategy" | "scenarios" | "noise_presets" | "confidence" | "hotkeys" | "general" | "about";
+type SettingsTab = "meeting_audio" | "llm" | "stt" | "translation" | "ai_actions" | "context_strategy" | "scenarios" | "noise_presets" | "confidence" | "hotkeys" | "general" | "about";
 
 // ── Tab groups for sidebar (contextually organized, importance-ordered) ──
 interface TabItem {
@@ -55,6 +57,7 @@ const TAB_GROUPS: TabGroup[] = [
     items: [
       { id: "llm", label: "LLM Providers", icon: <Brain className="h-4 w-4" /> },
       { id: "stt", label: "STT Providers", icon: <Mic className="h-4 w-4" /> },
+      { id: "translation", label: "Translation", icon: <Globe className="h-4 w-4" /> },
     ],
   },
   {
@@ -156,6 +159,8 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
         return <ConfidenceSettings />;
       case "stt":
         return <STTSettings />;
+      case "translation":
+        return <TranslationSettings />;
       case "hotkeys":
         return <HotkeySettings />;
       case "general":

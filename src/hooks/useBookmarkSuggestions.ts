@@ -48,18 +48,41 @@ function parseSuggestionsJSON(
     .replace(/```/g, "")
     .trim();
 
-  // Find the JSON array — look for [{ to avoid matching [Speaker] transcript lines
-  const start = cleaned.indexOf("[{");
-  const end = cleaned.lastIndexOf("}]");
-  if (start === -1 || end === -1 || end <= start) {
+  // Find JSON array start: [ followed by optional whitespace then {
+  const arrayMatch = cleaned.match(/\[\s*\{/);
+  if (!arrayMatch || arrayMatch.index === undefined) {
     console.error("[bookmarkSuggestions] No JSON array found. Cleaned:", cleaned.slice(0, 300));
     throw new Error("No JSON array found in response");
   }
 
-  const jsonStr = cleaned.slice(start, end + 2);
-  const parsed = JSON.parse(jsonStr);
+  const start = arrayMatch.index;
+  let end = cleaned.lastIndexOf("}]");
+  let jsonStr: string;
 
-  if (!Array.isArray(parsed)) throw new Error("Response is not an array");
+  if (end > start) {
+    jsonStr = cleaned.slice(start, end + 2);
+  } else {
+    // Truncated response — salvage complete objects
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (lastBrace > start) {
+      jsonStr = cleaned.slice(start, lastBrace + 1) + "]";
+      jsonStr = jsonStr.replace(/,\s*\]$/, "]");
+    } else {
+      throw new Error("No JSON array found in response");
+    }
+  }
+
+  let parsed: Record<string, unknown>[];
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    const lastComplete = jsonStr.lastIndexOf("},");
+    if (lastComplete > 0) {
+      parsed = JSON.parse(jsonStr.slice(0, lastComplete + 1) + "]");
+    } else {
+      throw new Error("Could not parse JSON array from response");
+    }
+  }
 
   // Build segment lookup for timestamp resolution
   const segMap = new Map<string, number>();

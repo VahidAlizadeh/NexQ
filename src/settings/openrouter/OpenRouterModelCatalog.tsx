@@ -122,15 +122,15 @@ export function OpenRouterModelCatalog({ models }: OpenRouterModelCatalogProps) 
         search={search}
         onSearchChange={(v) => { setSearch(v); setVisibleCount(VISIBLE_BATCH); }}
         sort={sort}
-        onSortChange={setSort}
+        onSortChange={(v) => { setSort(v); setVisibleCount(VISIBLE_BATCH); }}
         freeOnly={freeOnly}
-        onFreeOnlyChange={setFreeOnly}
+        onFreeOnlyChange={(v) => { setFreeOnly(v); setVisibleCount(VISIBLE_BATCH); }}
         filterTools={filterTools}
-        onFilterToolsChange={setFilterTools}
+        onFilterToolsChange={(v) => { setFilterTools(v); setVisibleCount(VISIBLE_BATCH); }}
         filterReasoning={filterReasoning}
-        onFilterReasoningChange={setFilterReasoning}
+        onFilterReasoningChange={(v) => { setFilterReasoning(v); setVisibleCount(VISIBLE_BATCH); }}
         filterWebSearch={filterWebSearch}
-        onFilterWebSearchChange={setFilterWebSearch}
+        onFilterWebSearchChange={(v) => { setFilterWebSearch(v); setVisibleCount(VISIBLE_BATCH); }}
       />
 
       {/* Recently Used */}

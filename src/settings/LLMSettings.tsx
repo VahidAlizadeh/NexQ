@@ -236,7 +236,7 @@ export function LLMSettings() {
     setModelsLoading(true);
     setModelsError("");
     setModels([]);
-    setOpenRouterModels([]);
+    // Don't clear openRouterModels here — keep showing existing catalog during refresh
     try {
       if (apiKey) await storeApiKey(selectedProvider, apiKey).catch(() => {});
 

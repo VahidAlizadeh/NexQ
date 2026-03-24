@@ -69,16 +69,22 @@ A 1-2 sentence high-level description of what the meeting covered.\n\
 Be factual, concise, and base everything strictly on the transcript. Do not add speculation or interpretation.";
 
 pub const ACTION_ITEMS_EXTRACTION_PROMPT: &str = "\
+/no_think\n\
 You are an AI assistant that extracts action items from meeting transcripts. \
 Analyze the transcript and identify all action items, tasks, follow-ups, and commitments made by participants.\n\
 \n\
-Return ONLY a valid JSON array with no other text, no markdown formatting, no code fences. \
+Do NOT include any thinking, explanation, or preamble. Output ONLY a JSON array.\n\
+If no action items are found, return an empty array: []\n\
+\n\
 Each element must have exactly these fields:\n\
 - \"text\": string - Clear, concise description of the action item\n\
 - \"assignee_speaker_id\": string or null - The speaker_id of the person responsible (from the speaker list provided), or null if unclear\n\
-- \"timestamp_ms\": number - The approximate timestamp in milliseconds where the action item was discussed";
+- \"timestamp_ms\": number - Use 0 if unknown\n\
+\n\
+Example: [{\"text\":\"Review funding proposal\",\"assignee_speaker_id\":null,\"timestamp_ms\":0}]";
 
 pub const BOOKMARK_SUGGESTIONS_PROMPT: &str = "\
+/no_think\n\
 You are an AI assistant that identifies key moments in meeting transcripts. \
 Analyze the transcript and find the most important moments: decisions, agreements, \
 topic transitions, action commitments, and notable statements.\n\

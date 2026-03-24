@@ -25,9 +25,14 @@ function parseActionItemsJSON(raw: string): ActionItem[] {
     .replace(/```/g, "")
     .trim();
 
+  // Handle empty array response: []
+  if (/^\[\s*\]/.test(cleaned)) return [];
+
   // Find JSON array start: [ followed by optional whitespace then {
   const arrayMatch = cleaned.match(/\[\s*\{/);
   if (!arrayMatch || arrayMatch.index === undefined) {
+    // If no JSON array and content is mostly non-JSON, return empty
+    if (cleaned.length < 20 || !cleaned.includes('"')) return [];
     console.error("[actionItems] No JSON array found. Cleaned:", cleaned.slice(0, 300));
     throw new Error("No JSON array found in response");
   }
@@ -139,10 +144,14 @@ export function useActionItemsExtraction(
           try {
             const items = parseActionItemsJSON(contentRef.current);
 
-            // Persist to DB (DELETE + INSERT atomically)
+            // Persist to DB — Rust struct requires meeting_id on each item
+            const itemsWithMeetingId = items.map((item) => ({
+              ...item,
+              meeting_id: meeting.id,
+            }));
             await saveMeetingActionItems(
               meeting.id,
-              JSON.stringify(items)
+              JSON.stringify(itemsWithMeetingId)
             );
 
             onItemsExtracted(items);

@@ -35,8 +35,8 @@ import { formatDuration } from "../lib/utils";
 // ════════════════════════════════════════════════════════════════
 export function OverlayView() {
   const activeMeeting = useMeetingStore((s) => s.activeMeeting);
-  const isRecording = useMeetingStore((s) => s.isRecording);
   const elapsedMs = useMeetingStore((s) => s.elapsedMs);
+  const recordingEnabled = useConfigStore((s) => s.recordingEnabled);
   const audioMode = useMeetingStore((s) => s.audioMode);
   const endMeetingFlow = useMeetingStore((s) => s.endMeetingFlow);
   const setCurrentView = useMeetingStore((s) => s.setCurrentView);
@@ -97,9 +97,12 @@ export function OverlayView() {
           <span className="text-xs font-semibold text-foreground/90 truncate max-w-[160px]" title={meetingTitle}>
             {meetingTitle}
           </span>
-          {isRecording && (
+          {recordingEnabled && (
             <div className="flex items-center gap-1.5 rounded-full bg-destructive/20 px-2.5 py-0.5 ring-1 ring-destructive/10" role="status" aria-label="Recording in progress">
-              <span className="relative flex h-2.5 w-2.5" aria-hidden="true"><span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-destructive opacity-50" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive" /></span>
+              <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive" />
+              </span>
               <span className="text-meta font-semibold text-destructive tracking-wide">REC</span>
             </div>
           )}

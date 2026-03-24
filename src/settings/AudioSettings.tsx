@@ -1,4 +1,4 @@
-// Sub-PRD 3: Audio device selection, level meters, recording toggle
+// Sub-PRD 3: Audio device selection, level meters
 
 import { useEffect, useState } from "react";
 import { useConfigStore } from "../stores/configStore";
@@ -7,19 +7,16 @@ import {
   listAudioDevices,
   startAudioTest,
   stopAudioTest,
-  setRecordingEnabled,
 } from "../lib/ipc";
 import { showToast } from "../stores/toastStore";
-import type { AudioDevice, AudioDeviceList } from "../lib/types";
+import type { AudioDeviceList } from "../lib/types";
 
 export function AudioSettings() {
   const {
     micDeviceId,
     systemDeviceId,
-    recordingEnabled,
     setMicDeviceId,
     setSystemDeviceId,
-    setRecordingEnabled: setRecordingEnabledStore,
   } = useConfigStore();
 
   const { micLevel, systemLevel, micPeak, systemPeak } = useAudioLevel();
@@ -85,20 +82,6 @@ export function AudioSettings() {
       setTestResult({ deviceId, success: false });
     } finally {
       setTestingDevice(null);
-    }
-  }
-
-  async function handleRecordingToggle(enabled: boolean) {
-    setRecordingEnabledStore(enabled);
-    try {
-      await setRecordingEnabled(enabled);
-      showToast(
-        enabled ? "Audio recording enabled" : "Audio recording disabled",
-        "success"
-      );
-    } catch (err) {
-      console.error("Failed to set recording:", err);
-      showToast("Couldn't toggle recording — audio device may be in use", "error");
     }
   }
 
@@ -222,25 +205,6 @@ export function AudioSettings() {
       >
         {loadingDevices ? "Refreshing..." : "Refresh devices"}
       </button>
-
-      {/* Recording Toggle */}
-      <div className="flex items-center justify-between rounded-md border p-3">
-        <div>
-          <p className="text-sm font-medium">Record audio to file</p>
-          <p className="text-xs text-muted-foreground">
-            Save meeting audio as WAV for later review
-          </p>
-        </div>
-        <label className="relative inline-flex cursor-pointer items-center">
-          <input
-            type="checkbox"
-            checked={recordingEnabled}
-            onChange={(e) => handleRecordingToggle(e.target.checked)}
-            className="peer sr-only"
-          />
-          <div className="peer h-5 w-9 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full"></div>
-        </label>
-      </div>
     </div>
   );
 }

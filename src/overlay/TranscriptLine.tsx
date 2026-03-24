@@ -178,25 +178,29 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
     return <>{parts}</>;
   };
 
+  // Hover translation tooltip state
+  const [showTranslationTooltip, setShowTranslationTooltip] = useState(false);
+  const hasHoverTranslation = autoTranslateActive && displayMode === "hover" && translation;
+
   return (
     <div
-      className={`group relative flex items-start gap-2 rounded-lg px-1.5 py-1 transition-colors duration-100 hover:bg-accent/30 border-l-2 transcript-line-enter`}
-      style={{ borderLeftColor: isPending ? "transparent" : `${speakerHex}80` }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`group relative flex items-start gap-2.5 rounded-lg px-2 py-[7px] transition-colors duration-100 hover:bg-accent/25 border-l-[3px] transcript-line-enter`}
+      style={{ borderLeftColor: isPending ? "transparent" : `${speakerHex}66` }}
+      onMouseEnter={() => { setIsHovered(true); if (hasHoverTranslation) setShowTranslationTooltip(true); }}
+      onMouseLeave={() => { setIsHovered(false); setShowTranslationTooltip(false); }}
       onContextMenu={handleContextMenu}
     >
       {/* Timestamp */}
       <span
-        className="mt-0.5 shrink-0 text-meta tabular-nums text-muted-foreground/60"
+        className="mt-[3px] shrink-0 text-[0.6875rem] tabular-nums text-muted-foreground/45 font-medium tracking-tight"
         title={fullTimestamp}
       >
         {isHovered ? fullTimestamp : shortTimestamp}
       </span>
 
-      {/* Bookmarked indicator — subtle filled icon near speaker label */}
+      {/* Bookmarked indicator */}
       {isBookmarked && (
-        <BookmarkIcon className="mt-1 h-2.5 w-2.5 shrink-0 fill-primary text-primary opacity-60" />
+        <BookmarkIcon className="mt-[5px] h-2.5 w-2.5 shrink-0 fill-primary text-primary opacity-60" />
       )}
 
       {/* Speaker label — click to rename */}
@@ -212,12 +216,12 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
             if (e.key === "Escape") cancelRename();
           }}
           maxLength={40}
-          className="mt-0.5 shrink-0 w-20 rounded bg-white/5 border border-purple-400/30 px-1 py-0 text-meta font-semibold outline-none"
+          className="mt-[2px] shrink-0 w-20 rounded bg-white/5 border border-purple-400/30 px-1 py-0 text-[0.6875rem] font-semibold outline-none"
           style={{ color: speakerHex }}
         />
       ) : (
         <span
-          className={`mt-0.5 shrink-0 text-meta font-semibold ${canRename ? "cursor-pointer hover:underline" : ""} ${isPending ? "animate-pulse" : ""}`}
+          className={`mt-[3px] shrink-0 text-[0.6875rem] font-semibold tracking-tight ${canRename ? "cursor-pointer hover:underline" : ""} ${isPending ? "animate-pulse" : ""}`}
           style={{ color: speakerHex }}
           onClick={startEditing}
           title={canRename ? "Click to rename" : undefined}
@@ -226,13 +230,13 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
         </span>
       )}
 
-      {/* Text content + bookmark note */}
-      <div className="flex-1 min-w-0">
+      {/* Text content + translation + bookmark note */}
+      <div className="flex-1 min-w-0 relative">
         <span
-          className={`text-xs leading-relaxed ${
+          className={`text-[0.8125rem] leading-[1.65] ${
             segment.is_final
               ? "text-foreground/90"
-              : "text-foreground/50 italic"
+              : "text-foreground/45 italic"
           } ${
             isLowConfidence
               ? "border-b border-dotted border-white/30 opacity-70"
@@ -241,34 +245,44 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
           title={
             isLowConfidence
               ? `Confidence: ${Math.round(segment.confidence * 100)}%`
-              : autoTranslateActive && displayMode === "hover" && translation
-              ? translation.translated_text
               : undefined
           }
         >
           {renderText()}
         </span>
 
-        {/* Inline translation — shown below transcript text when auto-translate is active */}
+        {/* Inline translation — visible below the original text */}
         {autoTranslateActive && displayMode === "inline" && (
-          <div className="mt-0.5 text-[11px] text-primary/40 italic leading-snug">
+          <div className="mt-1 text-[0.75rem] leading-[1.5] text-primary/55 italic">
             {isTranslating ? (
-              <span className="text-muted-foreground/30 animate-pulse">Translating...</span>
+              <span className="text-muted-foreground/40 animate-pulse">Translating...</span>
             ) : translation ? (
               translation.translated_text
             ) : null}
           </div>
         )}
 
-        {/* Bookmark note — rendered below transcript text */}
+        {/* Hover translation tooltip — styled popup instead of native title */}
+        {showTranslationTooltip && hasHoverTranslation && (
+          <div className="absolute left-0 top-full mt-1 z-30 max-w-[380px] rounded-lg border border-border/30 bg-popover/95 backdrop-blur-sm px-3 py-2 shadow-xl">
+            <p className="text-[0.75rem] leading-[1.55] text-foreground/80 italic">
+              {translation.translated_text}
+            </p>
+            <p className="mt-1 text-[0.6rem] text-muted-foreground/40 tracking-wide">
+              {translation.source_lang.toUpperCase()} → {translation.target_lang.toUpperCase()} · {translation.provider}
+            </p>
+          </div>
+        )}
+
+        {/* Bookmark note */}
         {isBookmarked && bookmark?.note && (
-          <p className="mt-0.5 text-[10px] italic text-muted-foreground/40 truncate">
+          <p className="mt-0.5 text-[0.625rem] italic text-muted-foreground/40 truncate">
             {bookmark.note}
           </p>
         )}
       </div>
 
-      {/* Hover bookmark icon — appears at right edge on hover */}
+      {/* Hover bookmark icon */}
       <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={handleToggleBookmark}

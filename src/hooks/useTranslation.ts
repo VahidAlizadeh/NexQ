@@ -130,7 +130,7 @@ export function useTranslation() {
           const currentTarget = targetLangRef.current;
           const currentSource = sourceLangRef.current;
 
-          if (!currentActive || !currentMid) return;
+          if (!currentActive || !currentMid || !currentTarget) return;
 
           setTranslatingRef.current(segmentId, true);
           translateSegments(

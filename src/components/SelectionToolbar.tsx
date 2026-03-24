@@ -65,11 +65,12 @@ export function SelectionToolbar() {
 
   const handleTranslate = async () => {
     if (!selectedText) return;
+    const lang = targetLang || "en";
     setIsTranslating(true);
     try {
       const result = await translateText(
         selectedText,
-        targetLang,
+        lang,
         sourceLang === "auto" ? undefined : sourceLang
       );
       setTranslationResult(result);

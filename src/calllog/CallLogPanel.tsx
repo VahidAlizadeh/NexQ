@@ -118,7 +118,7 @@ export function CallLogPanel() {
 
   // Translate all segments in the current meeting
   const handleTranslateAll = useCallback(async () => {
-    if (!meetingId) return;
+    if (!meetingId || !targetLang) return;
     try {
       await translateBatch(meetingId, targetLang);
     } catch (err) {

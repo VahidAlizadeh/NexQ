@@ -205,13 +205,10 @@ pub async fn start_capture(
         });
     }
 
-    // Grab the recorder handle for optional WAV recording
-    let recorder = {
-        let guard = state.audio.lock().map_err(|_| "lock poisoned".to_string())?;
-        guard.as_ref().and_then(|mgr| mgr.get_recorder())
-    };
+    // Recording is handled by process_chunk (with proper mic/system mixing)
+    // so we don't need a separate recorder handle here.
 
-    // Audio processing task: levels + recording + system STT feed
+    // Audio processing task: levels + system STT feed
     // (Mic STT is handled by Web Speech API in the frontend)
     let app_handle = app.clone();
     tokio::spawn(async move {
@@ -245,10 +242,7 @@ pub async fn start_capture(
                 let _ = app_handle.emit("audio_level", &level);
             }
 
-            // Write to WAV recorder if active
-            if let Some(ref rec) = recorder {
-                rec.write_samples(&chunk.pcm_data);
-            }
+            // Recording is handled by process_chunk (with proper mic/system mixing)
 
             // Feed ONLY system audio to the cloud STT provider
             if chunk.source == AudioSource::System {
@@ -1063,11 +1057,7 @@ pub async fn start_capture_per_party(
         });
     }
 
-    // Grab recorder handle
-    let recorder = {
-        let guard = state.audio.lock().map_err(|_| "lock poisoned".to_string())?;
-        guard.as_ref().and_then(|mgr| mgr.get_recorder())
-    };
+    // Recording is handled by process_chunk (with proper mic/system mixing)
 
     // Grab mute flags so the audio loop can check them lock-free
     let you_muted_flag = state.you_muted.clone();
@@ -1160,10 +1150,7 @@ pub async fn start_capture_per_party(
                 let _ = app_handle.emit("audio_level", &level);
             }
 
-            // Write to WAV recorder
-            if let Some(ref rec) = recorder {
-                rec.write_samples(&chunk.pcm_data);
-            }
+            // Recording is handled by process_chunk (with proper mic/system mixing)
 
             // Route to the correct party's STT provider (surface errors once).
             // Mute gate: when a party is muted, skip feed_audio entirely —

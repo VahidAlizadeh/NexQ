@@ -50,13 +50,16 @@ export function OpusMtModelManager() {
     loadModels();
   }, [loadModels]);
 
-  // Reload on download completion
+  // Reload on download completion, show errors as toasts
   useEffect(() => {
-    const completed = Object.entries(downloads).find(
-      ([key, d]) => key.startsWith("opus_mt:") && d.status === "complete"
-    );
-    if (completed) {
-      loadModels();
+    for (const [key, d] of Object.entries(downloads)) {
+      if (!key.startsWith("opus_mt:")) continue;
+      if (d.status === "complete") {
+        loadModels();
+      } else if (d.status === "error") {
+        const modelId = key.replace("opus_mt:", "");
+        showToast(`Download failed for ${modelId}`, "error");
+      }
     }
   }, [downloads, loadModels]);
 

@@ -10,6 +10,7 @@ use crate::intelligence::IntelligenceEngine;
 use crate::llm::openrouter_models::OpenRouterModelCache;
 use crate::llm::LLMRouter;
 use crate::rag::RagManager;
+use crate::translation::TranslationRouter;
 use crate::stt::groq_whisper::GroqConfig;
 use crate::stt::local_engines::ModelManager;
 use crate::stt::provider::DualPassConfig;
@@ -61,6 +62,7 @@ pub struct AppState {
     pub credentials: Option<Arc<Mutex<CredentialManager>>>,
     pub model_manager: Option<Arc<Mutex<ModelManager>>>,
     pub rag: Option<Arc<Mutex<RagManager>>>,
+    pub translation: Option<Arc<Mutex<TranslationRouter>>>,
     pub whisper_config: Arc<RwLock<DualPassConfig>>,
     /// Shared Groq Whisper config — read by running providers on each API call,
     /// written by IPC commands. Allows live config updates mid-meeting.
@@ -106,6 +108,7 @@ impl AppState {
             credentials: None,
             model_manager: None,
             rag: None,
+            translation: None,
             whisper_config: Arc::new(RwLock::new(DualPassConfig::default())),
             shared_groq_config: Arc::new(RwLock::new(GroqConfig::default())),
             pause_threshold_ms: Arc::new(AtomicU64::new(3000)),

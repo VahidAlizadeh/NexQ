@@ -280,6 +280,23 @@ impl TranslationRouter {
         &mut self.cache
     }
 
+    /// Increment the consecutive failure counter.
+    /// Returns the new count after incrementing.
+    pub fn record_failure(&mut self) -> u32 {
+        self.consecutive_failures += 1;
+        self.consecutive_failures
+    }
+
+    /// Reset the consecutive failure counter (call on success).
+    pub fn reset_failures(&mut self) {
+        self.consecutive_failures = 0;
+    }
+
+    /// Get the current consecutive failure count.
+    pub fn failure_count(&self) -> u32 {
+        self.consecutive_failures
+    }
+
     /// Split long text at sentence boundaries for providers with char limits.
     pub fn split_long_text(text: &str, max_chars: usize) -> Vec<String> {
         if text.len() <= max_chars {

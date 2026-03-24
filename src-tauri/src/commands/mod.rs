@@ -10,3 +10,4 @@ pub mod stealth_commands;
 pub mod stt_commands;
 pub mod rag_commands;
 pub mod recording_commands;
+pub mod translation_commands;

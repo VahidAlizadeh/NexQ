@@ -42,6 +42,8 @@ use commands::stealth_commands;
 use commands::rag_commands;
 // == MODULE COMMANDS: recording ==
 use commands::recording_commands;
+// == MODULE COMMANDS: translation ==
+use commands::translation_commands;
 
 /// Show the launcher window and hide the overlay window.
 fn show_launcher(app: &tauri::AppHandle) {
@@ -234,6 +236,11 @@ pub fn run() {
             let intel_engine = intelligence::IntelligenceEngine::new();
             app_state.intelligence = Some(Arc::new(Mutex::new(intel_engine)));
             log::info!("Intelligence engine initialized");
+
+            // -- Initialize TranslationRouter --
+            let translation_router = translation::TranslationRouter::new();
+            app_state.translation = Some(Arc::new(Mutex::new(translation_router)));
+            log::info!("Translation router initialized");
 
             app.manage(app_state);
 
@@ -467,6 +474,16 @@ pub fn run() {
             recording_commands::get_recording_info,
             recording_commands::get_recording_file_url,
             recording_commands::delete_recording,
+            // == COMMANDS: translation ==
+            translation_commands::set_translation_provider,
+            translation_commands::translate_text,
+            translation_commands::translate_segments,
+            translation_commands::translate_batch,
+            translation_commands::detect_language,
+            translation_commands::test_translation_connection,
+            translation_commands::get_translation_languages,
+            translation_commands::get_meeting_translations,
+            translation_commands::export_translated_transcript,
         ])
         .run(tauri::generate_context!())
         .expect("error while running NexQ");

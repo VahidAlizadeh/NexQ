@@ -10,6 +10,8 @@ import { ToastContainer } from "./components/Toast";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useTheme } from "./hooks/useTheme";
 import { useGlobalShortcut } from "./hooks/useGlobalShortcut";
+import { useTranslation } from "./hooks/useTranslation";
+import { useTranslationStore } from "./stores/translationStore";
 import { CallLogPanel } from "./calllog";
 import { SelectionToolbar } from "./components/SelectionToolbar";
 import { ActiveMeetingProvider } from "./components/ActiveMeetingProvider";
@@ -31,10 +33,14 @@ function App() {
   useTheme();
   useGlobalShortcut();
 
+  // Translation event subscriptions (needed for SelectionToolbar in all views)
+  useTranslation();
+
   // Load persisted config from Tauri store on app start
   useEffect(() => {
     loadConfig();
     useAIActionsStore.getState().loadConfigs();
+    useTranslationStore.getState().loadConfig();
     // Load scenario config (custom scenarios, overrides, active scenario)
     import("./stores/scenarioStore").then(({ useScenarioStore }) => {
       useScenarioStore.getState().loadScenarioConfig();

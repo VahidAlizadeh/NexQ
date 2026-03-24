@@ -425,6 +425,10 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       const { useTopicSectionStore } = await import("./topicSectionStore");
       useTopicSectionStore.getState().clearSections();
     } catch { /* non-critical */ }
+    try {
+      const { useTranslationStore } = await import("./translationStore");
+      useTranslationStore.getState().clearTranslations();
+    } catch { /* non-critical */ }
 
     // 8. Clear active state
     set({

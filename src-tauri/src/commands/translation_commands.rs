@@ -53,6 +53,26 @@ pub async fn set_translation_provider(
         .map_err(|e| e.to_string())
 }
 
+/// Update the backend's default target/source language for translation.
+/// Called by the frontend whenever the user changes language settings.
+#[command]
+pub async fn set_translation_languages(
+    app: AppHandle,
+    target_lang: String,
+    source_lang: Option<String>,
+) -> Result<(), String> {
+    let state = app.state::<AppState>();
+    let trans_arc = state.translation.as_ref()
+        .ok_or("Translation router not initialized")?;
+    let mut router = trans_arc.lock()
+        .map_err(|_| "Translation lock poisoned".to_string())?;
+
+    router.set_default_target_lang(target_lang.clone());
+    router.set_default_source_lang(source_lang.clone());
+    log::info!("Translation languages updated: target={}, source={:?}", target_lang, source_lang);
+    Ok(())
+}
+
 #[command]
 pub async fn translate_text(
     app: AppHandle,
@@ -64,8 +84,18 @@ pub async fn translate_text(
     let trans_arc = state.translation.as_ref()
         .ok_or("Translation router not initialized")?;
 
-    let target = target_lang.ok_or("target_lang is required")?;
-    let source = source_lang.as_deref();
+    // Use provided target_lang or fallback to the router's stored default
+    let (target, source) = {
+        let router = trans_arc.lock().map_err(|_| "Lock poisoned")?;
+        let t = target_lang
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| router.default_target_lang().to_string());
+        let s = source_lang
+            .filter(|s| !s.is_empty() && s != "auto")
+            .or_else(|| router.default_source_lang().map(|s| s.to_string()))
+            .filter(|s| s != "auto");
+        (t, s)
+    };
 
     // Check cache first, then clone Arc<dyn Provider> BEFORE dropping lock
     let (cached_result, provider_arc, provider_name) = {
@@ -85,7 +115,7 @@ pub async fn translate_text(
             segment_id: None,
             original_text: text,
             translated_text: cached,
-            source_lang: source.unwrap_or("auto").to_string(),
+            source_lang: source.as_deref().unwrap_or("auto").to_string(),
             target_lang: target,
             provider: provider_name,
         });
@@ -103,18 +133,18 @@ pub async fn translate_text(
 
     let translated = if is_llm {
         // LLM translation: use existing LLMRouter with a translation prompt
-        translate_via_llm(&app, &text, source, &target).await?
+        translate_via_llm(&app, &text, source.as_deref(), &target).await?
     } else {
         // Split long text if needed (>5000 chars for cloud providers)
         let chunks = crate::translation::TranslationRouter::split_long_text(&text, 5000);
         let mut parts = Vec::new();
         for chunk in &chunks {
             // Retry once on failure
-            match provider.translate(chunk, source, &target).await {
+            match provider.translate(chunk, source.as_deref(), &target).await {
                 Ok(t) => parts.push(t),
                 Err(_first_err) => {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                    match provider.translate(chunk, source, &target).await {
+                    match provider.translate(chunk, source.as_deref(), &target).await {
                         Ok(t) => parts.push(t),
                         Err(e) => {
                             // Track consecutive failures
@@ -150,7 +180,7 @@ pub async fn translate_text(
         segment_id: None,
         original_text: text,
         translated_text: translated,
-        source_lang: source.unwrap_or("auto").to_string(),
+        source_lang: source.as_deref().unwrap_or("auto").to_string(),
         target_lang: target,
         provider: provider_name,
     })
@@ -205,7 +235,7 @@ pub async fn translate_segments(
             segment_id: Some(seg_id.clone()),
             original_text: text.clone(),
             translated_text: translated,
-            source_lang: source.unwrap_or("auto").to_string(),
+            source_lang: source.as_deref().unwrap_or("auto").to_string(),
             target_lang: target.clone(),
             provider: provider_name.clone(),
         };

@@ -609,6 +609,10 @@ export async function exportTranslatedTranscript(meetingId: string, targetLang: 
   return invoke<string>("export_translated_transcript", { meeting_id: meetingId, target_lang: targetLang, format });
 }
 
+export async function setTranslationLanguages(targetLang: string, sourceLang?: string): Promise<void> {
+  return invoke("set_translation_languages", { target_lang: targetLang, source_lang: sourceLang });
+}
+
 // == IPC: OPUS-MT Models ==
 
 export async function listOpusMtModels(): Promise<OpusMtModelStatus[]> {

@@ -190,6 +190,9 @@ pub struct TranslationRouter {
     microsoft_region: Option<String>,
     google_api_key: Option<String>,
     deepl_api_key: Option<String>,
+    // Default target/source language — set by frontend, used as fallback
+    default_target_lang: String,
+    default_source_lang: Option<String>,
     // OPUS-MT models directory and active model
     opus_mt_models_dir: Option<std::path::PathBuf>,
     opus_mt_active_model_id: Option<String>,
@@ -206,6 +209,8 @@ impl TranslationRouter {
             microsoft_region: None,
             google_api_key: None,
             deepl_api_key: None,
+            default_target_lang: "en".to_string(),
+            default_source_lang: None,
             opus_mt_models_dir: None,
             opus_mt_active_model_id: None,
         }
@@ -226,6 +231,22 @@ impl TranslationRouter {
 
     pub fn set_deepl_credentials(&mut self, key: String) {
         self.deepl_api_key = Some(key);
+    }
+
+    pub fn set_default_target_lang(&mut self, lang: String) {
+        self.default_target_lang = lang;
+    }
+
+    pub fn set_default_source_lang(&mut self, lang: Option<String>) {
+        self.default_source_lang = lang;
+    }
+
+    pub fn default_target_lang(&self) -> &str {
+        &self.default_target_lang
+    }
+
+    pub fn default_source_lang(&self) -> Option<&str> {
+        self.default_source_lang.as_deref()
     }
 
     pub fn set_opus_mt_models_dir(&mut self, path: std::path::PathBuf) {

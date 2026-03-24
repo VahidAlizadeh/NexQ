@@ -501,6 +501,7 @@ pub fn run() {
             translation_commands::get_translation_languages,
             translation_commands::get_meeting_translations,
             translation_commands::export_translated_transcript,
+            translation_commands::set_translation_languages,
             // == COMMANDS: translation models ==
             translation_model_commands::list_opus_mt_models,
             translation_model_commands::download_opus_mt_model,

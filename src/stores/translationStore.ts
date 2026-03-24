@@ -5,6 +5,7 @@ import type {
   TranslationDisplayMode,
   TranslationResult,
 } from "../lib/types";
+import { setTranslationLanguages } from "../lib/ipc";
 
 const STORE_FILE = "translation-config.json";
 
@@ -64,7 +65,7 @@ interface TranslationState {
   loadConfig: () => Promise<void>;
 }
 
-export const useTranslationStore = create<TranslationState>((set) => ({
+export const useTranslationStore = create<TranslationState>((set, get) => ({
   // Persisted defaults
   provider: "microsoft",
   targetLang: "es",
@@ -87,10 +88,16 @@ export const useTranslationStore = create<TranslationState>((set) => ({
   setTargetLang: (lang) => {
     set({ targetLang: lang });
     persistValue("targetLang", lang);
+    // Sync to backend immediately so all windows + translate calls use it
+    const { sourceLang } = get();
+    setTranslationLanguages(lang, sourceLang === "auto" ? undefined : sourceLang).catch(() => {});
   },
   setSourceLang: (lang) => {
     set({ sourceLang: lang });
     persistValue("sourceLang", lang);
+    // Sync to backend immediately
+    const { targetLang } = get();
+    setTranslationLanguages(targetLang, lang === "auto" ? undefined : lang).catch(() => {});
   },
   setDisplayMode: (mode) => {
     set({ displayMode: mode });
@@ -164,6 +171,11 @@ export const useTranslationStore = create<TranslationState>((set) => ({
         ...(selectionToolbarEnabled != null && { selectionToolbarEnabled }),
         ...(cacheEnabled != null && { cacheEnabled }),
       });
+
+      // Sync the loaded languages to the backend immediately
+      const tl = targetLang ?? "en";
+      const sl = sourceLang === "auto" ? undefined : (sourceLang ?? undefined);
+      setTranslationLanguages(tl, sl).catch(() => {});
 
       // Cross-window sync: when another window changes the store,
       // update this window's Zustand state automatically.

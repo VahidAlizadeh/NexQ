@@ -8,8 +8,10 @@ interface AudioPlayerState {
   currentTimeMs: number;
   durationMs: number;
   playbackSpeed: number;
+  volume: number; // 0.0 to 3.0 (supports amplification beyond 100%)
   activeSegmentId: string | null;
   audioElement: HTMLAudioElement | null;
+  gainNode: GainNode | null;
 
   // Sync context (set when loading a meeting)
   meetingStartMs: number;
@@ -23,7 +25,9 @@ interface AudioPlayerState {
   seekToTimestamp: (absoluteTimestampMs: number) => void;
   setPlaybackSpeed: (speed: number) => void;
   cycleSpeed: (direction: "up" | "down") => void;
+  setVolume: (volume: number) => void;
   setAudioElement: (el: HTMLAudioElement | null) => void;
+  setGainNode: (node: GainNode | null) => void;
   setDuration: (ms: number) => void;
   updateCurrentTime: (ms: number) => void;
   setActiveSegmentId: (id: string | null) => void;
@@ -37,8 +41,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
   currentTimeMs: 0,
   durationMs: 0,
   playbackSpeed: 1,
+  volume: 1.0,
   activeSegmentId: null,
   audioElement: null,
+  gainNode: null,
   meetingStartMs: 0,
   recordingOffsetMs: 0,
 
@@ -110,6 +116,22 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
     get().setPlaybackSpeed(SPEED_OPTIONS[nextIndex]);
   },
 
+  setVolume: (volume: number) => {
+    const clamped = Math.max(0, Math.min(3, volume));
+    const { gainNode } = get();
+    if (gainNode) {
+      gainNode.gain.value = clamped;
+    }
+    set({ volume: clamped });
+  },
+
+  setGainNode: (node: GainNode | null) => {
+    set({ gainNode: node });
+    if (node) {
+      node.gain.value = get().volume;
+    }
+  },
+
   setAudioElement: (el: HTMLAudioElement | null) => {
     set({ audioElement: el });
     // Sync existing speed to new element
@@ -145,8 +167,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
       currentTimeMs: 0,
       durationMs: 0,
       playbackSpeed: 1,
+      volume: 1.0,
       activeSegmentId: null,
       audioElement: null,
+      gainNode: null,
       meetingStartMs: 0,
       recordingOffsetMs: 0,
     });

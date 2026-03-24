@@ -124,10 +124,13 @@ export function AudioPlayer({
     isPlaying,
     currentTimeMs,
     playbackSpeed,
+    volume,
     toggle,
     seekToTime,
     cycleSpeed,
+    setVolume,
     setAudioElement,
+    setGainNode,
     setSyncContext,
     setDuration,
     updateCurrentTime,
@@ -138,8 +141,9 @@ export function AudioPlayer({
   // Mount: wire up audio element to the store
   // -------------------------------------------------------------------------
 
-  // Track blob URL for cleanup
+  // Track blob URL and AudioContext for cleanup
   const blobUrlRef = useRef<string | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -155,8 +159,19 @@ export function AudioPlayer({
     setSyncContext(meetingStartMs, recordingOffsetMs);
     setDuration(durationMs);
 
+    // Set up Web Audio API for volume amplification (beyond 100%)
+    if (!audioCtxRef.current) {
+      const ctx = new AudioContext();
+      const source = ctx.createMediaElementSource(audio);
+      const gain = ctx.createGain();
+      gain.gain.value = useAudioPlayerStore.getState().volume;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      audioCtxRef.current = ctx;
+      setGainNode(gain);
+    }
+
     const handleEnded = () => {
-      // Pause and reset playing state
       pause();
     };
 
@@ -180,15 +195,13 @@ export function AudioPlayer({
 
     return () => {
       audio.removeEventListener("ended", handleEnded);
-      // Revoke blob URL on unmount
       if (blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
       }
-      // Deregister from store on unmount
       setAudioElement(null);
+      setGainNode(null);
     };
-    // We only want this to run on mount / path change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingPath]);
 
@@ -305,6 +318,28 @@ export function AudioPlayer({
       <span className="flex-shrink-0 text-[10px] font-semibold tabular-nums text-muted-foreground w-[36px]">
         {formatTime(durationMs)}
       </span>
+
+      {/* Volume control */}
+      <div className="flex-shrink-0 flex items-center gap-1.5 group">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-muted-foreground/50">
+          <path d="M2 4.5h1.5L6 2.5v7L3.5 7.5H2a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5z" />
+          {volume > 0 && <path d="M7.5 3.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" strokeWidth="1" />}
+          {volume > 1 && <path d="M9 2a5 5 0 0 1 0 8" fill="none" stroke="currentColor" strokeWidth="1" />}
+        </svg>
+        <input
+          type="range"
+          min="0"
+          max="300"
+          value={Math.round(volume * 100)}
+          onChange={(e) => setVolume(Number(e.target.value) / 100)}
+          className="w-16 h-1 accent-indigo-400 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
+          title={`Volume: ${Math.round(volume * 100)}%`}
+          aria-label="Volume"
+        />
+        <span className="text-[8px] text-muted-foreground/40 tabular-nums w-[26px]">
+          {Math.round(volume * 100)}%
+        </span>
+      </div>
 
       {/* Speed pill */}
       <button

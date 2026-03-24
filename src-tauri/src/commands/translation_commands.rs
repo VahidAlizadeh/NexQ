@@ -64,7 +64,7 @@ pub async fn translate_text(
     let trans_arc = state.translation.as_ref()
         .ok_or("Translation router not initialized")?;
 
-    let target = target_lang.unwrap_or_else(|| "es".to_string());
+    let target = target_lang.ok_or("target_lang is required")?;
     let source = source_lang.as_deref();
 
     // Check cache first, then clone Arc<dyn Provider> BEFORE dropping lock
@@ -166,7 +166,7 @@ pub async fn translate_segments(
     source_lang: Option<String>,
 ) -> Result<(), String> {
     let state = app.state::<AppState>();
-    let target = target_lang.unwrap_or_else(|| "es".to_string());
+    let target = target_lang.ok_or("target_lang is required")?;
     let source = source_lang.as_deref();
 
     let trans_arc = state.translation.as_ref()
@@ -222,7 +222,7 @@ pub async fn translate_batch(
     target_lang: Option<String>,
 ) -> Result<(), String> {
     let state = app.state::<AppState>();
-    let target = target_lang.unwrap_or_else(|| "es".to_string());
+    let target = target_lang.ok_or("target_lang is required")?;
 
     // Load all segments for the meeting from DB
     let segments: Vec<(String, String)> = {

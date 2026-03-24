@@ -576,15 +576,15 @@ export async function setTranslationProvider(provider: string, region?: string):
   return invoke("set_translation_provider", { provider, region });
 }
 
-export async function translateText(text: string, targetLang?: string, sourceLang?: string): Promise<TranslationResult> {
+export async function translateText(text: string, targetLang: string, sourceLang?: string): Promise<TranslationResult> {
   return invoke<TranslationResult>("translate_text", { text, target_lang: targetLang, source_lang: sourceLang });
 }
 
-export async function translateSegments(segmentIds: string[], texts: string[], meetingId: string, targetLang?: string, sourceLang?: string): Promise<void> {
+export async function translateSegments(segmentIds: string[], texts: string[], meetingId: string, targetLang: string, sourceLang?: string): Promise<void> {
   return invoke("translate_segments", { segment_ids: segmentIds, texts, meeting_id: meetingId, target_lang: targetLang, source_lang: sourceLang });
 }
 
-export async function translateBatch(meetingId: string, targetLang?: string): Promise<void> {
+export async function translateBatch(meetingId: string, targetLang: string): Promise<void> {
   return invoke("translate_batch", { meeting_id: meetingId, target_lang: targetLang });
 }
 

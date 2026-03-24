@@ -31,6 +31,40 @@ export interface BookmarkSuggestionsState {
 }
 
 // ---------------------------------------------------------------------------
+// Fallback: parse markdown bullet list when LLM ignores JSON instruction.
+// Handles formats like:
+//   - **[seg_id]** – Note text here
+//   - [seg_id] - Note text here
+//   - **[seg_id]**: Note text here
+// ---------------------------------------------------------------------------
+function parseMarkdownBullets(
+  text: string,
+  segments?: { id: string; timestamp_ms: number }[],
+): BookmarkSuggestion[] {
+  const segMap = new Map<string, number>();
+  if (segments) {
+    for (const s of segments) segMap.set(s.id, s.timestamp_ms);
+  }
+
+  const results: BookmarkSuggestion[] = [];
+  const lines = text.split("\n");
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Match: "- **[seg_id]** – Note" or "- [seg_id] - Note" etc.
+    const match = trimmed.match(
+      /^[-*]\s+\*{0,2}\[([^\]]+)\]\*{0,2}\s*[:\u2013\u2014-]+\s*(.+)/,
+    );
+    if (!match) continue;
+    const segId = match[1].trim();
+    const note = match[2].replace(/\*{2}/g, "").trim();
+    if (!note) continue;
+    const tsMs = segMap.get(segId) ?? 0;
+    results.push({ timestamp_ms: tsMs, segment_id: segId, note });
+  }
+  return results;
+}
+
+// ---------------------------------------------------------------------------
 // Defensive JSON parsing — strips markdown fences, finds the array, and
 // normalises each item into a proper BookmarkSuggestion.
 // ---------------------------------------------------------------------------
@@ -51,6 +85,14 @@ function parseSuggestionsJSON(
   // Find JSON array start: [ followed by optional whitespace then {
   const arrayMatch = cleaned.match(/\[\s*\{/);
   if (!arrayMatch || arrayMatch.index === undefined) {
+    // Fallback: parse markdown bullet list format
+    // e.g. "- **[them_8bea_152]** – Question about F1 score"
+    //   or "- [them_8bea_152] - Question about F1 score"
+    const bulletItems = parseMarkdownBullets(cleaned, segments);
+    if (bulletItems.length > 0) {
+      console.log("[bookmarkSuggestions] Parsed via markdown fallback:", bulletItems.length, "items");
+      return bulletItems;
+    }
     console.error("[bookmarkSuggestions] No JSON array found. Cleaned:", cleaned.slice(0, 300));
     throw new Error("No JSON array found in response");
   }

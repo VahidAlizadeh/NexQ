@@ -1,5 +1,6 @@
 pub mod device_default;
 pub mod device_manager;
+pub mod encoder;
 pub mod mic_capture;
 pub mod recorder;
 pub mod resampler;

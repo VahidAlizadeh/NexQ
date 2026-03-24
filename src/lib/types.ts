@@ -211,6 +211,35 @@ export interface ModelInfo {
   context_window: number | null;
 }
 
+// == OPENROUTER ENRICHED MODEL ==
+
+export interface OpenRouterModelPricing {
+  prompt: number;              // USD per 1M tokens
+  completion: number;
+  image?: number;
+  cache_read?: number;
+  cache_write?: number;
+}
+
+export interface OpenRouterModel {
+  id: string;
+  name: string;
+  provider_name: string;
+  description: string;
+  created: number;
+  context_length: number | null;
+  max_completion_tokens: number | null;
+  pricing: OpenRouterModelPricing;
+  is_free: boolean;
+  modality: string;
+  input_modalities: string[];
+  output_modalities: string[];
+  tokenizer: string;
+  supports_tools: boolean;
+  supports_reasoning: boolean;
+  supports_web_search: boolean;
+}
+
 export interface CompletionStats {
   prompt_tokens: number;
   completion_tokens: number;

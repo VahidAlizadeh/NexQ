@@ -8,6 +8,7 @@ pub mod rag;
 pub mod llm;
 pub mod state;
 pub mod stt;
+pub mod translation;
 
 use state::AppState;
 use std::sync::{Arc, Mutex};

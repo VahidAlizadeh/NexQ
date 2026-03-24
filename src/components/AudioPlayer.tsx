@@ -3,7 +3,8 @@
 // waveform visualization to WaveformCanvas.
 
 import React, { useRef, useEffect, useCallback } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { readFile, copyFile } from "@tauri-apps/plugin-fs";
+import { save } from "@tauri-apps/plugin-dialog";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { WaveformCanvas } from "@/components/WaveformCanvas";
 import type { WaveformData, MeetingBookmark, TopicSection } from "@/lib/types";
@@ -137,14 +138,18 @@ export function AudioPlayer({
   // Mount: wire up audio element to the store
   // -------------------------------------------------------------------------
 
+  // Track blob URL for cleanup
+  const blobUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Build the asset URL from the file path
-    const src = convertFileSrc(recordingPath);
-    audio.src = src;
-    audio.preload = "auto";
+    // Revoke any previous blob URL
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
 
     setAudioElement(audio);
     setSyncContext(meetingStartMs, recordingOffsetMs);
@@ -157,8 +162,29 @@ export function AudioPlayer({
 
     audio.addEventListener("ended", handleEnded);
 
+    // Load audio file via Tauri fs plugin and create a blob URL
+    const loadAudio = async () => {
+      try {
+        const bytes = await readFile(recordingPath);
+        const mimeType = recordingPath.endsWith(".ogg") ? "audio/ogg" : "audio/wav";
+        const blob = new Blob([bytes], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        blobUrlRef.current = url;
+        audio.src = url;
+        audio.preload = "auto";
+      } catch (err) {
+        console.error("Failed to load audio file:", err);
+      }
+    };
+    loadAudio();
+
     return () => {
       audio.removeEventListener("ended", handleEnded);
+      // Revoke blob URL on unmount
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
       // Deregister from store on unmount
       setAudioElement(null);
     };
@@ -211,16 +237,19 @@ export function AudioPlayer({
   // Download handler
   // -------------------------------------------------------------------------
 
-  const handleDownload = useCallback(() => {
-    const src = convertFileSrc(recordingPath);
-    const a = document.createElement("a");
-    a.href = src;
-    // Extract just the filename portion for the download attribute
-    const filename = recordingPath.split(/[\\/]/).pop() ?? "recording.opus";
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleDownload = useCallback(async () => {
+    try {
+      const ext = recordingPath.endsWith(".ogg") ? "ogg" : "wav";
+      const savePath = await save({
+        defaultPath: `meeting-recording.${ext}`,
+        filters: [{ name: "Audio", extensions: [ext] }],
+      });
+      if (savePath) {
+        await copyFile(recordingPath, savePath);
+      }
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
   }, [recordingPath]);
 
   // -------------------------------------------------------------------------

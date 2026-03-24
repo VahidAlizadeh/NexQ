@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Meeting, RecordingInfo, WaveformData } from "../../lib/types";
+import type { Meeting, RecordingInfo } from "../../lib/types";
 import { getMeeting, getRecordingInfo } from "../../lib/ipc";
 import { onTranscriptFinal, onRecordingReady } from "../../lib/events";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { useMeetingStore } from "../../stores/meetingStore";
 import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
@@ -35,7 +34,6 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const [expandedInteraction, setExpandedInteraction] = useState<string | null>(null);
   const [scrollToSegmentIndex, setScrollToSegmentIndex] = useState<number | null>(null);
   const [recordingInfo, setRecordingInfo] = useState<RecordingInfo | null>(null);
-  const [waveformData, setWaveformData] = useState<WaveformData | null>(null);
   const [recordingProcessing, setRecordingProcessing] = useState(false);
 
   const loadMeeting = useCallback(async () => {
@@ -68,16 +66,12 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     return () => { unlistenPromise.then((unlisten) => unlisten()); };
   }, [isActiveMeeting]);
 
-  // Load recording info when meeting loads
+  // Load recording info when meeting loads (waveform_data is included in the response)
   useEffect(() => {
     if (!meeting?.id) return;
     getRecordingInfo(meeting.id).then((info) => {
       if (info) {
         setRecordingInfo(info);
-        fetch(convertFileSrc(info.waveform_path))
-          .then((r) => r.json())
-          .then(setWaveformData)
-          .catch(console.error);
       }
     });
   }, [meeting?.id]);
@@ -90,10 +84,6 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         getRecordingInfo(meeting.id).then((info) => {
           if (info) {
             setRecordingInfo(info);
-            fetch(convertFileSrc(info.waveform_path))
-              .then((r) => r.json())
-              .then(setWaveformData)
-              .catch(console.error);
           }
         });
       }
@@ -282,7 +272,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
           recordingSize={recordingInfo.size_bytes}
           recordingOffsetMs={recordingInfo.offset_ms}
           durationMs={recordingInfo.duration_ms}
-          waveformData={waveformData}
+          waveformData={recordingInfo.waveform_data ?? null}
           bookmarks={meeting.bookmarks}
           topicSections={meeting.topic_sections}
         />

@@ -78,6 +78,7 @@ export interface RecordingInfo {
   duration_ms: number;
   waveform_path: string;
   offset_ms: number;
+  waveform_data?: WaveformData | null;
 }
 
 export interface WaveformData {

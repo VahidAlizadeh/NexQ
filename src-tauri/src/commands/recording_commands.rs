@@ -2,6 +2,7 @@ use serde::Serialize;
 use std::fs;
 use tauri::{command, State};
 
+use crate::audio::waveform::WaveformData;
 use crate::state::AppState;
 
 #[derive(Debug, Serialize)]
@@ -11,6 +12,7 @@ pub struct RecordingInfo {
     pub duration_ms: u64,
     pub waveform_path: String,
     pub offset_ms: i64,
+    pub waveform_data: Option<WaveformData>,
 }
 
 /// Query recording metadata for a meeting.
@@ -51,16 +53,14 @@ pub async fn get_recording_info(
         Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
         Err(e) => return Err(format!("Failed to query recording info: {}", e)),
         Ok((Some(path), Some(size_bytes), Some(waveform_path), Some(offset_ms))) => {
-            // Read waveform JSON to extract duration_ms
+            // Read and parse the full waveform JSON (includes peaks + duration_ms)
             let waveform_json = fs::read_to_string(&waveform_path)
                 .map_err(|e| format!("Failed to read waveform file: {}", e))?;
 
-            let waveform_value: serde_json::Value = serde_json::from_str(&waveform_json)
+            let waveform_data: WaveformData = serde_json::from_str(&waveform_json)
                 .map_err(|e| format!("Failed to parse waveform JSON: {}", e))?;
 
-            let duration_ms = waveform_value["duration_ms"]
-                .as_u64()
-                .ok_or_else(|| "Waveform JSON missing duration_ms field".to_string())?;
+            let duration_ms = waveform_data.duration_ms;
 
             Ok(Some(RecordingInfo {
                 path,
@@ -68,6 +68,7 @@ pub async fn get_recording_info(
                 duration_ms,
                 waveform_path,
                 offset_ms,
+                waveform_data: Some(waveform_data),
             }))
         }
         Ok(_) => {

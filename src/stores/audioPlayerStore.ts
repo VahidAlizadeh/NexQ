@@ -140,7 +140,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
     set({ audioElement: el });
     if (el) {
       el.playbackRate = get().playbackSpeed;
-      el.volume = get().volume;
+      // Keep audio.volume at 1.0 — GainNode handles amplification beyond 100%
+      el.volume = 1.0;
     }
   },
 

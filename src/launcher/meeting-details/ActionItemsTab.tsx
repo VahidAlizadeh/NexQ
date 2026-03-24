@@ -38,8 +38,6 @@ function ActionItemRow({
   onEdit,
   onDelete,
   onDragStart,
-  onDragOver,
-  onDrop,
   onDragEnd,
   isDragTarget,
 }: {
@@ -50,8 +48,6 @@ function ActionItemRow({
   onEdit: (id: string, text: string) => void;
   onDelete: (id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
-  onDragOver: (e: React.DragEvent, id: string) => void;
-  onDrop: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   isDragTarget: boolean;
 }) {
@@ -83,10 +79,9 @@ function ActionItemRow({
 
   return (
     <div
+      data-item-id={item.id}
       draggable={!editing}
       onDragStart={(e) => onDragStart(e, item.id)}
-      onDragOver={(e) => onDragOver(e, item.id)}
-      onDrop={onDrop}
       onDragEnd={onDragEnd}
       className={`group flex items-start gap-1.5 rounded-xl px-2 py-2.5 transition-colors hover:bg-secondary/20 ${
         item.completed ? "opacity-50" : ""
@@ -250,22 +245,32 @@ export function ActionItemsTab({
     [items, onItemsUpdated]
   );
 
-  // Drag & drop reorder
+  // Drag & drop reorder — container-level handlers for reliability
+  const findItemId = (el: HTMLElement | null): string | null => {
+    while (el) {
+      if (el.dataset?.itemId) return el.dataset.itemId;
+      el = el.parentElement;
+    }
+    return null;
+  };
+
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     dragItemId.current = id;
     e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent, id: string) => {
+  const handleContainerDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    if (dragItemId.current && dragItemId.current !== id) {
-      dragOverIdRef.current = id;
-      setDragOverId(id);
+    const targetId = findItemId(e.target as HTMLElement);
+    if (targetId && dragItemId.current && dragItemId.current !== targetId) {
+      dragOverIdRef.current = targetId;
+      setDragOverId(targetId);
     }
   }, []);
 
-  const handleDrop = useCallback(
+  const handleContainerDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault();
       const fromId = dragItemId.current;
@@ -392,8 +397,12 @@ export function ActionItemsTab({
           </div>
         </div>
 
-        {/* Checklist */}
-        <div className="space-y-0.5">
+        {/* Checklist — container handles dragOver/drop for reliable reorder */}
+        <div
+          className="space-y-0.5"
+          onDragOver={handleContainerDragOver}
+          onDrop={handleContainerDrop}
+        >
           {items.map((item) => {
             const speaker = meeting.speakers?.find((s) => s.id === item.assignee_speaker_id);
             return (
@@ -406,8 +415,6 @@ export function ActionItemsTab({
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
                 isDragTarget={dragOverId === item.id}
               />

@@ -1,6 +1,9 @@
-import { useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useCallLogStore } from "../stores/callLogStore";
 import { useMeetingStore } from "../stores/meetingStore";
+import { useTranslationStore } from "../stores/translationStore";
+import { translateBatch, exportTranslatedTranscript } from "../lib/ipc";
+import { showToast } from "../stores/toastStore";
 import { CallLogEntry } from "./CallLogEntry";
 import { PromptViewer } from "./PromptViewer";
 import type { LogFilterKind } from "../lib/types";
@@ -9,6 +12,9 @@ import {
   Trash2,
   Activity,
   FileSearch,
+  Globe,
+  Download,
+  ChevronDown,
 } from "lucide-react";
 
 // -- Filter options ----------------------------------------------------------
@@ -34,6 +40,14 @@ export function CallLogPanel() {
   const setFilter = useCallLogStore((s) => s.setFilter);
   const clearAll = useCallLogStore((s) => s.clearAll);
   const expandedEntryId = useCallLogStore((s) => s.expandedEntryId);
+
+  // Translation state
+  const meetingId = useMeetingStore((s) => s.activeMeeting?.id ?? null);
+  const targetLang = useTranslationStore((s) => s.targetLang);
+  const batchProgress = useTranslationStore((s) => s.batchProgress);
+  const isBatchTranslating = batchProgress !== null;
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape (skip if settings overlay is open)
   useEffect(() => {
@@ -90,6 +104,52 @@ export function CallLogPanel() {
     [entries, expandedEntryId]
   );
 
+  // Close export menu on outside click
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showExportMenu]);
+
+  // Translate all segments in the current meeting
+  const handleTranslateAll = useCallback(async () => {
+    if (!meetingId) return;
+    try {
+      await translateBatch(meetingId, targetLang);
+    } catch (err) {
+      showToast(`Batch translation failed: ${err}`, "error");
+    }
+  }, [meetingId, targetLang]);
+
+  // Export translated transcript
+  const handleExport = useCallback(async (format: string) => {
+    if (!meetingId) return;
+    try {
+      const content = await exportTranslatedTranscript(meetingId, targetLang, format);
+      if (format === "clipboard") {
+        await navigator.clipboard.writeText(content);
+        showToast("Copied to clipboard", "success");
+      } else {
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `transcript-${format.replace("_", "-")}.${format.includes("md") ? "md" : "txt"}`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("Export downloaded", "success");
+      }
+    } catch (err) {
+      showToast(`Export failed: ${err}`, "error");
+    }
+    setShowExportMenu(false);
+  }, [meetingId, targetLang]);
+
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
 
   return (
@@ -115,6 +175,66 @@ export function CallLogPanel() {
                 )}
               </div>
               <div className="flex items-center gap-1">
+                {/* Translate All button */}
+                {meetingId && entries.length > 0 && (
+                  <button
+                    onClick={handleTranslateAll}
+                    disabled={isBatchTranslating}
+                    className="flex items-center gap-1 rounded-lg border border-primary/20 bg-primary/5 px-2 py-1 text-meta font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                    title="Translate all transcript segments"
+                  >
+                    <Globe className="h-3 w-3" />
+                    {isBatchTranslating ? "Translating..." : "Translate All"}
+                  </button>
+                )}
+
+                {/* Export dropdown */}
+                {meetingId && entries.length > 0 && (
+                  <div className="relative" ref={exportMenuRef}>
+                    <button
+                      onClick={() => setShowExportMenu((v) => !v)}
+                      className="flex items-center gap-1 rounded-lg border border-border/30 bg-secondary/30 px-2 py-1 text-meta font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+                      title="Export transcript"
+                    >
+                      <Download className="h-3 w-3" />
+                      Export
+                      <ChevronDown className="h-2.5 w-2.5" />
+                    </button>
+
+                    {showExportMenu && (
+                      <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-border/40 bg-popover shadow-lg">
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleExport("translated_txt")}
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground/80 hover:bg-accent/40 transition-colors"
+                          >
+                            Translated transcript (.txt)
+                          </button>
+                          <button
+                            onClick={() => handleExport("bilingual_txt")}
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground/80 hover:bg-accent/40 transition-colors"
+                          >
+                            Bilingual transcript (.txt)
+                          </button>
+                          <button
+                            onClick={() => handleExport("bilingual_md")}
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground/80 hover:bg-accent/40 transition-colors"
+                          >
+                            Bilingual transcript (.md)
+                          </button>
+                          <div className="my-1 border-t border-border/20" />
+                          <button
+                            onClick={() => handleExport("clipboard")}
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground/80 hover:bg-accent/40 transition-colors"
+                          >
+                            Copy to clipboard
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {entries.length > 0 && (
                   <button
                     onClick={clearAll}
@@ -187,6 +307,24 @@ export function CallLogPanel() {
                   valueClass="text-red-400"
                 />
               )}
+            </div>
+          )}
+
+          {/* ── Batch translation progress ── */}
+          {batchProgress && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 border-b border-primary/10 shrink-0">
+              <span className="text-meta text-primary/60 font-medium whitespace-nowrap">
+                Translating to {targetLang.toUpperCase()}...
+              </span>
+              <div className="flex-1 h-1 rounded-full bg-border/20 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary/50 transition-all duration-300"
+                  style={{ width: `${(batchProgress.completed / batchProgress.total) * 100}%` }}
+                />
+              </div>
+              <span className="text-meta text-primary/60 font-medium tabular-nums">
+                {batchProgress.completed} / {batchProgress.total}
+              </span>
             </div>
           )}
 

@@ -8,6 +8,7 @@ import {
 } from "../lib/events";
 import { saveMeetingActionItems } from "../lib/ipc";
 import { useMeetingStore } from "../stores/meetingStore";
+import { showToast } from "../stores/toastStore";
 import type { Meeting, ActionItem } from "../lib/types";
 
 // ---------------------------------------------------------------------------
@@ -144,20 +145,25 @@ export function useActionItemsExtraction(
           try {
             const items = parseActionItemsJSON(contentRef.current);
 
-            // Persist to DB — Rust struct requires meeting_id on each item
-            const itemsWithMeetingId = items.map((item) => ({
-              ...item,
-              meeting_id: meeting.id,
-            }));
-            await saveMeetingActionItems(
-              meeting.id,
-              JSON.stringify(itemsWithMeetingId)
-            );
+            if (items.length === 0) {
+              showToast("No action items found in this meeting", "info");
+            } else {
+              // Persist to DB — Rust struct requires meeting_id on each item
+              const itemsWithMeetingId = items.map((item) => ({
+                ...item,
+                meeting_id: meeting.id,
+              }));
+              await saveMeetingActionItems(
+                meeting.id,
+                JSON.stringify(itemsWithMeetingId)
+              );
 
-            onItemsExtracted(items);
+              onItemsExtracted(items);
+              showToast(`Found ${items.length} action item${items.length !== 1 ? "s" : ""}`, "success");
 
-            // Refresh sidebar so counts update
-            useMeetingStore.getState().loadRecentMeetings();
+              // Refresh sidebar so counts update
+              useMeetingStore.getState().loadRecentMeetings();
+            }
           } catch (err) {
             console.error(
               "[actionItemsExtraction] Parse/save failed:",

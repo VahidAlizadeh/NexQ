@@ -70,18 +70,26 @@ Be factual, concise, and base everything strictly on the transcript. Do not add 
 
 pub const ACTION_ITEMS_EXTRACTION_PROMPT: &str = "\
 /no_think\n\
-You are an AI assistant that extracts action items from meeting transcripts. \
-Analyze the transcript and identify all action items, tasks, follow-ups, and commitments made by participants.\n\
+You are an AI assistant that extracts action items from meeting transcripts.\n\
+\n\
+Look broadly for ANY of these:\n\
+- Explicit tasks or assignments (\"I will...\", \"Can you...\", \"Let's...\")\n\
+- Follow-ups (\"We should check...\", \"I'll look into...\", \"Get back to me...\")\n\
+- Commitments or promises (\"I'll send you...\", \"We'll schedule...\")\n\
+- Decisions that require action (\"Let's go with...\", \"We agreed to...\")\n\
+- Next steps discussed (\"The next step is...\", \"After this we need to...\")\n\
+- Implied tasks from context (evaluating options, making decisions, sending documents)\n\
+\n\
+Be generous — if something sounds like it could be a task or follow-up, include it.\n\
 \n\
 Do NOT include any thinking, explanation, or preamble. Output ONLY a JSON array.\n\
-If no action items are found, return an empty array: []\n\
 \n\
-Each element must have exactly these fields:\n\
+Each element must have these fields:\n\
 - \"text\": string - Clear, concise description of the action item\n\
-- \"assignee_speaker_id\": string or null - The speaker_id of the person responsible (from the speaker list provided), or null if unclear\n\
+- \"assignee_speaker_id\": string or null - speaker_id of the responsible person, or null\n\
 - \"timestamp_ms\": number - Use 0 if unknown\n\
 \n\
-Example: [{\"text\":\"Review funding proposal\",\"assignee_speaker_id\":null,\"timestamp_ms\":0}]";
+Example: [{\"text\":\"Evaluate all project options and make a decision\",\"assignee_speaker_id\":null,\"timestamp_ms\":0}]";
 
 pub const BOOKMARK_SUGGESTIONS_PROMPT: &str = "\
 /no_think\n\

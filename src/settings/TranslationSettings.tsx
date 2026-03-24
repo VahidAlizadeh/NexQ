@@ -626,14 +626,31 @@ export function TranslationSettings() {
                   </button>
                 )}
 
-                {/* State 3: Test passed, key not changed → Make Active */}
-                {canMakeActive && (
+                {/* Clear stored key */}
+                {hasStoredKey && !keyDirty && (
                   <button
-                    onClick={handleMakeActive}
-                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                    onClick={async () => {
+                      if (!currentProviderOption) return;
+                      try {
+                        const { deleteApiKey } = await import("../lib/ipc");
+                        await deleteApiKey(currentProviderOption.credentialKey);
+                        setHasStoredKey(false);
+                        setApiKey("");
+                        setConnectionStatus("idle");
+                        setStatusMessage("");
+                        setTestedProviders((prev) => {
+                          const next = new Set(prev);
+                          next.delete(selectedProvider);
+                          return next;
+                        });
+                        setKeyStatusMap((prev) => ({ ...prev, [currentProviderOption.credentialKey]: false }));
+                      } catch { /* ignore */ }
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                    title="Remove stored API key"
                   >
-                    <Zap className="h-3.5 w-3.5" />
-                    Make Active
+                    <XCircle className="h-3.5 w-3.5" />
+                    Clear
                   </button>
                 )}
               </div>

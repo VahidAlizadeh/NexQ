@@ -304,7 +304,7 @@ function ModelRow({
             </button>
           )}
 
-          {!model.is_downloaded && (
+          {!model.is_downloaded && !def.requires_export && (
             <button
               onClick={onDownload}
               className="inline-flex items-center gap-1 rounded-md border border-border/50 bg-background px-2 py-1 text-[10px] font-medium text-foreground hover:bg-accent transition-colors cursor-pointer"
@@ -313,6 +313,15 @@ function ModelRow({
               <Download className="h-2.5 w-2.5" />
               Download
             </button>
+          )}
+
+          {!model.is_downloaded && def.requires_export && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md border border-warning/30 bg-warning/5 px-2 py-1 text-[10px] font-medium text-warning"
+              title="Run: python scripts/export_opus_mt_model.py to export this model"
+            >
+              Export Required
+            </span>
           )}
 
           {model.is_downloaded && (

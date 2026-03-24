@@ -788,6 +788,17 @@ export function TranslationSettings() {
           {/* ── Language Settings ── */}
           <div className="rounded-xl border border-border/30 bg-card/50 p-4">
             <h3 className="mb-3 text-sm font-semibold text-primary/80">Language</h3>
+
+            {/* Banner: activate provider to see its languages */}
+            {selectedProvider !== provider && (
+              <div className="mb-3 flex items-center gap-2 rounded-lg border border-info/20 bg-info/5 px-3 py-2">
+                <Info className="h-3.5 w-3.5 text-info shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Activate <span className="font-medium text-foreground">{currentProviderOption?.label}</span> to see its supported languages
+                </p>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-foreground">Target Language</label>

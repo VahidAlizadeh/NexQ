@@ -9,6 +9,7 @@ import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
 import { useSummaryGeneration } from "../../hooks/useSummaryGeneration";
 import { useActionItemsExtraction } from "../../hooks/useActionItemsExtraction";
 import { useBookmarkSuggestions } from "../../hooks/useBookmarkSuggestions";
+import { useAudioKeyboardShortcuts } from "../../hooks/useAudioKeyboardShortcuts";
 import { exportMeetingAsMarkdown } from "../../lib/export";
 import { MeetingHeader } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
@@ -99,6 +100,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     });
     return () => { unlisten.then((fn) => fn()); };
   }, [meeting?.id]);
+
+  // Audio keyboard shortcuts (Space, Arrow keys, [ ])
+  useAudioKeyboardShortcuts();
 
   // Hooks
   const stats = useMeetingStats(meeting);

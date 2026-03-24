@@ -5,6 +5,7 @@ import { updateActionItem, deleteActionItem, saveMeetingActionItems } from "../.
 import { useStreamStore } from "../../stores/streamStore";
 import { useConfigStore } from "../../stores/configStore";
 import { showToast } from "../../stores/toastStore";
+import { useAudioPlayerStore } from "../../stores/audioPlayerStore";
 import { formatTimestamp } from "../../lib/utils";
 import {
   CheckSquare,
@@ -51,6 +52,8 @@ function ActionItemRow({
   onDragEnd: () => void;
   isDragTarget: boolean;
 }) {
+  const isPlaying = useAudioPlayerStore((s) => s.isPlaying);
+  const seekToTimestamp = useAudioPlayerStore((s) => s.seekToTimestamp);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,7 +145,14 @@ function ActionItemRow({
         {showMeta && !editing && (
           <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground/40">
             {hasTimestamp && (
-              <span className="tabular-nums">{formatTimestamp(relativeMs)}</span>
+              <button
+                type="button"
+                onClick={() => { if (isPlaying) seekToTimestamp(item.timestamp_ms); }}
+                className={`tabular-nums transition-colors ${isPlaying ? "cursor-pointer hover:text-primary" : "cursor-default"}`}
+                title={isPlaying ? "Seek to this moment" : undefined}
+              >
+                {formatTimestamp(relativeMs)}
+              </button>
             )}
             {hasTimestamp && hasAssignee && <span>&middot;</span>}
             {hasAssignee && (

@@ -3,6 +3,7 @@ import type { Meeting, MeetingBookmark } from "../../lib/types";
 import type { BookmarkSuggestionsState } from "../../hooks/useBookmarkSuggestions";
 import { updateMeetingBookmark, deleteMeetingBookmark } from "../../lib/ipc";
 import { showToast } from "../../stores/toastStore";
+import { useAudioPlayerStore } from "../../stores/audioPlayerStore";
 import { Bookmark, Trash2, Pencil, Sparkles, Check, X, Loader2 } from "lucide-react";
 import { formatTimestamp, formatRelativeTime } from "../../lib/utils";
 
@@ -214,6 +215,8 @@ function BookmarkRow({
   onBookmarkUpdated,
   onNavigateToBookmark,
 }: BookmarkRowProps) {
+  const isPlaying = useAudioPlayerStore((s) => s.isPlaying);
+  const seekToTimestamp = useAudioPlayerStore((s) => s.seekToTimestamp);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(bookmark.note ?? "");
   const [saving, setSaving] = useState(false);
@@ -292,7 +295,10 @@ function BookmarkRow({
       {/* Timestamp chip — clickable */}
       <button
         type="button"
-        onClick={() => onNavigateToBookmark?.(bookmark)}
+        onClick={() => {
+          onNavigateToBookmark?.(bookmark);
+          if (isPlaying) seekToTimestamp(bookmark.timestamp_ms);
+        }}
         className="mt-0.5 shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 transition-colors hover:bg-primary/20 cursor-pointer"
         title="Go to this moment in transcript"
       >

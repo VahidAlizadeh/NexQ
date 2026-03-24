@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef, useCallback } from "react";
 import type { TranscriptSegment, SpeakerIdentity } from "../../lib/types";
 import { formatTimestamp } from "../../lib/utils";
+import { useAudioPlayerStore } from "../../stores/audioPlayerStore";
 
 interface SpeakerTimelineProps {
   segments: TranscriptSegment[];
@@ -36,6 +37,8 @@ export function SpeakerTimeline({
   meetingDurationMs,
   onSegmentClick,
 }: SpeakerTimelineProps) {
+  const isPlaying = useAudioPlayerStore((s) => s.isPlaying);
+  const seekToTimestamp = useAudioPlayerStore((s) => s.seekToTimestamp);
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
@@ -135,10 +138,11 @@ export function SpeakerTimeline({
   }, []);
 
   const handleBlockClick = useCallback(
-    (segmentIndex: number) => {
+    (segmentIndex: number, timestampMs: number) => {
       onSegmentClick?.(segmentIndex);
+      if (isPlaying) seekToTimestamp(timestampMs);
     },
-    [onSegmentClick]
+    [onSegmentClick, isPlaying, seekToTimestamp]
   );
 
   if (activeSpeakers.length === 0 || meetingDurationMs <= 0) return null;
@@ -204,7 +208,7 @@ export function SpeakerTimeline({
                     onMouseEnter={(e) => handleBlockHover(e, block)}
                     onMouseMove={(e) => handleBlockHover(e, block)}
                     onMouseLeave={handleBlockLeave}
-                    onClick={() => handleBlockClick(block.segmentIndex)}
+                    onClick={() => handleBlockClick(block.segmentIndex, block.timestampMs)}
                   />
                 ))}
               </div>

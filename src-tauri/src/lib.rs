@@ -39,6 +39,8 @@ use commands::model_commands;
 use commands::stealth_commands;
 // == MODULE COMMANDS: rag ==
 use commands::rag_commands;
+// == MODULE COMMANDS: recording ==
+use commands::recording_commands;
 
 /// Show the launcher window and hide the overlay window.
 fn show_launcher(app: &tauri::AppHandle) {
@@ -459,6 +461,10 @@ pub fn run() {
             rag_commands::pull_embedding_model,
             rag_commands::test_rag_answer,
             rag_commands::remove_file_rag_index,
+            // == COMMANDS: recording ==
+            recording_commands::get_recording_info,
+            recording_commands::get_recording_file_url,
+            recording_commands::delete_recording,
         ])
         .run(tauri::generate_context!())
         .expect("error while running NexQ");

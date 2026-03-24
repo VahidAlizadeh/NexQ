@@ -21,6 +21,7 @@ import type {
   RagConfig,
   RagIndexStatus,
   RagSearchResult,
+  RecordingInfo,
   TokenBudget,
 } from "./types";
 
@@ -540,4 +541,18 @@ export async function getConfig(key: string): Promise<string | null> {
 
 export async function setConfig(key: string, value: string): Promise<void> {
   return invoke("set_config", { key, value });
+}
+
+// == IPC: Recording (Sub-PRD 5) ==
+
+export async function getRecordingInfo(meetingId: string): Promise<RecordingInfo | null> {
+  return invoke<RecordingInfo | null>("get_recording_info", { meetingId });
+}
+
+export async function getRecordingFileUrl(meetingId: string): Promise<string> {
+  return invoke<string>("get_recording_file_url", { meetingId });
+}
+
+export async function deleteRecording(meetingId: string): Promise<void> {
+  return invoke("delete_recording", { meetingId });
 }

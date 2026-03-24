@@ -195,3 +195,24 @@ export function onSpeakerDetected(
     handler(event.payload)
   );
 }
+
+// == RECORDING EVENTS ==
+
+export interface RecordingReadyEvent {
+  meeting_id: string;
+  recording_path: string;
+  recording_size: number;
+  waveform_path: string;
+}
+
+export function onRecordingReady(
+  handler: (event: RecordingReadyEvent) => void
+): Promise<UnlistenFn> {
+  return listen<RecordingReadyEvent>("recording_ready", (e) => handler(e.payload));
+}
+
+export function onRecordingError(
+  handler: (event: string) => void
+): Promise<UnlistenFn> {
+  return listen<string>("recording_error", (e) => handler(e.payload));
+}

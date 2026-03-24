@@ -376,7 +376,7 @@ export function TranslationSettings() {
       }
     } catch (e) {
       setConnectionStatus("error");
-      setStatusMessage(e instanceof Error ? e.message : "Connection failed");
+      setStatusMessage(typeof e === "string" ? e : e instanceof Error ? e.message : String(e));
     }
   }, [apiKey, azureRegion, selectedProvider, currentProviderOption, setStoreProvider]);
 

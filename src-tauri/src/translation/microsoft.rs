@@ -165,13 +165,22 @@ impl TranslationProvider for MicrosoftTranslator {
 
     async fn test_connection(&self) -> Result<ConnectionStatus, TranslationError> {
         let start = Instant::now();
-        match self.supported_languages().await {
-            Ok(langs) => Ok(ConnectionStatus {
-                connected: true,
-                language_count: langs.len(),
-                response_ms: start.elapsed().as_millis() as u64,
-                error: None,
-            }),
+
+        // Translate a short test string to actually validate the API key.
+        // The /languages endpoint is public and doesn't require auth.
+        match self.translate("hello", None, "es").await {
+            Ok(_) => {
+                // Key works — now get the language count
+                let lang_count = self.supported_languages().await
+                    .map(|l| l.len())
+                    .unwrap_or(0);
+                Ok(ConnectionStatus {
+                    connected: true,
+                    language_count: lang_count,
+                    response_ms: start.elapsed().as_millis() as u64,
+                    error: None,
+                })
+            }
             Err(e) => Ok(ConnectionStatus {
                 connected: false,
                 language_count: 0,

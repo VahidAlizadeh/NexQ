@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useConfigStore } from "../stores/configStore";
+import { setRecordingEnabled } from "../lib/ipc";
 import { BUILT_IN_SCENARIOS } from "../lib/scenarios";
 import { MODE_COLORS } from "../lib/speakerColors";
 import type { AudioMode, AIScenario } from "../lib/types";
@@ -28,6 +29,8 @@ function getScenarioName(id: AIScenario): string {
 export function MeetingSetupModal({ open, onStart, onCancel }: MeetingSetupModalProps) {
   const rememberedSetup = useConfigStore((s) => s.rememberedMeetingSetup);
   const setRememberedMeetingSetup = useConfigStore((s) => s.setRememberedMeetingSetup);
+  const recordingEnabled = useConfigStore((s) => s.recordingEnabled);
+  const setRecordingEnabledStore = useConfigStore((s) => s.setRecordingEnabled);
 
   // Local state — initialise from remembered or defaults
   const [audioMode, setAudioMode] = useState<AudioMode>(
@@ -166,6 +169,13 @@ export function MeetingSetupModal({ open, onStart, onCancel }: MeetingSetupModal
                 <span className="rounded-full border border-border/30 bg-accent/20 px-2.5 py-1 text-xs font-medium text-foreground/80">
                   {getScenarioName(scenario)}
                 </span>
+                {/* REC badge */}
+                {recordingEnabled && (
+                  <span className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive ring-1 ring-destructive/20">
+                    <span className="h-1 w-1 rounded-full bg-destructive animate-pulse" />
+                    REC
+                  </span>
+                )}
               </div>
             </div>
 
@@ -317,6 +327,46 @@ export function MeetingSetupModal({ open, onStart, onCancel }: MeetingSetupModal
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* ── Recording Toggle ── */}
+            <div className={`flex items-center justify-between rounded-xl border p-3 transition-all duration-150 ${
+              recordingEnabled
+                ? "border-destructive/20 bg-destructive/[0.04]"
+                : "border-border/30 bg-secondary/10"
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <div className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                  recordingEnabled
+                    ? "bg-destructive shadow-[0_0_6px_rgba(239,68,68,0.5)]"
+                    : "bg-muted-foreground/30"
+                }`} />
+                <div>
+                  <p className="text-xs font-semibold text-foreground/80">Record Audio</p>
+                  <p className="text-[10px] text-muted-foreground/60 leading-tight mt-0.5">
+                    Save as file for playback
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={recordingEnabled}
+                  onChange={async (e) => {
+                    const enabled = e.target.checked;
+                    setRecordingEnabledStore(enabled);
+                    try {
+                      await setRecordingEnabled(enabled);
+                    } catch (err) {
+                      console.error("Failed to toggle recording:", err);
+                    }
+                  }}
+                  className="peer sr-only"
+                />
+                <div className={`h-5 w-9 rounded-full transition-colors duration-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-full ${
+                  recordingEnabled ? "bg-destructive" : "bg-muted-foreground/20"
+                }`} />
+              </label>
             </div>
 
             {/* ── Remember checkbox ── */}

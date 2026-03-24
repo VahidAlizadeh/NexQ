@@ -49,7 +49,14 @@ Provide a structured summary of the meeting so far. Include:\n\
 Use bullet points for scannability. Be factual and concise — do not add interpretation.";
 
 pub const MEETING_SUMMARY_PROMPT: &str = "\
-Generate a comprehensive meeting summary from the full transcript provided. Structure as:\n\
+Generate a comprehensive meeting summary from the full transcript provided.\n\
+\n\
+IMPORTANT formatting rules:\n\
+- Use plain ## for section headers (e.g. ## Overview). Never wrap headers in bold (**) markers.\n\
+- Use bullet points (- item) for lists.\n\
+- Use a markdown table (with | separators) for Action Items.\n\
+\n\
+Structure the summary exactly as:\n\
 \n\
 ## Overview\n\
 A 1-2 sentence high-level description of what the meeting covered.\n\
@@ -61,7 +68,9 @@ A 1-2 sentence high-level description of what the meeting covered.\n\
 - Any concrete decisions or agreements reached\n\
 \n\
 ## Action Items\n\
-- Tasks, owners, and deadlines mentioned\n\
+| Task | Owner | Deadline / Timeline |\n\
+|------|-------|---------------------|\n\
+| Description of task | Person responsible | When it is due |\n\
 \n\
 ## Open Questions\n\
 - Unresolved points that need follow-up\n\

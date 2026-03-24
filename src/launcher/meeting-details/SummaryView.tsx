@@ -15,6 +15,15 @@ function stripThinkTags(text: string): string {
     .trim();
 }
 
+/** Fix malformed markdown patterns from LLM output */
+function cleanMarkdown(text: string): string {
+  return text
+    // Bold-wrapped ATX headers: **### text** → ### text
+    .replace(/^\*\*(#{1,6})\s+(.+?)\*\*\s*$/gm, "$1 $2")
+    // Headers with bold content: ### **text** → ### text
+    .replace(/^(#{1,6})\s+\*\*(.+?)\*\*\s*$/gm, "$1 $2");
+}
+
 /** Custom ReactMarkdown component overrides for styled rendering */
 const mdComponents: Components = {
   h1: ({ children }) => (
@@ -49,7 +58,7 @@ const mdComponents: Components = {
   ),
   li: ({ children }) => (
     <li className="text-sm leading-relaxed text-foreground/80 flex gap-2">
-      <span className="text-primary/40 mt-1.5 shrink-0">•</span>
+      <span className="text-primary/60 mt-1.5 shrink-0">•</span>
       <span>{children}</span>
     </li>
   ),
@@ -62,6 +71,28 @@ const mdComponents: Components = {
     <em className="italic text-foreground/70">{children}</em>
   ),
   hr: () => <hr className="my-5 border-border/20" />,
+  table: ({ children }) => (
+    <div className="my-4 overflow-x-auto rounded-lg border border-border/30">
+      <table className="w-full text-sm">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="border-b border-border/40 bg-muted/20">{children}</thead>
+  ),
+  tbody: ({ children }) => (
+    <tbody className="divide-y divide-border/10">{children}</tbody>
+  ),
+  tr: ({ children }) => (
+    <tr className="hover:bg-muted/10 transition-colors">{children}</tr>
+  ),
+  th: ({ children }) => (
+    <th className="px-4 py-2.5 text-left text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="px-4 py-2.5 text-sm text-foreground/80">{children}</td>
+  ),
 };
 
 interface SummaryViewProps {
@@ -85,7 +116,7 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
 
   // Streaming
   if (generation.isGenerating) {
-    const cleanedStreaming = stripThinkTags(generation.streamedContent);
+    const cleanedStreaming = cleanMarkdown(stripThinkTags(generation.streamedContent));
     return (
       <div className="p-5">
         <div className="mb-3 flex items-center justify-between">
@@ -130,7 +161,7 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
 
   // Has summary
   if (meeting.summary) {
-    const cleanedSummary = stripThinkTags(meeting.summary);
+    const cleanedSummary = cleanMarkdown(stripThinkTags(meeting.summary));
     return (
       <div className="flex h-full flex-col">
         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-border/20">

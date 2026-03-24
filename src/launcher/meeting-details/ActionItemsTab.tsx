@@ -40,6 +40,7 @@ function ActionItemRow({
   onDragStart,
   onDragOver,
   onDrop,
+  onDragEnd,
   isDragTarget,
 }: {
   item: ActionItem;
@@ -51,6 +52,7 @@ function ActionItemRow({
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragOver: (e: React.DragEvent, id: string) => void;
   onDrop: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
   isDragTarget: boolean;
 }) {
   const [editing, setEditing] = useState(false);
@@ -85,6 +87,7 @@ function ActionItemRow({
       onDragStart={(e) => onDragStart(e, item.id)}
       onDragOver={(e) => onDragOver(e, item.id)}
       onDrop={onDrop}
+      onDragEnd={onDragEnd}
       className={`group flex items-start gap-1.5 rounded-xl px-2 py-2.5 transition-colors hover:bg-secondary/20 ${
         item.completed ? "opacity-50" : ""
       } ${isDragTarget ? "border-t-2 border-primary/40" : "border-t-2 border-transparent"}`}
@@ -132,9 +135,11 @@ function ActionItemRow({
           </div>
         ) : (
           <p
-            className={`text-sm leading-relaxed text-foreground/80 ${
+            onDoubleClick={() => { setEditText(item.text); setEditing(true); }}
+            className={`text-sm leading-relaxed text-foreground/80 cursor-default ${
               item.completed ? "line-through text-muted-foreground/50" : ""
             }`}
+            title="Double-click to edit"
           >
             {item.text}
           </p>
@@ -195,6 +200,7 @@ export function ActionItemsTab({
   const llmModel = useConfigStore((s) => s.llmModel);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragItemId = useRef<string | null>(null);
+  const dragOverIdRef = useRef<string | null>(null);
 
   const hasTranscript = meeting.transcript.length > 0;
   const hasLlm = !!llmModel;
@@ -245,13 +251,16 @@ export function ActionItemsTab({
   );
 
   // Drag & drop reorder
-  const handleDragStart = useCallback((_e: React.DragEvent, id: string) => {
+  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     dragItemId.current = id;
+    e.dataTransfer.effectAllowed = "move";
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent, id: string) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     if (dragItemId.current && dragItemId.current !== id) {
+      dragOverIdRef.current = id;
       setDragOverId(id);
     }
   }, []);
@@ -259,10 +268,11 @@ export function ActionItemsTab({
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault();
-      setDragOverId(null);
       const fromId = dragItemId.current;
-      const toId = dragOverId;
+      const toId = dragOverIdRef.current;
       dragItemId.current = null;
+      dragOverIdRef.current = null;
+      setDragOverId(null);
       if (!fromId || !toId || fromId === toId) return;
 
       const fromIdx = items.findIndex((a) => a.id === fromId);
@@ -281,8 +291,14 @@ export function ActionItemsTab({
         showToast("Failed to reorder", "error");
       }
     },
-    [items, dragOverId, meeting.id, onItemsUpdated]
+    [items, meeting.id, onItemsUpdated]
   );
+
+  const handleDragEnd = useCallback(() => {
+    dragItemId.current = null;
+    dragOverIdRef.current = null;
+    setDragOverId(null);
+  }, []);
 
   // Export as text
   const handleExport = useCallback(() => {
@@ -392,6 +408,7 @@ export function ActionItemsTab({
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
                 isDragTarget={dragOverId === item.id}
               />
             );

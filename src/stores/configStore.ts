@@ -142,6 +142,10 @@ interface ConfigState {
   confidenceThreshold: number;
   confidenceHighlightEnabled: boolean;
 
+  // OpenRouter catalog
+  openrouterFavorites: string[];
+  openrouterRecentlyUsed: string[];
+
   // Loading state
   _loaded: boolean;
 
@@ -183,6 +187,8 @@ interface ConfigState {
   setNoisePreset: (preset: string | null) => void;
   setConfidenceThreshold: (threshold: number) => void;
   setConfidenceHighlightEnabled: (enabled: boolean) => void;
+  toggleOpenRouterFavorite: (id: string) => void;
+  addOpenRouterRecentlyUsed: (id: string) => void;
   loadConfig: () => Promise<void>;
 }
 
@@ -216,6 +222,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
   noisePreset: null,
   confidenceThreshold: 0.7,
   confidenceHighlightEnabled: true,
+  openrouterFavorites: [],
+  openrouterRecentlyUsed: [],
   _loaded: false,
   mutedYou: false,
   mutedThem: false,
@@ -457,6 +465,20 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ confidenceHighlightEnabled: enabled });
     persistValue("confidenceHighlightEnabled", enabled);
   },
+  toggleOpenRouterFavorite: (id) => {
+    const { openrouterFavorites } = useConfigStore.getState();
+    const next = openrouterFavorites.includes(id)
+      ? openrouterFavorites.filter((fav) => fav !== id)
+      : [...openrouterFavorites, id];
+    set({ openrouterFavorites: next });
+    persistValue("openrouterFavorites", next);
+  },
+  addOpenRouterRecentlyUsed: (id) => {
+    const { openrouterRecentlyUsed } = useConfigStore.getState();
+    const next = [id, ...openrouterRecentlyUsed.filter((r) => r !== id)].slice(0, 5);
+    set({ openrouterRecentlyUsed: next });
+    persistValue("openrouterRecentlyUsed", next);
+  },
 
   /**
    * Load all persisted config values from the Tauri plugin-store on app start.
@@ -499,6 +521,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
       const noisePreset = await store.get<string | null>("noisePreset");
       const confidenceThreshold = await store.get<number>("confidenceThreshold");
       const confidenceHighlightEnabled = await store.get<boolean>("confidenceHighlightEnabled");
+      const openrouterFavorites = await store.get<string[]>("openrouterFavorites");
+      const openrouterRecentlyUsed = await store.get<string[]>("openrouterRecentlyUsed");
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
@@ -628,6 +652,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
         ...(noisePreset !== undefined && { noisePreset: noisePreset ?? null }),
         ...(confidenceThreshold != null && { confidenceThreshold }),
         ...(confidenceHighlightEnabled != null && { confidenceHighlightEnabled }),
+        ...(openrouterFavorites != null && { openrouterFavorites }),
+        ...(openrouterRecentlyUsed != null && { openrouterRecentlyUsed }),
       }));
 
       // Post-load: ensure local providers have a local_model_id so footer/backend use the right model

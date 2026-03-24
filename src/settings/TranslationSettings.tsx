@@ -831,30 +831,6 @@ export function TranslationSettings() {
           <div className="rounded-xl border border-border/30 bg-card/50 p-4">
             <h3 className="mb-3 text-sm font-semibold text-primary/80">Behavior</h3>
             <div className="space-y-4">
-              {/* Auto-translate during meetings */}
-              <ToggleRow
-                label="Auto-translate during meetings"
-                description="Automatically translate new transcript lines as they appear"
-                checked={autoTranslateEnabled}
-                onChange={setAutoTranslateEnabled}
-              />
-
-              {/* Default display mode */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Default display mode</label>
-                <select
-                  value={displayMode}
-                  onChange={(e) => setDisplayMode(e.target.value as "inline" | "hover")}
-                  className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
-                >
-                  <option value="inline">Inline Below</option>
-                  <option value="hover">Hover Tooltip</option>
-                </select>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  How translations appear in the transcript
-                </p>
-              </div>
-
               {/* Select-to-translate toolbar */}
               <ToggleRow
                 label="Select-to-translate toolbar"

@@ -32,6 +32,10 @@ pub async fn save_meeting_ai_interactions(
         ai_interactions: Some(ai_interactions),
         summary: None,
         config_snapshot: None,
+        recording_path: None,
+        recording_size: None,
+        waveform_path: None,
+        recording_offset_ms: None,
     };
 
     meetings::update_meeting(db.connection(), &meeting_id, &update)
@@ -102,6 +106,10 @@ pub async fn end_meeting(
         ai_interactions: None,
         summary: None,
         config_snapshot: None,
+        recording_path: None,
+        recording_size: None,
+        waveform_path: None,
+        recording_offset_ms: None,
     };
 
     meetings::update_meeting(db.connection(), &meeting_id, &update)
@@ -213,6 +221,10 @@ pub async fn rename_meeting(
         ai_interactions: None,
         summary: None,
         config_snapshot: None,
+        recording_path: None,
+        recording_size: None,
+        waveform_path: None,
+        recording_offset_ms: None,
     };
 
     meetings::update_meeting(db.connection(), &meeting_id, &update)
@@ -242,6 +254,10 @@ pub async fn update_meeting_summary(
         ai_interactions: None,
         summary: Some(summary),
         config_snapshot: None,
+        recording_path: None,
+        recording_size: None,
+        waveform_path: None,
+        recording_offset_ms: None,
     };
 
     meetings::update_meeting(db.connection(), &meeting_id, &update)

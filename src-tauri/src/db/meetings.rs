@@ -29,6 +29,18 @@ pub struct Meeting {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub topic_sections: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub recording_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub recording_size: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub waveform_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub recording_offset_ms: Option<i64>,
 }
 
 /// Response struct that maps MeetingSpeaker back to frontend SpeakerIdentity format.
@@ -103,6 +115,10 @@ pub struct MeetingUpdate {
     pub ai_interactions: Option<serde_json::Value>,
     pub summary: Option<String>,
     pub config_snapshot: Option<serde_json::Value>,
+    pub recording_path: Option<String>,
+    pub recording_size: Option<i64>,
+    pub waveform_path: Option<String>,
+    pub recording_offset_ms: Option<i64>,
 }
 
 // ── CRUD operations ──────────────────────────────────────────────────────────
@@ -132,6 +148,10 @@ pub fn create_meeting(conn: &Connection, title: &str) -> Result<Meeting, Databas
         bookmarks: None,
         action_items: None,
         topic_sections: None,
+        recording_path: None,
+        recording_size: None,
+        waveform_path: None,
+        recording_offset_ms: None,
     })
 }
 
@@ -139,7 +159,8 @@ pub fn create_meeting(conn: &Connection, title: &str) -> Result<Meeting, Databas
 pub fn get_meeting(conn: &Connection, id: &str) -> Result<Meeting, DatabaseError> {
     let mut stmt = conn.prepare(
         "SELECT id, title, start_time, end_time, duration_seconds,
-                transcript, ai_interactions, summary, config_snapshot
+                transcript, ai_interactions, summary, config_snapshot,
+                recording_path, recording_size, waveform_path, recording_offset_ms
          FROM meetings WHERE id = ?1",
     )?;
 
@@ -165,6 +186,10 @@ pub fn get_meeting(conn: &Connection, id: &str) -> Result<Meeting, DatabaseError
                 bookmarks: None,
                 action_items: None,
                 topic_sections: None,
+                recording_path: row.get(9)?,
+                recording_size: row.get(10)?,
+                waveform_path: row.get(11)?,
+                recording_offset_ms: row.get(12)?,
             })
         })
         .map_err(|e| match e {
@@ -281,6 +306,22 @@ pub fn update_meeting(
     if let Some(ref config) = updates.config_snapshot {
         sets.push(format!("config_snapshot = ?{}", sets.len() + 1));
         param_values.push(Box::new(config.to_string()));
+    }
+    if let Some(ref recording_path) = updates.recording_path {
+        sets.push(format!("recording_path = ?{}", sets.len() + 1));
+        param_values.push(Box::new(recording_path.clone()));
+    }
+    if let Some(recording_size) = updates.recording_size {
+        sets.push(format!("recording_size = ?{}", sets.len() + 1));
+        param_values.push(Box::new(recording_size));
+    }
+    if let Some(ref waveform_path) = updates.waveform_path {
+        sets.push(format!("waveform_path = ?{}", sets.len() + 1));
+        param_values.push(Box::new(waveform_path.clone()));
+    }
+    if let Some(recording_offset_ms) = updates.recording_offset_ms {
+        sets.push(format!("recording_offset_ms = ?{}", sets.len() + 1));
+        param_values.push(Box::new(recording_offset_ms));
     }
 
     if sets.is_empty() {

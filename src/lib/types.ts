@@ -70,6 +70,21 @@ export interface Meeting {
   topic_sections?: TopicSection[];
   action_items?: ActionItem[];
   noise_preset?: string;
+  recording_info?: RecordingInfo | null;
+}
+
+export interface RecordingInfo {
+  path: string;
+  size_bytes: number;
+  duration_ms: number;
+  waveform_path: string;
+  offset_ms: number;
+}
+
+export interface WaveformData {
+  sample_rate: number;
+  duration_ms: number;
+  peaks: [number, number][];
 }
 
 export interface MeetingConfig {

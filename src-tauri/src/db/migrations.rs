@@ -10,6 +10,7 @@ pub fn run(conn: &Connection) -> Result<(), rusqlite::Error> {
     v2_rag_schema(conn)?;
     v3_meeting_mode_schema(conn)?;
     v4_bookmark_segment_id(conn)?;
+    v5_recording_columns(conn)?;
 
     log::info!("Database migrations completed successfully");
     Ok(())
@@ -176,6 +177,28 @@ fn v4_bookmark_segment_id(conn: &Connection) -> Result<(), rusqlite::Error> {
         }
     }
 
+    Ok(())
+}
+
+/// Schema v5: Recording columns — recording_path, recording_size, waveform_path, recording_offset_ms.
+pub fn v5_recording_columns(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let columns = [
+        "ALTER TABLE meetings ADD COLUMN recording_path TEXT",
+        "ALTER TABLE meetings ADD COLUMN recording_size INTEGER",
+        "ALTER TABLE meetings ADD COLUMN waveform_path TEXT",
+        "ALTER TABLE meetings ADD COLUMN recording_offset_ms INTEGER",
+    ];
+    for sql in &columns {
+        match conn.execute(sql, []) {
+            Ok(_) => {}
+            Err(e) => {
+                let msg = e.to_string();
+                if !msg.contains("duplicate column name") {
+                    return Err(e);
+                }
+            }
+        }
+    }
     Ok(())
 }
 

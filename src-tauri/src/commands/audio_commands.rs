@@ -260,7 +260,7 @@ pub async fn start_capture(
                 if mix_len > 0 {
                     let mixed: Vec<i16> = mix_mic[..mix_len].iter()
                         .zip(&mix_sys[..mix_len])
-                        .map(|(&m, &s)| ((m as i32 + s as i32) * 10).clamp(-32768, 32767) as i16)
+                        .map(|(&m, &s)| ((m as i32 + s as i32) * 4).clamp(-32768, 32767) as i16)
                         .collect();
                     rec.write_samples(&mixed);
                     mix_mic.drain(..mix_len);
@@ -290,7 +290,7 @@ pub async fn start_capture(
             if mix_len > 0 {
                 let mixed: Vec<i16> = mix_mic[..mix_len].iter()
                     .zip(&mix_sys[..mix_len])
-                    .map(|(&m, &s)| ((m as i32 + s as i32) * 10).clamp(-32768, 32767) as i16)
+                    .map(|(&m, &s)| ((m as i32 + s as i32) * 4).clamp(-32768, 32767) as i16)
                     .collect();
                 rec.write_samples(&mixed);
                 mix_mic.drain(..mix_len);
@@ -1217,7 +1217,7 @@ pub async fn start_capture_per_party(
                 if mix_len > 0 {
                     let mixed: Vec<i16> = mix_mic[..mix_len].iter()
                         .zip(&mix_sys[..mix_len])
-                        .map(|(&m, &s)| ((m as i32 + s as i32) * 10).clamp(-32768, 32767) as i16)
+                        .map(|(&m, &s)| ((m as i32 + s as i32) * 4).clamp(-32768, 32767) as i16)
                         .collect();
                     rec.write_samples(&mixed);
                     mix_mic.drain(..mix_len);
@@ -1286,7 +1286,7 @@ pub async fn start_capture_per_party(
             if mix_len > 0 {
                 let mixed: Vec<i16> = mix_mic[..mix_len].iter()
                     .zip(&mix_sys[..mix_len])
-                    .map(|(&m, &s)| ((m as i32 + s as i32) * 10).clamp(-32768, 32767) as i16)
+                    .map(|(&m, &s)| ((m as i32 + s as i32) * 4).clamp(-32768, 32767) as i16)
                     .collect();
                 rec.write_samples(&mixed);
                 mix_mic.drain(..mix_len);

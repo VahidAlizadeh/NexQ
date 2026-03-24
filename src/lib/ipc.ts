@@ -578,15 +578,15 @@ export async function setTranslationProvider(provider: string, region?: string):
 }
 
 export async function translateText(text: string, targetLang: string, sourceLang?: string): Promise<TranslationResult> {
-  return invoke<TranslationResult>("translate_text", { text, target_lang: targetLang, source_lang: sourceLang });
+  return invoke<TranslationResult>("translate_text", { text, targetLang, sourceLang });
 }
 
 export async function translateSegments(segmentIds: string[], texts: string[], meetingId: string, targetLang: string, sourceLang?: string): Promise<void> {
-  return invoke("translate_segments", { segment_ids: segmentIds, texts, meeting_id: meetingId, target_lang: targetLang, source_lang: sourceLang });
+  return invoke("translate_segments", { segmentIds, texts, meetingId, targetLang, sourceLang });
 }
 
 export async function translateBatch(meetingId: string, targetLang: string): Promise<void> {
-  return invoke("translate_batch", { meeting_id: meetingId, target_lang: targetLang });
+  return invoke("translate_batch", { meetingId, targetLang });
 }
 
 export async function detectLanguage(text: string): Promise<{ lang: string; confidence: number }> {
@@ -602,15 +602,15 @@ export async function getTranslationLanguages(): Promise<TranslationLanguage[]> 
 }
 
 export async function getMeetingTranslations(meetingId: string, targetLang: string): Promise<TranslationResult[]> {
-  return invoke<TranslationResult[]>("get_meeting_translations", { meeting_id: meetingId, target_lang: targetLang });
+  return invoke<TranslationResult[]>("get_meeting_translations", { meetingId, targetLang });
 }
 
 export async function exportTranslatedTranscript(meetingId: string, targetLang: string, format: string): Promise<string> {
-  return invoke<string>("export_translated_transcript", { meeting_id: meetingId, target_lang: targetLang, format });
+  return invoke<string>("export_translated_transcript", { meetingId, targetLang, format });
 }
 
 export async function setTranslationLanguages(targetLang: string, sourceLang?: string): Promise<void> {
-  return invoke("set_translation_languages", { target_lang: targetLang, source_lang: sourceLang });
+  return invoke("set_translation_languages", { targetLang, sourceLang });
 }
 
 // == IPC: OPUS-MT Models ==

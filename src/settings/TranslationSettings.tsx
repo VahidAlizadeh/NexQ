@@ -451,7 +451,7 @@ export function TranslationSettings() {
       </div>
 
       {/* ── Two-column grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* ═══ LEFT COLUMN: Provider-specific ═══ */}
         <div className="space-y-5">
           {/* ── Provider Selection Grid ── */}
@@ -712,7 +712,7 @@ export function TranslationSettings() {
                 {connectionStatus === "error" && (
                   <div className="flex items-center gap-1 text-destructive">
                     <XCircle className="h-3.5 w-3.5" />
-                    <span className="text-xs truncate max-w-[250px]">{statusMessage}</span>
+                    <span className="text-xs">{statusMessage}</span>
                   </div>
                 )}
               </div>
@@ -787,21 +787,19 @@ export function TranslationSettings() {
               />
 
               {/* Default display mode */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">Default display mode</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    How translations appear in the transcript
-                  </p>
-                </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Default display mode</label>
                 <select
                   value={displayMode}
                   onChange={(e) => setDisplayMode(e.target.value as "inline" | "hover")}
-                  className="w-44 rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
+                  className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
                 >
                   <option value="inline">Inline Below</option>
                   <option value="hover">Hover Tooltip</option>
                 </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  How translations appear in the transcript
+                </p>
               </div>
 
               {/* Select-to-translate toolbar */}
@@ -862,20 +860,18 @@ function ProviderCard({
           />
         </div>
       )}
-      <div className="flex w-full items-start justify-between gap-1 mb-1">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <ProviderIcon value={provider.value} isSelected={isSelected} />
-          <span className={`text-xs font-medium truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
-            {provider.label}
-          </span>
-        </div>
+      <div className="flex w-full items-center gap-1.5 mb-1">
+        <ProviderIcon value={provider.value} isSelected={isSelected} />
+        <span className={`text-xs font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
+          {provider.label}
+        </span>
         <span
-          className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[8px] font-semibold tracking-wide ${BADGE_STYLES[badge.variant]}`}
+          className={`ml-auto inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[8px] font-semibold tracking-wide ${BADGE_STYLES[badge.variant]}`}
         >
           {badge.text}
         </span>
       </div>
-      <span className="text-meta text-muted-foreground/70 line-clamp-1 leading-tight">
+      <span className="text-meta text-muted-foreground/70 leading-tight">
         {provider.description}
       </span>
     </button>

@@ -185,7 +185,7 @@ export function SettingsOverlay({ isModal = false }: SettingsOverlayProps) {
   const currentTabLabel = TAB_LABELS[activeTab] ?? "Settings";
 
   // Wider content area for two-column settings pages
-  const contentMaxW = activeTab === "ai_actions" ? "max-w-4xl" : "max-w-2xl";
+  const contentMaxW = activeTab === "ai_actions" || activeTab === "translation" ? "max-w-4xl" : "max-w-2xl";
 
   // ─── Modal mode: render as overlay dialog ───
   if (isModal) {

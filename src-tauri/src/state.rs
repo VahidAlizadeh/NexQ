@@ -7,6 +7,7 @@ use crate::context::ContextManager;
 use crate::credentials::CredentialManager;
 use crate::db::DatabaseManager;
 use crate::intelligence::IntelligenceEngine;
+use crate::llm::openrouter_models::OpenRouterModelCache;
 use crate::llm::LLMRouter;
 use crate::rag::RagManager;
 use crate::stt::groq_whisper::GroqConfig;
@@ -89,6 +90,8 @@ pub struct AppState {
     /// in sequence; by the time end_meeting runs the recorder is stopped and
     /// the WAV path + start time are waiting here.
     pub pending_recording: Arc<Mutex<Option<PendingRecording>>>,
+    /// In-memory cache for OpenRouter model catalog (TTL: 4 hours).
+    pub openrouter_cache: Arc<Mutex<Option<OpenRouterModelCache>>>,
 }
 
 impl AppState {
@@ -113,6 +116,7 @@ impl AppState {
             ipolicy_target_endpoint: Arc::new(Mutex::new(None)),
             active_scenario: Arc::new(RwLock::new(ActiveScenario::default())),
             pending_recording: Arc::new(Mutex::new(None)),
+            openrouter_cache: Arc::new(Mutex::new(None)),
         }
     }
 }

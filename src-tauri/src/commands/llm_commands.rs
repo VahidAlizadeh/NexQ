@@ -142,3 +142,63 @@ pub async fn get_llm_providers() -> Result<String, String> {
     serde_json::to_string(&providers)
         .map_err(|e| format!("Failed to serialize providers: {}", e))
 }
+
+use crate::llm::openrouter_models::{self, OpenRouterModelCache};
+
+#[command]
+pub async fn list_openrouter_models(
+    force_refresh: bool,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    // Check cache first (unless force refresh)
+    if !force_refresh {
+        let cache_guard = state
+            .openrouter_cache
+            .lock()
+            .map_err(|e| format!("Failed to lock cache: {}", e))?;
+        if let Some(ref cache) = *cache_guard {
+            if cache.is_valid() {
+                log::info!(
+                    "OpenRouter models: returning {} cached models",
+                    cache.models.len()
+                );
+                return serde_json::to_string(&cache.models)
+                    .map_err(|e| format!("Failed to serialize: {}", e));
+            }
+        }
+    }
+
+    // Get API key from CredentialManager
+    let api_key = {
+        let cred_mgr = state
+            .credentials
+            .as_ref()
+            .ok_or_else(|| "Credential manager not initialized".to_string())?;
+        let cred = cred_mgr
+            .lock()
+            .map_err(|e| format!("Failed to lock credential manager: {}", e))?;
+        cred.get_key("openrouter")
+            .map_err(|e| format!("Failed to get API key: {}", e))?
+            .ok_or_else(|| "OpenRouter API key not found. Please enter your API key first.".to_string())?
+    };
+
+    // Fetch from API
+    let models = openrouter_models::fetch_openrouter_models(&api_key).await?;
+    let model_count = models.len();
+
+    // Update cache
+    {
+        let mut cache_guard = state
+            .openrouter_cache
+            .lock()
+            .map_err(|e| format!("Failed to lock cache: {}", e))?;
+        *cache_guard = Some(OpenRouterModelCache::new(models.clone()));
+    }
+
+    log::info!(
+        "OpenRouter models: fetched and cached {} models",
+        model_count
+    );
+
+    serde_json::to_string(&models).map_err(|e| format!("Failed to serialize: {}", e))
+}

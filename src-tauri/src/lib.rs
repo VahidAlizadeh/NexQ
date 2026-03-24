@@ -395,6 +395,7 @@ pub fn run() {
             llm_commands::set_active_model,
             llm_commands::test_llm_connection,
             llm_commands::get_llm_providers,
+            llm_commands::list_openrouter_models,
             // == COMMANDS: intelligence ==
             intelligence_commands::generate_assist,
             intelligence_commands::cancel_generation,

@@ -118,6 +118,14 @@ export function useBookmarkSuggestions(
   const isOurGeneration = useRef(false);
   const unlistenersRef = useRef<(() => void)[]>([]);
 
+  // Reset state when meeting changes
+  useEffect(() => {
+    setError(null);
+    setSuggestions([]);
+    setIsSuggesting(false);
+    contentRef.current = "";
+  }, [meeting?.id]);
+
   // Cleanup listeners on unmount
   useEffect(() => {
     return () => {

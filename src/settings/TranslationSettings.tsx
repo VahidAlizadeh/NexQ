@@ -24,8 +24,8 @@ import {
   EyeOff,
   Loader2,
   Wifi,
-  ChevronDown,
   Zap,
+  Info,
 } from "lucide-react";
 
 // ── Provider definitions ──
@@ -97,19 +97,47 @@ const CLOUD_PROVIDERS: ProviderOption[] = [
 
 const ALL_PROVIDERS: ProviderOption[] = [...LOCAL_PROVIDERS, ...CLOUD_PROVIDERS];
 
-// ── Languages ──
+// ── Languages (comprehensive default list) ──
 
 const DEFAULT_TARGET_LANGUAGES = [
-  { code: "es", name: "Spanish" },
+  { code: "af", name: "Afrikaans" },
+  { code: "ar", name: "Arabic" },
+  { code: "bn", name: "Bengali" },
+  { code: "bg", name: "Bulgarian" },
+  { code: "zh", name: "Chinese (Simplified)" },
+  { code: "zh-TW", name: "Chinese (Traditional)" },
+  { code: "cs", name: "Czech" },
+  { code: "da", name: "Danish" },
+  { code: "nl", name: "Dutch" },
+  { code: "en", name: "English" },
+  { code: "et", name: "Estonian" },
+  { code: "fa", name: "Farsi (Persian)" },
+  { code: "fi", name: "Finnish" },
   { code: "fr", name: "French" },
   { code: "de", name: "German" },
-  { code: "ja", name: "Japanese" },
-  { code: "zh", name: "Chinese" },
-  { code: "ko", name: "Korean" },
-  { code: "pt", name: "Portuguese" },
+  { code: "el", name: "Greek" },
+  { code: "he", name: "Hebrew" },
+  { code: "hi", name: "Hindi" },
+  { code: "hu", name: "Hungarian" },
+  { code: "id", name: "Indonesian" },
   { code: "it", name: "Italian" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+  { code: "ms", name: "Malay" },
+  { code: "no", name: "Norwegian" },
+  { code: "pl", name: "Polish" },
+  { code: "pt", name: "Portuguese" },
+  { code: "ro", name: "Romanian" },
   { code: "ru", name: "Russian" },
-  { code: "ar", name: "Arabic" },
+  { code: "sk", name: "Slovak" },
+  { code: "sl", name: "Slovenian" },
+  { code: "es", name: "Spanish" },
+  { code: "sv", name: "Swedish" },
+  { code: "th", name: "Thai" },
+  { code: "tr", name: "Turkish" },
+  { code: "uk", name: "Ukrainian" },
+  { code: "ur", name: "Urdu" },
+  { code: "vi", name: "Vietnamese" },
 ];
 
 // ── Azure Regions ──
@@ -143,6 +171,13 @@ const BADGE_STYLES: Record<BadgeVariant, string> = {
   "no-key": "bg-muted text-muted-foreground border-border/30",
 };
 
+// Status dot colors derived from badge variant
+const DOT_COLORS: Record<BadgeVariant, string> = {
+  "ready": "bg-success",
+  "available": "bg-info",
+  "no-key": "bg-muted-foreground/40",
+};
+
 type ConnectionStatus = "idle" | "testing" | "success" | "error";
 
 // ══════════════════════════════════════════════════════════════
@@ -174,6 +209,7 @@ export function TranslationSettings() {
   const [azureRegion, setAzureRegion] = useState("global");
   const [keyStatusMap, setKeyStatusMap] = useState<Record<string, boolean>>({});
   const [availableLanguages, setAvailableLanguages] = useState<TranslationLanguage[]>([]);
+  const [testedProviders, setTestedProviders] = useState<Set<string>>(new Set());
 
   const currentProviderOption = ALL_PROVIDERS.find((p) => p.value === selectedProvider);
 
@@ -188,6 +224,18 @@ export function TranslationSettings() {
       setKeyStatusMap(status);
     }
     checkAllKeys();
+  }, []);
+
+  // ── Fetch languages from active provider on initial load ──
+
+  useEffect(() => {
+    async function fetchLanguages() {
+      try {
+        const langs = await getTranslationLanguages();
+        if (langs.length > 0) setAvailableLanguages(langs);
+      } catch { /* fallback to defaults */ }
+    }
+    fetchLanguages();
   }, []);
 
   // ── Load key when provider changes ──
@@ -236,7 +284,15 @@ export function TranslationSettings() {
   // ── Badge state ──
 
   function getBadgeState(p: ProviderOption): BadgeState {
-    if (p.isLocal) return { text: "Ready", variant: "ready" };
+    if (p.isLocal) {
+      if (p.value === "llm") {
+        return { text: "Available", variant: "available" };
+      }
+      // OPUS-MT — not ready until models are downloaded
+      return { text: "Not Ready", variant: "no-key" };
+    }
+    // Cloud providers
+    if (testedProviders.has(p.value)) return { text: "Ready", variant: "ready" };
     if (keyStatusMap[p.credentialKey]) return { text: "Has Key", variant: "available" };
     return { text: "No Key", variant: "no-key" };
   }
@@ -285,6 +341,7 @@ export function TranslationSettings() {
           `Connected — ${result.language_count} languages available (${result.response_ms}ms)`
         );
         setKeyStatusMap((prev) => ({ ...prev, [currentProviderOption.credentialKey]: true }));
+        setTestedProviders((prev) => new Set(prev).add(selectedProvider));
         // Update active provider in store
         setStoreProvider(selectedProvider);
 
@@ -304,6 +361,13 @@ export function TranslationSettings() {
   }, [apiKey, azureRegion, selectedProvider, currentProviderOption, setStoreProvider]);
 
   const handleTestLocal = useCallback(async () => {
+    // OPUS-MT: show friendly message instead of raw error
+    if (selectedProvider === "opus-mt") {
+      setConnectionStatus("error");
+      setStatusMessage("OPUS-MT models are not yet available. Model download support coming soon.");
+      return;
+    }
+
     setConnectionStatus("testing");
     setStatusMessage("Testing...");
     setResponseMs(null);
@@ -318,6 +382,7 @@ export function TranslationSettings() {
         setStatusMessage(
           `Connected — ${result.language_count} languages (${result.response_ms}ms)`
         );
+        setTestedProviders((prev) => new Set(prev).add(selectedProvider));
         setStoreProvider(selectedProvider);
       } else {
         setConnectionStatus("error");
@@ -349,10 +414,22 @@ export function TranslationSettings() {
     : DEFAULT_TARGET_LANGUAGES;
 
   const isCloud = currentProviderOption?.requiresApiKey ?? false;
+  const isOpusMt = selectedProvider === "opus-mt";
+  const isLlm = selectedProvider === "llm";
+
+  // ── "Make Active" gating logic ──
+  // Cloud: only after successful test. OPUS-MT: never (stub). LLM: always allowed.
+  const canMakeActive = (() => {
+    if (selectedProvider === provider) return false; // already active
+    if (isOpusMt) return false; // OPUS-MT not functional yet
+    if (isCloud) return testedProviders.has(selectedProvider); // cloud: must test first
+    if (isLlm) return true; // LLM: always available
+    return false;
+  })();
 
   return (
-    <div className="space-y-6">
-      {/* ── 1. Active Provider Banner ── */}
+    <div className="space-y-5">
+      {/* ── Active Provider Banner (full-width above grid) ── */}
       <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-5 py-3.5">
         <Globe className="h-4 w-4 text-primary shrink-0" />
         <div className="flex-1 min-w-0">
@@ -362,12 +439,10 @@ export function TranslationSettings() {
             {languageOptions.find((l) => l.code === targetLang)?.name || targetLang}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {provider === provider
-              ? "This provider will be used for transcript translation"
-              : "Select a provider and configure it below"}
+            This provider will be used for transcript translation
           </p>
         </div>
-        {connectionStatus === "success" && (
+        {connectionStatus === "success" && selectedProvider === provider && (
           <div className="flex items-center gap-1 text-success shrink-0">
             <CheckCircle className="h-3.5 w-3.5" />
             <span className="text-xs">Connected</span>
@@ -375,326 +450,379 @@ export function TranslationSettings() {
         )}
       </div>
 
-      {/* ── 2. Provider Selection Grid ── */}
-      <div className="rounded-xl border border-border/30 bg-card/50 overflow-hidden">
-        {/* Local & Offline */}
-        <div className="px-5 pt-4 pb-3 border-b border-border/20 bg-muted/10">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-success/10">
-              <Server className="h-3 w-3 text-success" />
-            </div>
-            <span className="text-xs font-semibold text-foreground">Local & Offline</span>
-            <span className="ml-auto text-meta text-muted-foreground/60 font-medium uppercase tracking-wider">
-              Free · No API Key · Private
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {LOCAL_PROVIDERS.map((p) => (
-              <ProviderCard
-                key={p.value}
-                provider={p}
-                isSelected={selectedProvider === p.value}
-                isActive={provider === p.value}
-                badge={getBadgeState(p)}
-                onClick={() => handleProviderSelect(p.value)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Cloud Providers */}
-        <div className="px-5 pt-4 pb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-info/10">
-              <Cloud className="h-3 w-3 text-info" />
-            </div>
-            <span className="text-xs font-semibold text-foreground">Cloud Providers</span>
-            <span className="ml-auto text-meta text-muted-foreground/60 font-medium uppercase tracking-wider">
-              Requires API Key
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {CLOUD_PROVIDERS.map((p) => (
-              <ProviderCard
-                key={p.value}
-                provider={p}
-                isSelected={selectedProvider === p.value}
-                isActive={provider === p.value}
-                badge={getBadgeState(p)}
-                onClick={() => handleProviderSelect(p.value)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── 3. API Key Configuration (cloud providers only) ── */}
-      {isCloud && (
-        <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="mb-3 text-sm font-semibold text-primary/80">API Key</h3>
-
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
-                type={showApiKey ? "text" : "password"}
-                value={apiKey}
-                onChange={(e) => {
-                  setApiKey(e.target.value);
-                  setKeyDirty(true);
-                  setConnectionStatus("idle");
-                  setStatusMessage("");
-                }}
-                placeholder={
-                  hasStoredKey && !keyDirty
-                    ? "Key stored — type to replace"
-                    : `Enter ${currentProviderOption?.label || selectedProvider} API key`
-                }
-                maxLength={256}
-                className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
-              />
-              <button
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground cursor-pointer"
-                type="button"
-                aria-label={showApiKey ? "Hide API key" : "Show API key"}
-                aria-pressed={showApiKey}
-              >
-                {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              </button>
-            </div>
-
-            {/* Save & Test — shown when user has typed a new key */}
-            {(keyDirty || (!hasStoredKey && apiKey.trim())) && (
-              <button
-                onClick={handleSaveAndTest}
-                disabled={!apiKey.trim() || connectionStatus === "testing"}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              >
-                {connectionStatus === "testing" ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Wifi className="h-3.5 w-3.5" />
-                )}
-                Save & Test
-              </button>
-            )}
-
-            {/* Make Active — shown when key is stored but provider is not active */}
-            {hasStoredKey && !keyDirty && selectedProvider !== provider && (
-              <button
-                onClick={handleMakeActive}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
-              >
-                <Zap className="h-3.5 w-3.5" />
-                Make Active
-              </button>
-            )}
-          </div>
-
-          {/* Help link */}
-          {currentProviderOption?.helpUrl && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              <a
-                href={currentProviderOption.helpUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary/70 hover:text-primary underline-offset-2 hover:underline"
-              >
-                {currentProviderOption.helpLabel || "Get a free API key"} &rarr;
-              </a>
-            </p>
-          )}
-
-          {/* Azure Region dropdown (Microsoft only) */}
-          {currentProviderOption?.needsRegion && (
-            <div className="mt-3">
-              <label className="mb-1.5 block text-xs font-medium text-foreground">Azure Region</label>
-              <select
-                value={azureRegion}
-                onChange={(e) => setAzureRegion(e.target.value)}
-                className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
-              >
-                {AZURE_REGIONS.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+      {/* ── Two-column grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* ═══ LEFT COLUMN: Provider-specific ═══ */}
+        <div className="space-y-5">
+          {/* ── Provider Selection Grid ── */}
+          <div className="rounded-xl border border-border/30 bg-card/50 overflow-hidden">
+            {/* Local & Offline */}
+            <div className="px-5 pt-4 pb-3 border-b border-border/20 bg-muted/10">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-5 w-5 items-center justify-center rounded bg-success/10">
+                  <Server className="h-3 w-3 text-success" />
+                </div>
+                <span className="text-xs font-semibold text-foreground">Local & Offline</span>
+                <span className="ml-auto text-meta text-muted-foreground/60 font-medium uppercase tracking-wider">
+                  Free · No API Key · Private
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {LOCAL_PROVIDERS.map((p) => (
+                  <ProviderCard
+                    key={p.value}
+                    provider={p}
+                    isSelected={selectedProvider === p.value}
+                    isActive={provider === p.value}
+                    badge={getBadgeState(p)}
+                    onClick={() => handleProviderSelect(p.value)}
+                  />
                 ))}
-              </select>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Region for your Azure Translator resource
-              </p>
+              </div>
+            </div>
+
+            {/* Cloud Providers */}
+            <div className="px-5 pt-4 pb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-5 w-5 items-center justify-center rounded bg-info/10">
+                  <Cloud className="h-3 w-3 text-info" />
+                </div>
+                <span className="text-xs font-semibold text-foreground">Cloud Providers</span>
+                <span className="ml-auto text-meta text-muted-foreground/60 font-medium uppercase tracking-wider">
+                  Requires API Key
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {CLOUD_PROVIDERS.map((p) => (
+                  <ProviderCard
+                    key={p.value}
+                    provider={p}
+                    isSelected={selectedProvider === p.value}
+                    isActive={provider === p.value}
+                    badge={getBadgeState(p)}
+                    onClick={() => handleProviderSelect(p.value)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── API Key Configuration (cloud providers only) ── */}
+          {isCloud && (
+            <div className="rounded-xl border border-border/30 bg-card/50 p-4">
+              <h3 className="mb-3 text-sm font-semibold text-primary/80">API Key</h3>
+
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type={showApiKey ? "text" : "password"}
+                    value={apiKey}
+                    onChange={(e) => {
+                      setApiKey(e.target.value);
+                      setKeyDirty(true);
+                      setConnectionStatus("idle");
+                      setStatusMessage("");
+                    }}
+                    placeholder={
+                      hasStoredKey && !keyDirty
+                        ? "Key stored — type to replace"
+                        : `Enter ${currentProviderOption?.label || selectedProvider} API key`
+                    }
+                    maxLength={256}
+                    className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                  />
+                  <button
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                    type="button"
+                    aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                    aria-pressed={showApiKey}
+                  >
+                    {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+
+                {/* Save & Test — shown when user has typed a new key */}
+                {(keyDirty || (!hasStoredKey && apiKey.trim())) && (
+                  <button
+                    onClick={handleSaveAndTest}
+                    disabled={!apiKey.trim() || connectionStatus === "testing"}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  >
+                    {connectionStatus === "testing" ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Wifi className="h-3.5 w-3.5" />
+                    )}
+                    Save & Test
+                  </button>
+                )}
+
+                {/* Make Active — only after successful test */}
+                {canMakeActive && hasStoredKey && !keyDirty && (
+                  <button
+                    onClick={handleMakeActive}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    Make Active
+                  </button>
+                )}
+              </div>
+
+              {/* Help link */}
+              {currentProviderOption?.helpUrl && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  <a
+                    href={currentProviderOption.helpUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary/70 hover:text-primary underline-offset-2 hover:underline"
+                  >
+                    {currentProviderOption.helpLabel || "Get a free API key"} &rarr;
+                  </a>
+                </p>
+              )}
+
+              {/* Azure Region dropdown (Microsoft only) */}
+              {currentProviderOption?.needsRegion && (
+                <div className="mt-3">
+                  <label className="mb-1.5 block text-xs font-medium text-foreground">Azure Region</label>
+                  <select
+                    value={azureRegion}
+                    onChange={(e) => setAzureRegion(e.target.value)}
+                    className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
+                  >
+                    {AZURE_REGIONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Region for your Azure Translator resource
+                  </p>
+                </div>
+              )}
+
+              {/* Status feedback */}
+              <div className="mt-2 min-h-[18px]">
+                {connectionStatus === "success" && (
+                  <div className="flex items-center gap-1.5 text-xs text-success">
+                    <CheckCircle className="h-3 w-3" />
+                    {statusMessage}
+                  </div>
+                )}
+                {connectionStatus === "error" && (
+                  <div className="flex items-center gap-1.5 text-xs text-destructive">
+                    <XCircle className="h-3 w-3" />
+                    {statusMessage}
+                  </div>
+                )}
+                {connectionStatus === "idle" && hasStoredKey && !keyDirty && (
+                  <p className="text-xs text-success/70">
+                    API key stored securely
+                  </p>
+                )}
+                {connectionStatus === "idle" && !hasStoredKey && (
+                  <p className="text-xs text-muted-foreground">
+                    Enter your key and click Save & Test
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Status feedback */}
-          <div className="mt-2 min-h-[18px]">
-            {connectionStatus === "success" && (
-              <div className="flex items-center gap-1.5 text-xs text-success">
-                <CheckCircle className="h-3 w-3" />
-                {statusMessage}
+          {/* ── OPUS-MT info panel (stub — models not available) ── */}
+          {isOpusMt && (
+            <div className="rounded-xl border border-border/30 bg-card/50 p-4">
+              <h3 className="mb-3 text-sm font-semibold text-primary/80">OPUS-MT</h3>
+              <div className="flex items-start gap-2.5 rounded-lg border border-info/20 bg-info/5 px-3.5 py-3">
+                <Info className="h-4 w-4 text-info shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-foreground">
+                    OPUS-MT uses locally downloaded translation models.
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Model download support is coming in a future update. Once available, models will run fully offline with no API key required.
+                  </p>
+                </div>
               </div>
-            )}
-            {connectionStatus === "error" && (
-              <div className="flex items-center gap-1.5 text-xs text-destructive">
-                <XCircle className="h-3 w-3" />
-                {statusMessage}
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  onClick={handleTestLocal}
+                  disabled={connectionStatus === "testing"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-4 py-2 text-sm font-medium text-foreground transition-all duration-150 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                >
+                  {connectionStatus === "testing" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Wifi className="h-3.5 w-3.5" />
+                  )}
+                  Test Connection
+                </button>
+                {connectionStatus === "error" && (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Info className="h-3.5 w-3.5" />
+                    <span className="text-xs">{statusMessage}</span>
+                  </div>
+                )}
+                {connectionStatus === "success" && (
+                  <div className="flex items-center gap-1 text-success">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    <span className="text-xs">{statusMessage}</span>
+                  </div>
+                )}
               </div>
-            )}
-            {connectionStatus === "idle" && hasStoredKey && !keyDirty && (
-              <p className="text-xs text-success/70">
-                API key stored securely
-              </p>
-            )}
-            {connectionStatus === "idle" && !hasStoredKey && (
-              <p className="text-xs text-muted-foreground">
-                Enter your key and click Save & Test
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Local provider — Test Connection */}
-      {!isCloud && (
-        <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-          <h3 className="mb-3 text-sm font-semibold text-primary/80">Connection</h3>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleTestLocal}
-              disabled={connectionStatus === "testing"}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-4 py-2 text-sm font-medium text-foreground transition-all duration-150 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-            >
-              {connectionStatus === "testing" ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Wifi className="h-3.5 w-3.5" />
-              )}
-              Test Connection
-            </button>
-
-            {selectedProvider !== provider && (
-              <button
-                onClick={handleMakeActive}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
-              >
-                <Zap className="h-3.5 w-3.5" />
-                Make Active
-              </button>
-            )}
-
-            {connectionStatus === "success" && (
-              <div className="flex items-center gap-1 text-success">
-                <CheckCircle className="h-3.5 w-3.5" />
-                <span className="text-xs">{statusMessage}</span>
-              </div>
-            )}
-            {connectionStatus === "error" && (
-              <div className="flex items-center gap-1 text-destructive">
-                <XCircle className="h-3.5 w-3.5" />
-                <span className="text-xs truncate max-w-[250px]">{statusMessage}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── 4. Language Settings ── */}
-      <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-primary/80">Language</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-foreground">Target Language</label>
-            <select
-              value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value)}
-              className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
-            >
-              {languageOptions.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.name}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Translate transcripts into this language
-            </p>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-foreground">Source Language</label>
-            <select
-              value={sourceLang}
-              onChange={(e) => setSourceLang(e.target.value)}
-              className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
-            >
-              <option value="auto">Auto-detect (recommended)</option>
-              {languageOptions.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.name}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Detect source language automatically or set explicitly
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 5. Behavior Toggles ── */}
-      <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-primary/80">Behavior</h3>
-        <div className="space-y-4">
-          {/* Auto-translate during meetings */}
-          <ToggleRow
-            label="Auto-translate during meetings"
-            description="Automatically translate new transcript lines as they appear"
-            checked={autoTranslateEnabled}
-            onChange={setAutoTranslateEnabled}
-          />
-
-          {/* Default display mode */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground">Default display mode</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                How translations appear in the transcript
-              </p>
             </div>
-            <select
-              value={displayMode}
-              onChange={(e) => setDisplayMode(e.target.value as "inline" | "hover")}
-              className="w-44 rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
+          )}
+
+          {/* ── LLM local provider — Test Connection ── */}
+          {isLlm && (
+            <div className="rounded-xl border border-border/30 bg-card/50 p-4">
+              <h3 className="mb-3 text-sm font-semibold text-primary/80">Connection</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleTestLocal}
+                  disabled={connectionStatus === "testing"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-4 py-2 text-sm font-medium text-foreground transition-all duration-150 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                >
+                  {connectionStatus === "testing" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Wifi className="h-3.5 w-3.5" />
+                  )}
+                  Test Connection
+                </button>
+
+                {canMakeActive && (
+                  <button
+                    onClick={handleMakeActive}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    Make Active
+                  </button>
+                )}
+
+                {connectionStatus === "success" && (
+                  <div className="flex items-center gap-1 text-success">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    <span className="text-xs">{statusMessage}</span>
+                  </div>
+                )}
+                {connectionStatus === "error" && (
+                  <div className="flex items-center gap-1 text-destructive">
+                    <XCircle className="h-3.5 w-3.5" />
+                    <span className="text-xs truncate max-w-[250px]">{statusMessage}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Make Active — full-width at bottom of left column */}
+          {canMakeActive && (
+            <button
+              onClick={handleMakeActive}
+              className="w-full rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-all duration-150 hover:bg-primary/10 hover:-translate-y-px active:translate-y-px active:scale-[0.99] cursor-pointer"
             >
-              <option value="inline">Inline Below</option>
-              <option value="hover">Hover Tooltip</option>
-            </select>
+              Set {currentProviderOption?.label || selectedProvider} as Active Translation Provider
+            </button>
+          )}
+        </div>
+
+        {/* ═══ RIGHT COLUMN: Common settings ═══ */}
+        <div className="space-y-5">
+          {/* ── Language Settings ── */}
+          <div className="rounded-xl border border-border/30 bg-card/50 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-primary/80">Language</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-foreground">Target Language</label>
+                <select
+                  value={targetLang}
+                  onChange={(e) => setTargetLang(e.target.value)}
+                  className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
+                >
+                  {languageOptions.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Translate transcripts into this language
+                </p>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-foreground">Source Language</label>
+                <select
+                  value={sourceLang}
+                  onChange={(e) => setSourceLang(e.target.value)}
+                  className="w-full rounded-lg border border-border/50 bg-background px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
+                >
+                  <option value="auto">Auto-detect (recommended)</option>
+                  {languageOptions.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Detect source language automatically or set explicitly
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Select-to-translate toolbar */}
-          <ToggleRow
-            label="Select-to-translate toolbar"
-            description="Show a translate button when selecting text in the transcript"
-            checked={selectionToolbarEnabled}
-            onChange={setSelectionToolbarEnabled}
-          />
+          {/* ── Behavior Toggles ── */}
+          <div className="rounded-xl border border-border/30 bg-card/50 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-primary/80">Behavior</h3>
+            <div className="space-y-4">
+              {/* Auto-translate during meetings */}
+              <ToggleRow
+                label="Auto-translate during meetings"
+                description="Automatically translate new transcript lines as they appear"
+                checked={autoTranslateEnabled}
+                onChange={setAutoTranslateEnabled}
+              />
 
-          {/* Cache translations */}
-          <ToggleRow
-            label="Cache translations"
-            description="Store translated text locally to avoid re-translating the same content"
-            checked={cacheEnabled}
-            onChange={setCacheEnabled}
-          />
+              {/* Default display mode */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground">Default display mode</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    How translations appear in the transcript
+                  </p>
+                </div>
+                <select
+                  value={displayMode}
+                  onChange={(e) => setDisplayMode(e.target.value as "inline" | "hover")}
+                  className="w-44 rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
+                >
+                  <option value="inline">Inline Below</option>
+                  <option value="hover">Hover Tooltip</option>
+                </select>
+              </div>
+
+              {/* Select-to-translate toolbar */}
+              <ToggleRow
+                label="Select-to-translate toolbar"
+                description="Show a translate button when selecting text in the transcript"
+                checked={selectionToolbarEnabled}
+                onChange={setSelectionToolbarEnabled}
+              />
+
+              {/* Cache translations */}
+              <ToggleRow
+                label="Cache translations"
+                description="Store translated text locally to avoid re-translating the same content"
+                checked={cacheEnabled}
+                onChange={setCacheEnabled}
+              />
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Make Active — shown at bottom when selected differs from active */}
-      {selectedProvider !== provider && (
-        <button
-          onClick={handleMakeActive}
-          className="w-full rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-all duration-150 hover:bg-primary/10 hover:-translate-y-px active:translate-y-px active:scale-[0.99] cursor-pointer"
-        >
-          Set {currentProviderOption?.label || selectedProvider} as Active Translation Provider
-        </button>
-      )}
     </div>
   );
 }
@@ -724,12 +852,12 @@ function ProviderCard({
           : "border-border/40 bg-card/30 hover:border-border/70 hover:bg-accent/60"
       }`}
     >
-      {/* Active dot indicator */}
+      {/* Status dot — color reflects actual badge state */}
       {isActive && (
         <div className="absolute -top-1 -right-1">
           <div
-            className="h-2.5 w-2.5 rounded-full ring-2 ring-card bg-success"
-            title="Active provider"
+            className={`h-2.5 w-2.5 rounded-full ring-2 ring-card ${DOT_COLORS[badge.variant]}`}
+            title={`Active provider — ${badge.text}`}
             aria-hidden="true"
           />
         </div>

@@ -77,25 +77,15 @@ pub async fn set_translation_languages(
 pub async fn translate_text(
     app: AppHandle,
     text: String,
-    target_lang: Option<String>,
+    target_lang: String,
     source_lang: Option<String>,
 ) -> Result<TranslationResult, String> {
     let state = app.state::<AppState>();
     let trans_arc = state.translation.as_ref()
         .ok_or("Translation router not initialized")?;
 
-    // Use provided target_lang or fallback to the router's stored default
-    let (target, source) = {
-        let router = trans_arc.lock().map_err(|_| "Lock poisoned")?;
-        let t = target_lang
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| router.default_target_lang().to_string());
-        let s = source_lang
-            .filter(|s| !s.is_empty() && s != "auto")
-            .or_else(|| router.default_source_lang().map(|s| s.to_string()))
-            .filter(|s| s != "auto");
-        (t, s)
-    };
+    let target = target_lang;
+    let source = source_lang.filter(|s| !s.is_empty() && s != "auto");
 
     // Check cache first, then clone Arc<dyn Provider> BEFORE dropping lock
     let (cached_result, provider_arc, provider_name) = {

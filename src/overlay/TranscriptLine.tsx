@@ -3,7 +3,7 @@
 // Speaker color is dynamic via speakerStore; confidence underline when enabled.
 // SP2 Task 7: Hover bookmark icon, right-click context menu, bookmarked line indicator.
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Bookmark as BookmarkIcon } from "lucide-react";
 import type { TranscriptSegment } from "../lib/types";
 import { useMeetingStore } from "../stores/meetingStore";
@@ -187,6 +187,19 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const hasHoverTranslation = displayMode === "hover" && !!translation;
   const lineRef = useRef<HTMLDivElement>(null);
   const [tooltipY, setTooltipY] = useState(0);
+
+  // Sync tooltip visibility when displayMode changes while already hovering
+  useEffect(() => {
+    if (isHovered && hasHoverTranslation) {
+      setShowTranslationTooltip(true);
+      if (lineRef.current) {
+        const rect = lineRef.current.getBoundingClientRect();
+        setTooltipY(rect.bottom + 4);
+      }
+    } else if (!hasHoverTranslation) {
+      setShowTranslationTooltip(false);
+    }
+  }, [isHovered, hasHoverTranslation]);
 
   return (
     <div

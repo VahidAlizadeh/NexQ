@@ -14,6 +14,8 @@ const PALETTE = [
   { name: "Pink", value: "#f9a8d4" },
   { name: "Lavender", value: "#c4b5fd" },
   { name: "Indigo", value: "#a5b4fc" },
+  { name: "Peach", value: "#fdba74" },
+  { name: "Teal", value: "#5eead4" },
 ];
 
 interface ColorPickerButtonProps {
@@ -38,41 +40,47 @@ export function ColorPickerButton({ value, onChange, label }: ColorPickerButtonP
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-accent/40 transition-colors"
+        className="flex items-center gap-1 rounded-md px-1.5 py-1 hover:bg-white/5 transition-colors cursor-pointer"
         title={label || "Pick color"}
       >
         <div
-          className="h-3 w-3 rounded-sm border border-white/20"
+          className="h-3.5 w-3.5 rounded border border-white/15"
           style={{ backgroundColor: value }}
         />
-        <svg className="h-2.5 w-2.5 text-muted-foreground/40" viewBox="0 0 12 12" fill="none">
+        <svg className="h-2 w-2 text-muted-foreground/35" viewBox="0 0 12 12" fill="none">
           <path d="M3 5L6 8L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
       {open && (
         <div
-          className="absolute bottom-full mb-2 left-0 z-[9999] rounded-lg border border-white/10 p-2 shadow-2xl"
-          style={{ backgroundColor: '#131320' }}
+          className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-[9999] rounded-xl border border-white/8 p-3 shadow-2xl shadow-black/50"
+          style={{ backgroundColor: '#0f0f1a' }}
         >
-          <div className="grid grid-cols-5 gap-1">
+          {/* Color grid */}
+          <div className="grid grid-cols-5 gap-2">
             {PALETTE.map((c) => (
               <button
                 key={c.value}
                 onClick={() => { onChange(c.value); setOpen(false); }}
-                className={`h-5 w-5 rounded-md border-2 transition-all hover:scale-110 ${
+                className={`h-6 w-6 rounded-lg transition-all duration-150 cursor-pointer ${
                   value === c.value
-                    ? "border-white/70 ring-1 ring-white/30"
-                    : "border-transparent hover:border-white/30"
+                    ? "ring-2 ring-white/50 ring-offset-1 ring-offset-[#0f0f1a] scale-105"
+                    : "hover:scale-110 hover:ring-1 hover:ring-white/20"
                 }`}
                 style={{ backgroundColor: c.value }}
                 title={c.name}
               />
             ))}
           </div>
-          {/* Custom hex input */}
-          <div className="mt-1.5 flex items-center gap-1 border-t border-white/5 pt-1.5">
-            <span className="text-[0.55rem] text-muted-foreground/40">#</span>
+
+          {/* Hex input */}
+          <div className="mt-2.5 flex items-center gap-1.5 border-t border-white/6 pt-2">
+            <div
+              className="h-4 w-4 rounded border border-white/10 shrink-0"
+              style={{ backgroundColor: value }}
+            />
+            <span className="text-[0.6rem] text-muted-foreground/30 font-mono">#</span>
             <input
               type="text"
               value={value.replace('#', '')}
@@ -82,7 +90,7 @@ export function ColorPickerButton({ value, onChange, label }: ColorPickerButtonP
                   if (hex.length === 6) onChange(`#${hex}`);
                 }
               }}
-              className="w-16 bg-transparent text-[0.6rem] text-foreground/70 outline-none font-mono"
+              className="w-14 bg-transparent text-[0.65rem] text-foreground/60 outline-none font-mono tracking-wider"
               maxLength={6}
               placeholder="custom"
             />

@@ -10,6 +10,7 @@ import { useMeetingStore } from "../stores/meetingStore";
 import { useSpeakerStore } from "../stores/speakerStore";
 import { useConfigStore } from "../stores/configStore";
 import { useBookmarkStore } from "../stores/bookmarkStore";
+import { useTranslationStore } from "../stores/translationStore";
 import { TranscriptContextMenu } from "./TranscriptContextMenu";
 import { showBookmarkToast } from "./BookmarkToast";
 
@@ -36,11 +37,21 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const confidenceThreshold = useConfigStore((s) => s.confidenceThreshold);
   const confidenceHighlightEnabled = useConfigStore((s) => s.confidenceHighlightEnabled);
 
+  // Translation store subscriptions
+  const translations = useTranslationStore((s) => s.translations);
+  const translating = useTranslationStore((s) => s.translating);
+  const displayMode = useTranslationStore((s) => s.displayMode);
+  const autoTranslateActive = useTranslationStore((s) => s.autoTranslateActive);
+
   // SP2 Task 7: Bookmark state + context menu position
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const bookmark = useBookmarkStore((s) => s.getBookmarkForSegment(segment.id));
   const isBookmarked = !!bookmark;
   const toggleBookmark = useBookmarkStore((s) => s.toggleBookmark);
+
+  // Translation for this segment
+  const translation = translations.get(segment.id);
+  const isTranslating = translating.has(segment.id);
 
   // Resolve speaker ID — prefer explicit speaker_id, fall back to speaker field
   const speakerId = segment.speaker_id ?? (segment.speaker === "User" ? "you" : "them");
@@ -227,10 +238,27 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
               ? "border-b border-dotted border-white/30 opacity-70"
               : ""
           }`}
-          title={isLowConfidence ? `Confidence: ${Math.round(segment.confidence * 100)}%` : undefined}
+          title={
+            isLowConfidence
+              ? `Confidence: ${Math.round(segment.confidence * 100)}%`
+              : autoTranslateActive && displayMode === "hover" && translation
+              ? translation.translated_text
+              : undefined
+          }
         >
           {renderText()}
         </span>
+
+        {/* Inline translation — shown below transcript text when auto-translate is active */}
+        {autoTranslateActive && displayMode === "inline" && (
+          <div className="mt-0.5 text-[11px] text-primary/40 italic leading-snug">
+            {isTranslating ? (
+              <span className="text-muted-foreground/30 animate-pulse">Translating...</span>
+            ) : translation ? (
+              translation.translated_text
+            ) : null}
+          </div>
+        )}
 
         {/* Bookmark note — rendered below transcript text */}
         {isBookmarked && bookmark?.note && (

@@ -6,6 +6,14 @@ import type { Meeting, TranscriptSegment, AIScenario, SpeakerIdentity } from "./
 import { formatTimestamp, formatDurationLong, getSpeakerLabel, getModeLabel } from "./utils";
 import { showToast } from "../stores/toastStore";
 
+/** Strip LLM thinking tags from text (Qwen3, DeepSeek, etc.) */
+function stripThinkTags(text: string): string {
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*/gi, "")
+    .trim();
+}
+
 // ── Speaker resolution ───────────────────────────────────────────────────────
 
 function buildSpeakerMap(speakers?: SpeakerIdentity[]): Map<string, SpeakerIdentity> | null {
@@ -59,7 +67,7 @@ export function exportToMarkdown(meeting: Meeting): string {
   md += `**Segments:** ${meeting.transcript.length}\n\n`;
 
   if (meeting.summary) {
-    md += `## Summary\n\n${meeting.summary}\n\n`;
+    md += `## Summary\n\n${stripThinkTags(meeting.summary)}\n\n`;
   }
 
   if (meeting.action_items && meeting.action_items.length > 0) {
@@ -144,7 +152,7 @@ export function exportToJSON(meeting: Meeting): string {
     duration_seconds: meeting.duration_seconds,
     audio_mode: meeting.audio_mode,
     ai_scenario: meeting.ai_scenario,
-    summary: meeting.summary,
+    summary: meeting.summary ? stripThinkTags(meeting.summary) : meeting.summary,
     transcript: meeting.transcript,
     ai_interactions: meeting.ai_interactions,
     speakers: meeting.speakers,
@@ -167,7 +175,7 @@ export function exportStudyNotes(meeting: Meeting): string {
   md += "\n";
 
   if (meeting.summary) {
-    md += `## Key Takeaways\n\n${meeting.summary}\n\n`;
+    md += `## Key Takeaways\n\n${stripThinkTags(meeting.summary)}\n\n`;
   }
 
   if (meeting.topic_sections && meeting.topic_sections.length > 0) {
@@ -220,7 +228,7 @@ export function exportMeetingMinutes(meeting: Meeting): string {
   md += "\n";
 
   if (meeting.summary) {
-    md += `## Summary\n\n${meeting.summary}\n\n`;
+    md += `## Summary\n\n${stripThinkTags(meeting.summary)}\n\n`;
   }
 
   if (meeting.topic_sections && meeting.topic_sections.length > 0) {

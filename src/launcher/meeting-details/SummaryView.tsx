@@ -3,9 +3,10 @@ import type { Meeting } from "../../lib/types";
 import type { SummaryGenerationState } from "../../hooks/useSummaryGeneration";
 import { useStreamStore } from "../../stores/streamStore";
 import { showToast } from "../../stores/toastStore";
-import { Sparkles, RefreshCw, Copy, Download, Loader2, X } from "lucide-react";
+import { Sparkles, Copy, Download, Loader2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { Components } from "react-markdown";
 
 function stripThinkTags(text: string): string {
   return text
@@ -13,6 +14,55 @@ function stripThinkTags(text: string): string {
     .replace(/<think>[\s\S]*/gi, "")
     .trim();
 }
+
+/** Custom ReactMarkdown component overrides for styled rendering */
+const mdComponents: Components = {
+  h1: ({ children }) => (
+    <h1 className="text-lg font-bold text-foreground mt-6 mb-3 pb-2 border-b border-primary/20">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="text-[15px] font-semibold text-primary mt-7 mb-2.5 pb-1.5 border-b border-border/20 tracking-wide uppercase text-primary/80">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="text-sm font-semibold text-foreground mt-4 mb-1.5">
+      {children}
+    </h3>
+  ),
+  p: ({ children }) => (
+    <p className="text-sm leading-7 text-foreground/80 mb-3">
+      {children}
+    </p>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-2 ml-1 space-y-1.5">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-2 ml-1 space-y-1.5 list-decimal list-inside">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => (
+    <li className="text-sm leading-relaxed text-foreground/80 flex gap-2">
+      <span className="text-primary/40 mt-1.5 shrink-0">•</span>
+      <span>{children}</span>
+    </li>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-semibold text-foreground">
+      {children}
+    </strong>
+  ),
+  em: ({ children }) => (
+    <em className="italic text-foreground/70">{children}</em>
+  ),
+  hr: () => <hr className="my-5 border-border/20" />,
+};
 
 interface SummaryViewProps {
   meeting: Meeting;
@@ -51,16 +101,10 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
             Cancel
           </button>
         </div>
-        <div className="prose prose-sm prose-invert max-w-none
-          prose-headings:text-foreground prose-headings:font-semibold
-          prose-h2:text-base prose-h2:mt-6 prose-h2:mb-2 prose-h2:border-b prose-h2:border-border/20 prose-h2:pb-1.5
-          prose-h3:text-sm prose-h3:mt-4 prose-h3:mb-1.5
-          prose-p:text-sm prose-p:leading-relaxed prose-p:text-foreground/80
-          prose-li:text-sm prose-li:text-foreground/80 prose-li:leading-relaxed
-          prose-strong:text-foreground prose-strong:font-semibold
-          prose-ul:my-1.5 prose-ol:my-1.5
-        ">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanedStreaming}</ReactMarkdown>
+        <div>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+            {cleanedStreaming}
+          </ReactMarkdown>
           <span className="inline-block h-4 w-0.5 animate-pulse bg-primary/60 ml-0.5" />
         </div>
       </div>
@@ -110,18 +154,10 @@ export function SummaryView({ meeting, generation, onExport }: SummaryViewProps)
             Export
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5">
-          <div className="prose prose-sm prose-invert max-w-none
-            prose-headings:text-foreground prose-headings:font-semibold
-            prose-h2:text-base prose-h2:mt-6 prose-h2:mb-2 prose-h2:border-b prose-h2:border-border/20 prose-h2:pb-1.5
-            prose-h3:text-sm prose-h3:mt-4 prose-h3:mb-1.5
-            prose-p:text-sm prose-p:leading-relaxed prose-p:text-foreground/80
-            prose-li:text-sm prose-li:text-foreground/80 prose-li:leading-relaxed
-            prose-strong:text-foreground prose-strong:font-semibold
-            prose-ul:my-1.5 prose-ol:my-1.5
-          ">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanedSummary}</ReactMarkdown>
-          </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+            {cleanedSummary}
+          </ReactMarkdown>
         </div>
       </div>
     );

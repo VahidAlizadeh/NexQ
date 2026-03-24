@@ -181,7 +181,7 @@ fn v4_bookmark_segment_id(conn: &Connection) -> Result<(), rusqlite::Error> {
 }
 
 /// Schema v5: Recording columns — recording_path, recording_size, waveform_path, recording_offset_ms.
-pub fn v5_recording_columns(conn: &Connection) -> Result<(), rusqlite::Error> {
+fn v5_recording_columns(conn: &Connection) -> Result<(), rusqlite::Error> {
     let columns = [
         "ALTER TABLE meetings ADD COLUMN recording_path TEXT",
         "ALTER TABLE meetings ADD COLUMN recording_size INTEGER",

@@ -70,7 +70,6 @@ export interface Meeting {
   topic_sections?: TopicSection[];
   action_items?: ActionItem[];
   noise_preset?: string;
-  recording_info?: RecordingInfo | null;
 }
 
 export interface RecordingInfo {

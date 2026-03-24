@@ -5,6 +5,7 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   AudioLevelEvent,
+  BatchTranslationProgress,
   ModelDownloadProgress,
   OllamaPullProgressEvent,
   QuestionDetectedEvent,
@@ -14,6 +15,7 @@ import type {
   StreamTokenEvent,
   TranscriptIndexedEvent,
   TranscriptUpdateEvent,
+  TranslationResult,
 } from "./types";
 
 // == TRANSCRIPT EVENTS ==
@@ -215,4 +217,18 @@ export function onRecordingError(
   handler: (event: string) => void
 ): Promise<UnlistenFn> {
   return listen<string>("recording_error", (e) => handler(e.payload));
+}
+
+// == Events: Translation ==
+
+export function onTranslationResult(handler: (result: TranslationResult) => void): Promise<UnlistenFn> {
+  return listen<TranslationResult>("translation_result", (e) => handler(e.payload));
+}
+
+export function onTranslationError(handler: (error: { segment_id?: string; error: string }) => void): Promise<UnlistenFn> {
+  return listen<{ segment_id?: string; error: string }>("translation_error", (e) => handler(e.payload));
+}
+
+export function onBatchTranslationProgress(handler: (progress: BatchTranslationProgress) => void): Promise<UnlistenFn> {
+  return listen<BatchTranslationProgress>("batch_translation_progress", (e) => handler(e.payload));
 }

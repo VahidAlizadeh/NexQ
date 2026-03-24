@@ -670,3 +670,48 @@ export interface STTConnectionStatusEvent {
   status: "connecting" | "connected" | "error" | "disconnected" | "reconnecting";
   message?: string;
 }
+
+// == Translation ==
+
+export type TranslationProviderType = "microsoft" | "google" | "deepl" | "opus-mt" | "llm";
+
+export type TranslationDisplayMode = "inline" | "hover";
+
+export interface TranslationResult {
+  segment_id?: string;
+  original_text: string;
+  translated_text: string;
+  source_lang: string;
+  target_lang: string;
+  provider: string;
+}
+
+export interface TranslationLanguage {
+  code: string;
+  name: string;
+  native_name?: string;
+}
+
+export interface TranslationConnectionStatus {
+  connected: boolean;
+  language_count: number;
+  response_ms: number;
+  error?: string;
+}
+
+export interface BatchTranslationProgress {
+  meetingId: string;
+  completed: number;
+  total: number;
+  targetLang: string;
+}
+
+export interface TranslationConfig {
+  provider: TranslationProviderType;
+  targetLang: string;
+  sourceLang: string;
+  displayMode: TranslationDisplayMode;
+  autoTranslateEnabled: boolean;
+  selectionToolbarEnabled: boolean;
+  cacheEnabled: boolean;
+}

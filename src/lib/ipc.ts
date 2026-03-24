@@ -24,6 +24,9 @@ import type {
   RagSearchResult,
   RecordingInfo,
   TokenBudget,
+  TranslationResult,
+  TranslationLanguage,
+  TranslationConnectionStatus,
 } from "./types";
 
 // == IPC: Audio (Sub-PRD 3) ==
@@ -565,4 +568,42 @@ export async function getRecordingFileUrl(meetingId: string): Promise<string> {
 
 export async function deleteRecording(meetingId: string): Promise<void> {
   return invoke("delete_recording", { meetingId });
+}
+
+// == IPC: Translation ==
+
+export async function setTranslationProvider(provider: string, region?: string): Promise<void> {
+  return invoke("set_translation_provider", { provider, region });
+}
+
+export async function translateText(text: string, targetLang?: string, sourceLang?: string): Promise<TranslationResult> {
+  return invoke<TranslationResult>("translate_text", { text, target_lang: targetLang, source_lang: sourceLang });
+}
+
+export async function translateSegments(segmentIds: string[], texts: string[], meetingId: string, targetLang?: string, sourceLang?: string): Promise<void> {
+  return invoke("translate_segments", { segment_ids: segmentIds, texts, meeting_id: meetingId, target_lang: targetLang, source_lang: sourceLang });
+}
+
+export async function translateBatch(meetingId: string, targetLang?: string): Promise<void> {
+  return invoke("translate_batch", { meeting_id: meetingId, target_lang: targetLang });
+}
+
+export async function detectLanguage(text: string): Promise<{ lang: string; confidence: number }> {
+  return invoke("detect_language", { text });
+}
+
+export async function testTranslationConnection(provider: string): Promise<TranslationConnectionStatus> {
+  return invoke<TranslationConnectionStatus>("test_translation_connection", { provider });
+}
+
+export async function getTranslationLanguages(): Promise<TranslationLanguage[]> {
+  return invoke<TranslationLanguage[]>("get_translation_languages");
+}
+
+export async function getMeetingTranslations(meetingId: string, targetLang: string): Promise<TranslationResult[]> {
+  return invoke<TranslationResult[]>("get_meeting_translations", { meeting_id: meetingId, target_lang: targetLang });
+}
+
+export async function exportTranslatedTranscript(meetingId: string, targetLang: string, format: string): Promise<string> {
+  return invoke<string>("export_translated_transcript", { meeting_id: meetingId, target_lang: targetLang, format });
 }

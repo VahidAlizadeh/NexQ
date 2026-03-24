@@ -408,10 +408,21 @@ export function TranslationSettings() {
   }, [selectedProvider, apiKey, azureRegion, currentProviderOption, setStoreProvider]);
 
   // ── Language list for dropdowns ──
+  // Always use the comprehensive default list as the base.
+  // If the provider returned additional languages not in the defaults, merge them in.
 
-  const languageOptions = availableLanguages.length > 0
-    ? availableLanguages.map((l) => ({ code: l.code, name: l.name }))
-    : DEFAULT_TARGET_LANGUAGES;
+  const languageOptions = (() => {
+    const base = [...DEFAULT_TARGET_LANGUAGES];
+    if (availableLanguages.length > 0) {
+      const existingCodes = new Set(base.map((l) => l.code));
+      for (const pl of availableLanguages) {
+        if (!existingCodes.has(pl.code)) {
+          base.push({ code: pl.code, name: pl.name });
+        }
+      }
+    }
+    return base.sort((a, b) => a.name.localeCompare(b.name));
+  })();
 
   const isCloud = currentProviderOption?.requiresApiKey ?? false;
   const isOpusMt = selectedProvider === "opus-mt";

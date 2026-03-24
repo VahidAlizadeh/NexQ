@@ -16,6 +16,7 @@ import type {
   Meeting,
   MeetingSummary,
   ModelInfo,
+  OpenRouterModel,
   OllamaEmbeddingStatus,
   PartyAudioConfig,
   RagConfig,
@@ -164,6 +165,15 @@ export async function testLLMConnection(provider: string): Promise<boolean> {
 
 export async function getLLMProviders(): Promise<string[]> {
   const result = await invoke<string>("get_llm_providers");
+  return JSON.parse(result);
+}
+
+export async function listOpenRouterModels(
+  forceRefresh: boolean
+): Promise<OpenRouterModel[]> {
+  const result = await invoke<string>("list_openrouter_models", {
+    forceRefresh,
+  });
   return JSON.parse(result);
 }
 

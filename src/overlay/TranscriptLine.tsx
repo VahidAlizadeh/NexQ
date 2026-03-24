@@ -310,11 +310,18 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
           document.body
         )}
 
-        {/* Bookmark note */}
+        {/* Bookmark note — quote-style, sized proportional to transcript text */}
         {isBookmarked && bookmark?.note && (
-          <p className="mt-0.5 text-[0.625rem] italic text-muted-foreground/40 truncate">
-            {bookmark.note}
-          </p>
+          <div
+            className="mt-1.5 flex items-start gap-2 rounded-md border-l-2 border-primary/30 bg-primary/5 px-2.5 py-1.5"
+          >
+            <p
+              className="leading-[1.5] text-primary/70 italic"
+              style={{ fontSize: `${Math.max(11, transcriptFontSize - 2)}px` }}
+            >
+              {bookmark.note}
+            </p>
+          </div>
         )}
       </div>
 

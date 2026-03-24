@@ -503,7 +503,7 @@ export function TranslationSettings() {
                   Requires API Key
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {CLOUD_PROVIDERS.map((p) => (
                   <ProviderCard
                     key={p.value}

@@ -98,15 +98,14 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
     const currentIndex = SPEED_OPTIONS.indexOf(
       playbackSpeed as (typeof SPEED_OPTIONS)[number]
     );
+    const idx = currentIndex === -1 ? 2 : currentIndex; // default to 1x
     let nextIndex: number;
     if (direction === "up") {
-      nextIndex =
-        currentIndex === -1 || currentIndex >= SPEED_OPTIONS.length - 1
-          ? SPEED_OPTIONS.length - 1
-          : currentIndex + 1;
+      // Wrap around: 2x → 0.5x
+      nextIndex = (idx + 1) % SPEED_OPTIONS.length;
     } else {
-      nextIndex =
-        currentIndex === -1 || currentIndex <= 0 ? 0 : currentIndex - 1;
+      // Wrap around: 0.5x → 2x
+      nextIndex = (idx - 1 + SPEED_OPTIONS.length) % SPEED_OPTIONS.length;
     }
     get().setPlaybackSpeed(SPEED_OPTIONS[nextIndex]);
   },

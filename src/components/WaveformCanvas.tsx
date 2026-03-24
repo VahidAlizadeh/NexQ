@@ -91,11 +91,18 @@ export function WaveformCanvas({
     const gapW = slotW * BAR_GAP_RATIO;
     const barW = Math.max(1, slotW - gapW);
 
+    // Auto-normalize: find max peak so even quiet recordings fill the waveform
+    let maxAmplitude = 0;
+    for (let i = 0; i < numBars; i++) {
+      const [pMin, pMax] = peaks[i];
+      maxAmplitude = Math.max(maxAmplitude, Math.abs(pMin), Math.abs(pMax));
+    }
+    const ampScale = maxAmplitude > 0.01 ? 0.85 / maxAmplitude : 1;
+
     // --- waveform bars ---
     for (let i = 0; i < numBars; i++) {
       const [min, max] = peaks[i];
-      // Normalise amplitudes (peaks are -1..1 or 0..1 depending on encoder)
-      const amplitude = Math.max(Math.abs(min), Math.abs(max));
+      const amplitude = Math.max(Math.abs(min), Math.abs(max)) * ampScale;
       const barH = Math.max(2, amplitude * logicalH);
       const x = i * slotW + gapW / 2;
       const y = (logicalH - barH) / 2;

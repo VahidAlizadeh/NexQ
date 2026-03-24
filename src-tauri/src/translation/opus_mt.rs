@@ -96,8 +96,7 @@ fn ensure_loaded_blocking(
     log_session_io("Decoder", &decoder);
 
     log::info!("Loading OPUS-MT tokenizer: {}", tokenizer_path.display());
-    let tokenizer = tokenizers::Tokenizer::from_file(&tokenizer_path)
-        .map_err(|e| format!("Tokenizer load failed: {}", e))?;
+    let tokenizer = load_tokenizer(&tokenizer_path)?;
 
     let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
     log::info!("OPUS-MT model ready: {} (eos={}, dec_start={})", model_id, eos_token_id, decoder_start_token_id);
@@ -248,6 +247,31 @@ fn log_session_io(name: &str, session: &ort::session::Session) {
     let outputs: Vec<String> = session.outputs().iter().map(|o| o.name().to_string()).collect();
     log::info!("{} inputs: {:?}", name, inputs);
     log::info!("{} outputs: {:?}", name, outputs);
+}
+
+/// Load tokenizer from file, patching known incompatibilities.
+/// Xenova MarianMT exports have `normalizer: { "type": "Precompiled", "precompiled_charsmap": null }`
+/// which the tokenizers crate rejects. We strip the null normalizer before loading.
+fn load_tokenizer(path: &std::path::Path) -> Result<tokenizers::Tokenizer, String> {
+    let raw = std::fs::read_to_string(path)
+        .map_err(|e| format!("Failed to read tokenizer: {}", e))?;
+
+    let mut json: serde_json::Value = serde_json::from_str(&raw)
+        .map_err(|e| format!("Failed to parse tokenizer JSON: {}", e))?;
+
+    // Patch: remove normalizer if its precompiled_charsmap is null
+    if let Some(norm) = json.get("normalizer") {
+        if norm.get("precompiled_charsmap") == Some(&serde_json::Value::Null) {
+            json["normalizer"] = serde_json::Value::Null;
+            log::info!("Patched tokenizer: removed null precompiled_charsmap normalizer");
+        }
+    }
+
+    let patched = serde_json::to_string(&json)
+        .map_err(|e| format!("Failed to serialize patched tokenizer: {}", e))?;
+
+    tokenizers::Tokenizer::from_bytes(patched.as_bytes())
+        .map_err(|e| format!("Tokenizer load failed: {}", e))
 }
 
 fn extract_special_tokens(tokenizer: &tokenizers::Tokenizer) -> (i64, i64) {

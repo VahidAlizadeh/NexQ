@@ -48,15 +48,15 @@ function parseSuggestionsJSON(
     .replace(/```/g, "")
     .trim();
 
-  // Find the JSON array
-  const start = cleaned.indexOf("[");
-  const end = cleaned.lastIndexOf("]");
+  // Find the JSON array — look for [{ to avoid matching [Speaker] transcript lines
+  const start = cleaned.indexOf("[{");
+  const end = cleaned.lastIndexOf("}]");
   if (start === -1 || end === -1 || end <= start) {
     console.error("[bookmarkSuggestions] No JSON array found. Cleaned:", cleaned.slice(0, 300));
     throw new Error("No JSON array found in response");
   }
 
-  const jsonStr = cleaned.slice(start, end + 1);
+  const jsonStr = cleaned.slice(start, end + 2);
   const parsed = JSON.parse(jsonStr);
 
   if (!Array.isArray(parsed)) throw new Error("Response is not an array");

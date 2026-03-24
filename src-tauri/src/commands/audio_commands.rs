@@ -205,16 +205,22 @@ pub async fn start_capture(
         });
     }
 
-    // Recording is handled by process_chunk (with proper mic/system mixing)
-    // so we don't need a separate recorder handle here.
+    // Grab the recorder handle for WAV recording (with mic/system mixing)
+    let recorder = {
+        let guard = state.audio.lock().map_err(|_| "lock poisoned".to_string())?;
+        guard.as_ref().and_then(|mgr| mgr.get_recorder())
+    };
 
-    // Audio processing task: levels + system STT feed
+    // Audio processing task: levels + recording + system STT feed
     // (Mic STT is handled by Web Speech API in the frontend)
     let app_handle = app.clone();
     tokio::spawn(async move {
         let mut vad = VoiceActivityDetector::new();
         let mut mic_emit_counter: u32 = 0;
         let mut system_emit_counter: u32 = 0;
+        // Mix buffers for proper two-source recording
+        let mut mix_mic: Vec<i16> = Vec::new();
+        let mut mix_sys: Vec<i16> = Vec::new();
 
         while let Some(mut chunk) = rx.recv().await {
             let vad_result = vad.process_chunk(&chunk.pcm_data);
@@ -242,7 +248,33 @@ pub async fn start_capture(
                 let _ = app_handle.emit("audio_level", &level);
             }
 
-            // Recording is handled by process_chunk (with proper mic/system mixing)
+            // Recording with mic/system mixing
+            if let Some(ref rec) = recorder {
+                match chunk.source {
+                    AudioSource::Mic => mix_mic.extend_from_slice(&chunk.pcm_data),
+                    AudioSource::System => mix_sys.extend_from_slice(&chunk.pcm_data),
+                    AudioSource::Room => rec.write_samples(&chunk.pcm_data),
+                }
+                // Mix when both buffers have data
+                let mix_len = mix_mic.len().min(mix_sys.len());
+                if mix_len > 0 {
+                    let mixed: Vec<i16> = mix_mic[..mix_len].iter()
+                        .zip(&mix_sys[..mix_len])
+                        .map(|(&m, &s)| ((m as i32 + s as i32) / 2) as i16)
+                        .collect();
+                    rec.write_samples(&mixed);
+                    mix_mic.drain(..mix_len);
+                    mix_sys.drain(..mix_len);
+                }
+                // Solo flush if one source has >2s buffered with nothing from the other
+                if mix_mic.len() > 32000 && mix_sys.is_empty() {
+                    rec.write_samples(&mix_mic);
+                    mix_mic.clear();
+                } else if mix_sys.len() > 32000 && mix_mic.is_empty() {
+                    rec.write_samples(&mix_sys);
+                    mix_sys.clear();
+                }
+            }
 
             // Feed ONLY system audio to the cloud STT provider
             if chunk.source == AudioSource::System {
@@ -250,6 +282,22 @@ pub async fn start_capture(
                     let _ = provider.feed_audio(chunk).await;
                 }
             }
+        }
+
+        // Flush remaining mix buffers on loop exit
+        if let Some(ref rec) = recorder {
+            let mix_len = mix_mic.len().min(mix_sys.len());
+            if mix_len > 0 {
+                let mixed: Vec<i16> = mix_mic[..mix_len].iter()
+                    .zip(&mix_sys[..mix_len])
+                    .map(|(&m, &s)| ((m as i32 + s as i32) / 2) as i16)
+                    .collect();
+                rec.write_samples(&mixed);
+                mix_mic.drain(..mix_len);
+                mix_sys.drain(..mix_len);
+            }
+            if !mix_mic.is_empty() { rec.write_samples(&mix_mic); }
+            if !mix_sys.is_empty() { rec.write_samples(&mix_sys); }
         }
 
         // Clean shutdown
@@ -1057,7 +1105,11 @@ pub async fn start_capture_per_party(
         });
     }
 
-    // Recording is handled by process_chunk (with proper mic/system mixing)
+    // Grab the recorder handle for WAV recording (with mic/system mixing)
+    let recorder = {
+        let guard = state.audio.lock().map_err(|_| "lock poisoned".to_string())?;
+        guard.as_ref().and_then(|mgr| mgr.get_recorder())
+    };
 
     // Grab mute flags so the audio loop can check them lock-free
     let you_muted_flag = state.you_muted.clone();
@@ -1079,6 +1131,10 @@ pub async fn start_capture_per_party(
         let mut last_mic_stats = std::time::Instant::now();
         let mut last_sys_stats = std::time::Instant::now();
         let stats_interval = std::time::Duration::from_secs(120);
+
+        // Mix buffers for proper two-source recording
+        let mut mix_mic: Vec<i16> = Vec::new();
+        let mut mix_sys: Vec<i16> = Vec::new();
 
         // Track feed_audio errors per provider (emit once, not every chunk)
         let mut you_feed_error_emitted = false;
@@ -1150,7 +1206,31 @@ pub async fn start_capture_per_party(
                 let _ = app_handle.emit("audio_level", &level);
             }
 
-            // Recording is handled by process_chunk (with proper mic/system mixing)
+            // Recording with mic/system mixing
+            if let Some(ref rec) = recorder {
+                match chunk.source {
+                    AudioSource::Mic => mix_mic.extend_from_slice(&chunk.pcm_data),
+                    AudioSource::System => mix_sys.extend_from_slice(&chunk.pcm_data),
+                    AudioSource::Room => rec.write_samples(&chunk.pcm_data),
+                }
+                let mix_len = mix_mic.len().min(mix_sys.len());
+                if mix_len > 0 {
+                    let mixed: Vec<i16> = mix_mic[..mix_len].iter()
+                        .zip(&mix_sys[..mix_len])
+                        .map(|(&m, &s)| ((m as i32 + s as i32) / 2) as i16)
+                        .collect();
+                    rec.write_samples(&mixed);
+                    mix_mic.drain(..mix_len);
+                    mix_sys.drain(..mix_len);
+                }
+                if mix_mic.len() > 32000 && mix_sys.is_empty() {
+                    rec.write_samples(&mix_mic);
+                    mix_mic.clear();
+                } else if mix_sys.len() > 32000 && mix_mic.is_empty() {
+                    rec.write_samples(&mix_sys);
+                    mix_sys.clear();
+                }
+            }
 
             // Route to the correct party's STT provider (surface errors once).
             // Mute gate: when a party is muted, skip feed_audio entirely —
@@ -1198,6 +1278,22 @@ pub async fn start_capture_per_party(
                     }
                 }
             }
+        }
+
+        // Flush remaining mix buffers
+        if let Some(ref rec) = recorder {
+            let mix_len = mix_mic.len().min(mix_sys.len());
+            if mix_len > 0 {
+                let mixed: Vec<i16> = mix_mic[..mix_len].iter()
+                    .zip(&mix_sys[..mix_len])
+                    .map(|(&m, &s)| ((m as i32 + s as i32) / 2) as i16)
+                    .collect();
+                rec.write_samples(&mixed);
+                mix_mic.drain(..mix_len);
+                mix_sys.drain(..mix_len);
+            }
+            if !mix_mic.is_empty() { rec.write_samples(&mix_mic); }
+            if !mix_sys.is_empty() { rec.write_samples(&mix_sys); }
         }
 
         // Clean shutdown

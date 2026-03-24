@@ -88,11 +88,6 @@ pub struct AudioCaptureManager {
     pub test_stop_flag: Arc<AtomicBool>,
     /// Whether any non-silent audio was detected during test
     pub test_audio_detected: Arc<AtomicBool>,
-    // -- Recording mix buffers --
-    /// Pending mic samples waiting to be mixed with system audio
-    mix_mic_buf: Vec<i16>,
-    /// Pending system samples waiting to be mixed with mic audio
-    mix_sys_buf: Vec<i16>,
 }
 
 impl AudioCaptureManager {
@@ -116,8 +111,6 @@ impl AudioCaptureManager {
             test_system_thread: None,
             test_stop_flag: Arc::new(AtomicBool::new(false)),
             test_audio_detected: Arc::new(AtomicBool::new(false)),
-            mix_mic_buf: Vec::new(),
-            mix_sys_buf: Vec::new(),
         }
     }
 
@@ -327,23 +320,8 @@ impl AudioCaptureManager {
             }
         }
 
-        // Write to recorder with proper two-source mixing.
-        // Mic and system chunks arrive interleaved — accumulate in separate
-        // buffers, then mix (average) when both have enough data.
-        if self.recorder.is_some() {
-            match chunk.source {
-                AudioSource::Mic => self.mix_mic_buf.extend_from_slice(&chunk.pcm_data),
-                AudioSource::System => self.mix_sys_buf.extend_from_slice(&chunk.pcm_data),
-                AudioSource::Room => {
-                    // In-person mode: single source, write directly
-                    if let Some(ref recorder) = self.recorder {
-                        recorder.write_samples(&chunk.pcm_data);
-                    }
-                }
-            }
-            // Flush mixed audio when both buffers have data
-            self.flush_mix_buffers(false);
-        }
+        // Note: Recording is handled by the processing loops in audio_commands.rs
+        // (with proper mic/system mixing). process_chunk only handles VAD + levels.
 
         chunk
     }
@@ -351,49 +329,6 @@ impl AudioCaptureManager {
     /// Flush the mic/system mix buffers to the recorder.
     /// When `force` is true, flush all remaining samples (used at recording end).
     /// Otherwise, only flush when both buffers have samples.
-    fn flush_mix_buffers(&mut self, force: bool) {
-        let recorder = match self.recorder.as_ref() {
-            Some(r) => r,
-            None => return,
-        };
-
-        // Mix when both buffers have data
-        let mix_len = self.mix_mic_buf.len().min(self.mix_sys_buf.len());
-        if mix_len > 0 {
-            let mixed: Vec<i16> = self.mix_mic_buf[..mix_len]
-                .iter()
-                .zip(&self.mix_sys_buf[..mix_len])
-                .map(|(&m, &s)| {
-                    // Average the two sources, clamping to i16 range
-                    (((m as i32) + (s as i32)) / 2) as i16
-                })
-                .collect();
-            recorder.write_samples(&mixed);
-            self.mix_mic_buf.drain(..mix_len);
-            self.mix_sys_buf.drain(..mix_len);
-        }
-
-        if force {
-            // Flush any remaining samples from either buffer
-            if !self.mix_mic_buf.is_empty() {
-                recorder.write_samples(&self.mix_mic_buf);
-                self.mix_mic_buf.clear();
-            }
-            if !self.mix_sys_buf.is_empty() {
-                recorder.write_samples(&self.mix_sys_buf);
-                self.mix_sys_buf.clear();
-            }
-        } else if self.mix_mic_buf.len() > 32000 && self.mix_sys_buf.is_empty() {
-            // If one source has >2 seconds buffered with nothing from the other,
-            // flush it solo (the other source may be muted or inactive)
-            recorder.write_samples(&self.mix_mic_buf);
-            self.mix_mic_buf.clear();
-        } else if self.mix_sys_buf.len() > 32000 && self.mix_mic_buf.is_empty() {
-            recorder.write_samples(&self.mix_sys_buf);
-            self.mix_sys_buf.clear();
-        }
-    }
-
     /// Get the current audio levels for UI display.
     pub fn get_audio_levels(&self) -> (AudioLevel, AudioLevel) {
         (
@@ -494,9 +429,6 @@ impl AudioCaptureManager {
 
     /// Stop the active recorder and return (wav_path, start_time_ms) if one was running.
     pub fn stop_recording_internal(&mut self) -> Option<(std::path::PathBuf, u64)> {
-        // Flush any remaining mixed audio before stopping
-        self.flush_mix_buffers(true);
-
         if let Some(rec) = self.recorder.take() {
             let start_time_ms = rec.start_time_ms;
             match rec.stop() {

@@ -26,17 +26,24 @@ struct OpenRouterModelCache {
 }
 ```
 
-**New IPC command: `list_openrouter_models(api_key: String) -> Vec<OpenRouterModel>`**
+**New IPC command: `list_openrouter_models(force_refresh: bool) -> Vec<OpenRouterModel>`**
+
+The command reads the API key internally from Windows CredentialManager (matching the existing credential pattern — the frontend never passes raw keys over IPC for data fetches).
 
 Flow:
-1. Check in-memory cache — if valid (within TTL), return cached list
-2. If stale or empty, fetch `GET https://openrouter.ai/api/v1/models` with headers:
+1. Read API key from CredentialManager for `"openrouter"`
+2. If `force_refresh` is false, check in-memory cache — if valid (within TTL), return cached list
+3. If stale, empty, or `force_refresh` is true, fetch `GET https://openrouter.ai/api/v1/models` with headers:
    - `Authorization: Bearer <api_key>`
    - `HTTP-Referer: https://nexq.app`
    - `X-Title: NexQ`
-3. Parse response into `Vec<OpenRouterModel>` — convert string prices to f64, derive booleans, extract provider name from ID prefix
-4. Store in `AppState` as `Arc<Mutex<Option<OpenRouterModelCache>>>`
-5. Return full list to frontend
+4. Parse response into `Vec<OpenRouterModel>` — convert string prices to f64, derive booleans, extract provider name from ID prefix
+5. Store in `AppState` as `Arc<Mutex<Option<OpenRouterModelCache>>>`
+6. Return full list to frontend
+
+**Call sites:**
+- "Load Models" button → `list_openrouter_models(true)` (force refresh)
+- Settings panel open with existing cache → `list_openrouter_models(false)` (use cache)
 
 **Changes to existing files:**
 - `state.rs` — Add `openrouter_cache: Arc<Mutex<Option<OpenRouterModelCache>>>` to `AppState`
@@ -54,6 +61,16 @@ Flow:
 
 Replaces the model dropdown when `provider === "openrouter"` and models are loaded.
 
+**File structure:** All sub-components live in `src/settings/openrouter/`:
+```
+src/settings/openrouter/
+  ├─ OpenRouterModelCatalog.tsx   // main container, filtering/sorting state
+  ├─ ModelCard.tsx                // V1 compact rich card
+  ├─ FilterBar.tsx                // free toggle, sort dropdown, capability chips
+  ├─ RecentlyUsedSection.tsx      // horizontal chip row
+  └─ FavoritesSection.tsx         // starred model cards (collapsible)
+```
+
 Component tree:
 ```
 LLMSettings.tsx
@@ -63,22 +80,36 @@ LLMSettings.tsx
           ├─ FilterBar              // free toggle, sort dropdown, capability chips
           ├─ RecentlyUsedSection    // horizontal row of last 5
           ├─ FavoritesSection       // starred model cards (collapsible)
-          └─ AllModelsSection       // scrollable card list
+          └─ AllModelsSection       // virtualized scrollable card list (see Rendering)
                └─ ModelCard × N     // V1 compact rich card
 ```
 
 **LLMSettings.tsx change:** After "Load Models" for OpenRouter, render `<OpenRouterModelCatalog>` instead of `<select>`.
 
+**Model selection handoff:** When a user clicks a model card, the catalog must:
+1. Call `setActiveModel("openrouter", modelId)` IPC (existing backend command)
+2. Update `configStore.llmModel` (existing Zustand action)
+3. Call `addOpenRouterRecentlyUsed(modelId)` (new Zustand action)
+
 **Zustand additions (configStore.ts):**
 ```typescript
+// State fields
 openrouterFavorites: string[];        // persisted model IDs
 openrouterRecentlyUsed: string[];     // last 5, most recent first
 
+// Actions
 toggleOpenRouterFavorite(id: string): void;
+  // If id is in favorites, remove it. Otherwise, add it.
+
 addOpenRouterRecentlyUsed(id: string): void;
+  // 1. Filter out `id` from existing list (dedup)
+  // 2. Prepend `id` to front
+  // 3. Slice to max 5 entries
 ```
 
 No new Zustand store. Two fields + two actions added to existing `configStore`.
+
+**loadConfig integration:** The `loadConfig` function must also load both fields from the Tauri plugin-store on startup via `store.get("openrouterFavorites")` and `store.get("openrouterRecentlyUsed")`, with `[]` defaults. Both fields must be included in the store persistence logic alongside existing fields.
 
 ## Data Model
 
@@ -108,18 +139,28 @@ export interface OpenRouterModel {
   output_modalities: string[];   // ["text"]
   tokenizer: string;             // "Claude", "GPT", "Llama3"
 
+  // Derived from API `supported_parameters` array:
+  //   supports_tools = supported_parameters.contains("tools")
+  //   supports_reasoning = supported_parameters.contains("reasoning")
+  //   supports_web_search = supported_parameters.contains("web_search_options")
   supports_tools: boolean;
   supports_reasoning: boolean;
   supports_web_search: boolean;
-
-  is_good_for_meetings: boolean; // computed
-  estimated_meeting_cost?: number; // computed on render
 }
+
+// Frontend-only computed fields (NOT part of IPC payload, NOT in Rust struct):
+//   is_good_for_meetings: supports_tools && context_length >= 65536 && pricing.prompt <= 10
+//   estimated_meeting_cost: (15000 * pricing.prompt + 2000 * pricing.completion) / 1_000_000
 ```
 
 ### Rust mirror struct
 
-Same fields in `openrouter_models.rs`, serialized with serde to match TypeScript interface. Parsing converts API string prices to f64 and derives boolean capabilities from `supported_parameters` array.
+The Rust struct in `openrouter_models.rs` contains all fields above EXCEPT `is_good_for_meetings` and `estimated_meeting_cost`, which are computed on the frontend only. Serialized with serde to match the TypeScript interface.
+
+**Capability derivation (Rust parsing):** The API returns a `supported_parameters: Vec<String>` array at the top level of each model object. Map to booleans:
+- `supports_tools = supported_parameters.contains(&"tools".to_string())`
+- `supports_reasoning = supported_parameters.contains(&"reasoning".to_string())`
+- `supports_web_search = supported_parameters.contains(&"web_search_options".to_string())`
 
 ## UI Layout
 
@@ -139,11 +180,15 @@ Star/favorite button in top-right corner of each card. Selected card has indigo 
 3. **Filter chips** — "Free only" toggle, divider, capability chips: Tools, Reasoning, Web search
 4. **Recently Used** — horizontal scrollable row of compact chips (model name + price)
 5. **Favorites** — starred model cards section
-6. **All Models** — count + active filter summary, then scrollable card list
+6. **All Models** — count + active filter summary, then virtualized scrollable card list
+
+### Rendering
+
+The "All Models" section uses virtual scrolling to avoid rendering 200+ cards simultaneously. Since all model cards have uniform height (~80px), a simple windowed approach works: render only the cards visible in the scroll viewport plus a small overscan buffer. This can use CSS `overflow-y: auto` with a container of fixed `max-height` (~520px) and an intersection observer or `react-window` for virtualization. No new dependencies required if using intersection observer.
 
 ### Filtering & Sorting
 
-**Pre-filter (automatic):** Only `text→text` models shown (filter where `output_modalities` includes only `"text"` and `input_modalities` includes only `"text"`).
+**Pre-filter (automatic):** Only models capable of text-to-text shown. Filter where `output_modalities` includes `"text"` AND `input_modalities` includes `"text"`. Models with additional modalities (e.g., `input_modalities: ["text", "image"]`) are NOT excluded — many capable meeting models like GPT-4o and Claude accept images but work perfectly for text-only use. The filter ensures the model can accept text input and produce text output, not that it does *only* text.
 
 **User filters:**
 - Text search: matches against `name + description + provider_name`, debounced 200ms
@@ -187,10 +232,13 @@ Computed boolean, not stored. Updates automatically as model data changes.
 ### Recently Used
 
 - Last 5 models used, most recent first
-- Updated when user selects a model via `addOpenRouterRecentlyUsed(id)`
-- Persisted in `configStore.openrouterRecentlyUsed: string[]`
-- Displayed as horizontal scrollable compact chips (name + price)
-- Clicking a recent chip selects that model
+- Updated when user selects a model via `addOpenRouterRecentlyUsed(id)`:
+  1. Remove `id` from existing list if present (dedup)
+  2. Prepend `id` to front
+  3. Slice to max 5 entries
+- Persisted in `configStore.openrouterRecentlyUsed: string[]` (Tauri plugin-store)
+- Displayed as horizontal scrollable compact chips (model name + price)
+- Clicking a recent chip selects that model (same handoff: `setActiveModel` IPC + configStore update)
 
 ### Caching
 
@@ -219,13 +267,17 @@ Computed boolean, not stored. Updates automatically as model data changes.
 ## Files to Create
 
 - `src-tauri/src/llm/openrouter_models.rs` — Rust struct, parsing, cache
-- `src/settings/OpenRouterModelCatalog.tsx` — React catalog component
+- `src/settings/openrouter/OpenRouterModelCatalog.tsx` — main catalog container
+- `src/settings/openrouter/ModelCard.tsx` — V1 compact rich card component
+- `src/settings/openrouter/FilterBar.tsx` — search, sort, filter chips
+- `src/settings/openrouter/RecentlyUsedSection.tsx` — horizontal chip row
+- `src/settings/openrouter/FavoritesSection.tsx` — starred model cards
 
 ## Files to Modify
 
 - `src/lib/types.ts` — Add `OpenRouterModel` interface
 - `src/lib/ipc.ts` — Add `listOpenRouterModels()` wrapper
-- `src/stores/configStore.ts` — Add favorites + recently used fields/actions
+- `src/stores/configStore.ts` — Add favorites + recently used fields/actions + loadConfig integration
 - `src/settings/LLMSettings.tsx` — Conditional render catalog instead of dropdown
 - `src-tauri/src/state.rs` — Add cache slot to `AppState`
 - `src-tauri/src/lib.rs` — Register new command

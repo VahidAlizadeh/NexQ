@@ -30,6 +30,22 @@ export function TranscriptContextMenu({
     };
   }, [onClose]);
 
+  // Clamp menu to viewport boundaries
+  useEffect(() => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      if (rect.right > vw) {
+        ref.current.style.left = `${vw - rect.width - 8}px`;
+      }
+      if (rect.bottom > vh) {
+        ref.current.style.top = `${vh - rect.height - 8}px`;
+      }
+    }
+  }, [x, y]);
+
   const items = [
     {
       icon: isBookmarked ? <BookmarkX className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />,
@@ -51,8 +67,8 @@ export function TranscriptContextMenu({
   return (
     <div
       ref={ref}
-      className="fixed z-50 w-44 rounded-lg border border-border/20 bg-card/95 py-1 shadow-xl backdrop-blur-xl"
-      style={{ left: x, top: y }}
+      className="fixed z-[9999] w-44 rounded-lg border border-white/10 py-1 shadow-2xl"
+      style={{ left: x, top: y, backgroundColor: '#131320' }}
     >
       {items.map((item) => (
         <button

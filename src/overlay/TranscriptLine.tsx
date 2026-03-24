@@ -185,12 +185,24 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   // Hover translation tooltip state
   const [showTranslationTooltip, setShowTranslationTooltip] = useState(false);
   const hasHoverTranslation = displayMode === "hover" && !!translation;
+  const lineRef = useRef<HTMLDivElement>(null);
+  const [tooltipY, setTooltipY] = useState(0);
 
   return (
     <div
+      ref={lineRef}
       className={`group relative flex items-start gap-2.5 rounded-lg px-2 py-[7px] transition-colors duration-100 hover:bg-accent/25 border-l-[3px] transcript-line-enter`}
       style={{ borderLeftColor: isPending ? "transparent" : `${speakerHex}66` }}
-      onMouseEnter={() => { setIsHovered(true); if (hasHoverTranslation) setShowTranslationTooltip(true); }}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        if (hasHoverTranslation) {
+          setShowTranslationTooltip(true);
+          if (lineRef.current) {
+            const rect = lineRef.current.getBoundingClientRect();
+            setTooltipY(rect.bottom + 4);
+          }
+        }
+      }}
       onMouseLeave={() => { setIsHovered(false); setShowTranslationTooltip(false); }}
       onContextMenu={handleContextMenu}
     >
@@ -269,12 +281,19 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
 
         {/* Hover translation tooltip — solid high-contrast popup */}
         {showTranslationTooltip && hasHoverTranslation && (
-          <div className="absolute left-0 top-full mt-1.5 z-50 max-w-[420px] rounded-lg border border-amber-500/20 bg-[#1a1a2e] px-3.5 py-2.5 shadow-2xl shadow-black/40">
+          <div
+            className="fixed z-[9999] max-w-[420px] rounded-lg border border-white/10 px-3.5 py-2.5 shadow-2xl"
+            style={{
+              backgroundColor: '#131320',
+              left: '80px',
+              top: `${tooltipY}px`,
+            }}
+          >
             <p style={{ fontSize: `${translationFontSize + 1}px`, color: translationTextColor }} className="leading-[1.6]">
               {translation.translated_text}
             </p>
             <div className="mt-1.5 flex items-center gap-1.5 text-[0.6rem] text-muted-foreground/50">
-              <span className="rounded bg-white/5 px-1.5 py-0.5 font-medium tracking-wider">
+              <span className="rounded bg-white/8 px-1.5 py-0.5 font-medium tracking-wider">
                 {translation.source_lang.toUpperCase()} → {translation.target_lang.toUpperCase()}
               </span>
               <span>·</span>

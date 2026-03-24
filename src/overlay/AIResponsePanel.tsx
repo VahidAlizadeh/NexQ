@@ -13,18 +13,9 @@ import remarkGfm from "remark-gfm";
 import { getModeLabel } from "../lib/utils";
 import type { AIResponse } from "../lib/types";
 import { useConfigStore } from "../stores/configStore";
+import { ColorPickerButton } from "../components/ColorPickerButton";
 
 type TabId = "current" | "history-0" | "history-1" | string;
-
-const TEXT_COLORS = [
-  { name: "White", value: "#e4e4e7" },
-  { name: "Warm", value: "#d6d3d1" },
-  { name: "Cyan", value: "#67e8f9" },
-  { name: "Amber", value: "#fbbf24" },
-  { name: "Emerald", value: "#6ee7b7" },
-  { name: "Rose", value: "#fda4af" },
-  { name: "Lavender", value: "#c4b5fd" },
-];
 
 // Sub-PRD 6: Streaming markdown, response history tabs, pin/copy
 export function AIResponsePanel() {
@@ -269,19 +260,7 @@ export function AIResponsePanel() {
           <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-6 text-center">{aiResponseFontSize}</span>
           <button onClick={() => setAiResponseFontSize(Math.min(20, aiResponseFontSize + 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors" title="Larger">A</button>
         </div>
-        <div className="flex items-center gap-0.5">
-          {TEXT_COLORS.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => setAiResponseTextColor(c.value)}
-              className={`h-3 w-3 rounded-full border transition-all ${
-                aiResponseTextColor === c.value ? "border-white/60 scale-110" : "border-white/10 hover:border-white/30"
-              }`}
-              style={{ backgroundColor: c.value }}
-              title={c.name}
-            />
-          ))}
-        </div>
+        <ColorPickerButton value={aiResponseTextColor} onChange={setAiResponseTextColor} label="AI text color" />
       </div>
     </div>
   );

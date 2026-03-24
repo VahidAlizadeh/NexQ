@@ -10,16 +10,7 @@ import { TranscriptLine } from "./TranscriptLine";
 import { SpeakerNamingBanner } from "./SpeakerNamingBanner";
 import { mergeConsecutiveSegments } from "../lib/mergeSegments";
 import { Mic, MicOff, Volume2, VolumeX, Search, X, Radio } from "lucide-react";
-
-const TEXT_COLORS = [
-  { name: "White", value: "#e4e4e7" },
-  { name: "Warm", value: "#d6d3d1" },
-  { name: "Cyan", value: "#67e8f9" },
-  { name: "Amber", value: "#fbbf24" },
-  { name: "Emerald", value: "#6ee7b7" },
-  { name: "Rose", value: "#fda4af" },
-  { name: "Lavender", value: "#c4b5fd" },
-];
+import { ColorPickerButton } from "../components/ColorPickerButton";
 
 export function TranscriptPanel() {
   const segments = useTranscriptStore((s) => s.segments);
@@ -268,74 +259,22 @@ export function TranscriptPanel() {
       </div>
 
       {/* Typeset controls */}
-      <div className="flex items-center gap-3 mx-1 mb-1 px-2.5 py-1 border-t border-border/10">
+      <div className="flex items-center gap-2 mx-1 mb-1 px-2.5 py-1 border-t border-border/10">
         <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground/40 font-medium">Text</span>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setTranscriptFontSize(Math.max(10, transcriptFontSize - 1))}
-            className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
-            title="Decrease transcript font size"
-          >
-            A
-          </button>
-          <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-6 text-center">{transcriptFontSize}</span>
-          <button
-            onClick={() => setTranscriptFontSize(Math.min(20, transcriptFontSize + 1))}
-            className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
-            title="Increase transcript font size"
-          >
-            A
-          </button>
-        </div>
         <div className="flex items-center gap-0.5">
-          {TEXT_COLORS.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => setTranscriptTextColor(c.value)}
-              className={`h-3.5 w-3.5 rounded-full border transition-all ${
-                transcriptTextColor === c.value
-                  ? "border-white/60 scale-110 ring-1 ring-white/30"
-                  : "border-white/10 hover:border-white/30"
-              }`}
-              style={{ backgroundColor: c.value }}
-              title={c.name}
-            />
-          ))}
+          <button onClick={() => setTranscriptFontSize(Math.max(10, transcriptFontSize - 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 transition-colors">A</button>
+          <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-5 text-center">{transcriptFontSize}</span>
+          <button onClick={() => setTranscriptFontSize(Math.min(20, transcriptFontSize + 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 transition-colors">A</button>
         </div>
+        <ColorPickerButton value={transcriptTextColor} onChange={setTranscriptTextColor} label="Text color" />
         <div className="h-3 w-px bg-border/10" />
         <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground/40 font-medium">Translation</span>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setTranslationFontSize(Math.max(9, translationFontSize - 1))}
-            className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
-            title="Decrease translation font size"
-          >
-            A
-          </button>
-          <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-6 text-center">{translationFontSize}</span>
-          <button
-            onClick={() => setTranslationFontSize(Math.min(18, translationFontSize + 1))}
-            className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
-            title="Increase translation font size"
-          >
-            A
-          </button>
-        </div>
         <div className="flex items-center gap-0.5">
-          {TEXT_COLORS.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => setTranslationTextColor(c.value)}
-              className={`h-3.5 w-3.5 rounded-full border transition-all ${
-                translationTextColor === c.value
-                  ? "border-white/60 scale-110 ring-1 ring-white/30"
-                  : "border-white/10 hover:border-white/30"
-              }`}
-              style={{ backgroundColor: c.value }}
-              title={c.name}
-            />
-          ))}
+          <button onClick={() => setTranslationFontSize(Math.max(9, translationFontSize - 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 transition-colors">A</button>
+          <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-5 text-center">{translationFontSize}</span>
+          <button onClick={() => setTranslationFontSize(Math.min(18, translationFontSize + 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 transition-colors">A</button>
         </div>
+        <ColorPickerButton value={translationTextColor} onChange={setTranslationTextColor} label="Translation color" />
       </div>
 
       {/* Live audio activity indicators — mode-aware */}

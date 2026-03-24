@@ -130,7 +130,6 @@ export function AudioPlayer({
     cycleSpeed,
     setVolume,
     setAudioElement,
-    setGainNode,
     setSyncContext,
     setDuration,
     updateCurrentTime,
@@ -141,9 +140,8 @@ export function AudioPlayer({
   // Mount: wire up audio element to the store
   // -------------------------------------------------------------------------
 
-  // Track blob URL and AudioContext for cleanup
+  // Track blob URL for cleanup
   const blobUrlRef = useRef<string | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -158,18 +156,6 @@ export function AudioPlayer({
     setAudioElement(audio);
     setSyncContext(meetingStartMs, recordingOffsetMs);
     setDuration(durationMs);
-
-    // Set up Web Audio API for volume amplification (beyond 100%)
-    if (!audioCtxRef.current) {
-      const ctx = new AudioContext();
-      const source = ctx.createMediaElementSource(audio);
-      const gain = ctx.createGain();
-      gain.gain.value = useAudioPlayerStore.getState().volume;
-      source.connect(gain);
-      gain.connect(ctx.destination);
-      audioCtxRef.current = ctx;
-      setGainNode(gain);
-    }
 
     const handleEnded = () => {
       pause();
@@ -200,7 +186,6 @@ export function AudioPlayer({
         blobUrlRef.current = null;
       }
       setAudioElement(null);
-      setGainNode(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingPath]);
@@ -324,12 +309,12 @@ export function AudioPlayer({
         <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-muted-foreground/50">
           <path d="M2 4.5h1.5L6 2.5v7L3.5 7.5H2a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5z" />
           {volume > 0 && <path d="M7.5 3.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" strokeWidth="1" />}
-          {volume > 1 && <path d="M9 2a5 5 0 0 1 0 8" fill="none" stroke="currentColor" strokeWidth="1" />}
+          {volume > 0.5 && <path d="M9 2a5 5 0 0 1 0 8" fill="none" stroke="currentColor" strokeWidth="1" />}
         </svg>
         <input
           type="range"
           min="0"
-          max="300"
+          max="100"
           value={Math.round(volume * 100)}
           onChange={(e) => setVolume(Number(e.target.value) / 100)}
           className="w-16 h-1 accent-indigo-400 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"

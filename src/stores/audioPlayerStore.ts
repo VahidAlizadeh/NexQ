@@ -117,10 +117,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
   },
 
   setVolume: (volume: number) => {
-    const clamped = Math.max(0, Math.min(3, volume));
-    const { gainNode } = get();
-    if (gainNode) {
-      gainNode.gain.value = clamped;
+    const clamped = Math.max(0, Math.min(1, volume));
+    const { audioElement } = get();
+    if (audioElement) {
+      audioElement.volume = clamped;
     }
     set({ volume: clamped });
   },
@@ -134,9 +134,9 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
 
   setAudioElement: (el: HTMLAudioElement | null) => {
     set({ audioElement: el });
-    // Sync existing speed to new element
     if (el) {
       el.playbackRate = get().playbackSpeed;
+      el.volume = get().volume;
     }
   },
 

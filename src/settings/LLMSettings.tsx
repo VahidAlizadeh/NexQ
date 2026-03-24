@@ -10,8 +10,10 @@ import {
   storeApiKey,
   getApiKey,
   hasApiKey,
+  listOpenRouterModels,
 } from "../lib/ipc";
-import type { LLMProviderType, ModelInfo } from "../lib/types";
+import type { LLMProviderType, ModelInfo, OpenRouterModel } from "../lib/types";
+import { OpenRouterModelCatalog } from "./openrouter/OpenRouterModelCatalog";
 import {
   CheckCircle,
   XCircle,
@@ -123,6 +125,7 @@ export function LLMSettings() {
 
   const [selectedProvider, setSelectedProvider] = useState<LLMProviderType>(llmProvider);
   const [models, setModels] = useState<ModelInfo[]>([]);
+  const [openRouterModels, setOpenRouterModels] = useState<OpenRouterModel[]>([]);
   const [selectedModel, setSelectedModel] = useState(llmModel);
   const [apiKey, setApiKeyValue] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -163,6 +166,7 @@ export function LLMSettings() {
     setConnectionStatus("idle");
     setConnectionMessage("");
     setModels([]);
+    setOpenRouterModels([]);
     setModelsError("");
   }, [selectedProvider]);
 
@@ -184,6 +188,7 @@ export function LLMSettings() {
     setSelectedProvider(provider);
     setSelectedModel("");
     setModels([]);
+    setOpenRouterModels([]);
     setConnectionStatus("idle");
     setConnectionMessage("");
     setModelsError("");
@@ -231,20 +236,36 @@ export function LLMSettings() {
     setModelsLoading(true);
     setModelsError("");
     setModels([]);
+    setOpenRouterModels([]);
     try {
       if (apiKey) await storeApiKey(selectedProvider, apiKey).catch(() => {});
-      const configJson = buildProviderConfig();
-      await setLLMProvider(configJson).catch(() => {});
-      setConfigProvider(selectedProvider);
-      const modelList = await listModels(configJson);
-      const chatModels = filterChatModels(modelList);
-      setModels(chatModels);
-      if (chatModels.length === 0) {
-        setModelsError(
-          modelList.length > 0
-            ? "No chat models found (embedding-only models filtered)"
-            : "No models found"
-        );
+
+      if (selectedProvider === "openrouter") {
+        // Set provider on backend + configStore first
+        const configJson = buildProviderConfig();
+        await setLLMProvider(configJson).catch(() => {});
+        setConfigProvider(selectedProvider);
+        // Use enriched OpenRouter endpoint
+        const orModels = await listOpenRouterModels(true);
+        setOpenRouterModels(orModels);
+        if (orModels.length === 0) {
+          setModelsError("No text models found");
+        }
+      } else {
+        // Use generic model listing for other providers
+        const configJson = buildProviderConfig();
+        await setLLMProvider(configJson).catch(() => {});
+        setConfigProvider(selectedProvider);
+        const modelList = await listModels(configJson);
+        const chatModels = filterChatModels(modelList);
+        setModels(chatModels);
+        if (chatModels.length === 0) {
+          setModelsError(
+            modelList.length > 0
+              ? "No chat models found (embedding-only models filtered)"
+              : "No models found"
+          );
+        }
       }
     } catch (err) {
       setModelsError(err instanceof Error ? err.message : "Failed to load models");
@@ -464,7 +485,9 @@ export function LLMSettings() {
       {/* Model Selection */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-5">
         <h3 className="mb-3 text-sm font-semibold text-primary/80">Model</h3>
-        {models.length > 0 ? (
+        {selectedProvider === "openrouter" && openRouterModels.length > 0 ? (
+          <OpenRouterModelCatalog models={openRouterModels} />
+        ) : models.length > 0 ? (
           <select
             value={selectedModel}
             onChange={(e) => handleModelSelect(e.target.value)}

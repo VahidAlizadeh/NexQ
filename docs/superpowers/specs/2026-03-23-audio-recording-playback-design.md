@@ -40,7 +40,7 @@ waveform_path       TEXT,      -- e.g. "recordings/abc-123.waveform.json"
 recording_offset_ms INTEGER    -- delta between recording start and meeting start_time
 ```
 
-`recording_offset_ms` captures the gap between creating the meeting DB record and starting audio capture. Required for accurate transcript-audio sync: `audio_position = segment.timestamp_ms - meeting_start_ms - recording_offset_ms`.
+`recording_offset_ms` captures the gap between creating the meeting DB record and starting audio capture. Required for accurate transcript-audio sync: `audio_position = segment.timestamp_ms - meeting_start_ms - recording_offset_ms`, where `meeting_start_ms = new Date(meeting.start_time).getTime()` (epoch-millisecond conversion of the ISO 8601 string).
 
 ### TypeScript Type Additions (`types.ts`)
 
@@ -48,7 +48,7 @@ recording_offset_ms INTEGER    -- delta between recording start and meeting star
 interface RecordingInfo {
   path: string;
   size_bytes: number;
-  duration_ms: number;
+  duration_ms: number;    // derived from waveform.duration_ms (not stored in DB)
   waveform_path: string;
   offset_ms: number;
 }
@@ -77,9 +77,10 @@ Triggered during `endMeeting` flow, after `recorder.stop()`:
 2. Read WAV samples → extract waveform peaks (downsample to ~200 peaks/minute)
 3. Write `{meeting_id}.waveform.json`
 4. Encode WAV → Opus via `opus` crate → write `{meeting_id}.opus`
-5. Delete original WAV file
-6. Update meeting DB record with `recording_path`, `recording_size`, `waveform_path`, `recording_offset_ms`
-7. Emit `recording_ready` event to frontend
+5. Verify Opus file exists and size > 0. If encoding failed, keep WAV in place, emit `recording_error` event to frontend, and store WAV path as `recording_path` instead (fallback — HTML5 `<audio>` supports WAV too)
+6. Delete original WAV file (only after successful Opus verification)
+7. Update meeting DB record with `recording_path`, `recording_size`, `waveform_path`, `recording_offset_ms`
+8. Emit `recording_ready` event to frontend
 
 This runs asynchronously — the UI shows a processing skeleton until the `recording_ready` event arrives.
 
@@ -171,7 +172,7 @@ Spotify-style fixed footer that persists across all tab switches in the meeting 
 **Visual markers on waveform:**
 - Bookmark pins: amber dots (`#f59e0b`) at top edge, 5px diameter, with subtle glow
 - Topic section dividers: green dashed vertical lines (`#10b981`, 40% opacity)
-- Markers are positioned proportionally: `left = (marker_timestamp_ms - meeting_start_ms) / duration_ms * 100%`
+- Markers are positioned proportionally: `left = (marker_timestamp_ms - meeting_start_ms - recording_offset_ms) / recording_duration_ms * 100%`
 - Hover on marker shows tooltip with bookmark note or topic title
 
 **Speed control:** Pill button showing current speed (e.g., "1.5x"). Click cycles through: 1x → 1.25x → 1.5x → 2x → 0.5x → 0.75x → 1x. Styling: `bg-white/06` with `text-muted-foreground`, `font-weight:600`.
@@ -283,6 +284,7 @@ New hook: `useAudioKeyboardShortcuts()`
 - Registers `keydown` listener on mount
 - Guards: only active when `audioPlayerStore.audioElement` exists (recording loaded)
 - `Space` prevented from scrolling via `e.preventDefault()`
+- Guard: only fire when no `input`, `textarea`, or `button` element is focused (`document.activeElement` check)
 - No conflicts: existing shortcuts (`Ctrl+F`, `Ctrl+S`, `Ctrl+B`) all use modifier keys
 
 ---

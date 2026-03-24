@@ -453,6 +453,18 @@ export function TranslationSettings() {
     return base.sort((a, b) => a.name.localeCompare(b.name));
   })();
 
+  // ── Auto-correct target language if not in available options ──
+  // When switching to OPUS-MT with filtered languages, the stored targetLang
+  // may not exist in the new option set. Auto-select the first available.
+  useEffect(() => {
+    if (languageOptions.length > 0) {
+      const currentValid = languageOptions.some((l) => l.code === targetLang);
+      if (!currentValid) {
+        setTargetLang(languageOptions[0].code);
+      }
+    }
+  }, [languageOptions.length, targetLang, setTargetLang, provider]);
+
   const isCloud = currentProviderOption?.requiresApiKey ?? false;
   const isOpusMt = selectedProvider === "opus-mt";
   const isLlm = selectedProvider === "llm";

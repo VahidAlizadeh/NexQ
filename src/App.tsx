@@ -11,6 +11,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useTheme } from "./hooks/useTheme";
 import { useGlobalShortcut } from "./hooks/useGlobalShortcut";
 import { CallLogPanel } from "./calllog";
+import { SelectionToolbar } from "./components/SelectionToolbar";
 import { ActiveMeetingProvider } from "./components/ActiveMeetingProvider";
 import { listen } from "@tauri-apps/api/event";
 import type { AppView } from "./lib/types";
@@ -142,6 +143,7 @@ function App() {
           regardless of which view is displayed */}
       <ActiveMeetingProvider />
       <ToastContainer />
+      <SelectionToolbar />
       {/* Call log panel is now integrated into the overlay flex layout above */}
     </div>
   );

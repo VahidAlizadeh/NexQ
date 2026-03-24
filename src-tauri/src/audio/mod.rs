@@ -6,6 +6,7 @@ pub mod resampler;
 pub mod session_monitor;
 pub mod system_capture;
 pub mod vad;
+pub mod waveform;
 
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};

@@ -25,6 +25,10 @@ export function TranscriptPanel() {
   const mutedThem = useConfigStore((s) => s.mutedThem);
   const toggleMuteYou = useConfigStore((s) => s.toggleMuteYou);
   const toggleMuteThem = useConfigStore((s) => s.toggleMuteThem);
+  const transcriptFontSize = useConfigStore((s) => s.transcriptFontSize ?? 13);
+  const translationFontSize = useConfigStore((s) => s.translationFontSize ?? 12);
+  const setTranscriptFontSize = useConfigStore((s) => s.setTranscriptFontSize);
+  const setTranslationFontSize = useConfigStore((s) => s.setTranslationFontSize);
   const isInPerson = audioMode === "in_person";
   // In in-person mode, room audio comes via the "them" config (system audio / AudienceMix),
   // so use systemLevel for the Room bar. micLevel is for the user's mic (online mode).
@@ -247,6 +251,47 @@ export function TranscriptPanel() {
         ))}
         <div ref={bottomRef} />
       </div>
+      </div>
+
+      {/* Typeset controls */}
+      <div className="flex items-center gap-3 mx-1 mb-1 px-2.5 py-1 border-t border-border/10">
+        <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground/40 font-medium">Text</span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setTranscriptFontSize(Math.max(10, transcriptFontSize - 1))}
+            className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
+            title="Decrease transcript font size"
+          >
+            A
+          </button>
+          <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-6 text-center">{transcriptFontSize}</span>
+          <button
+            onClick={() => setTranscriptFontSize(Math.min(20, transcriptFontSize + 1))}
+            className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
+            title="Increase transcript font size"
+          >
+            A
+          </button>
+        </div>
+        <div className="h-3 w-px bg-border/10" />
+        <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground/40 font-medium">Translation</span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setTranslationFontSize(Math.max(9, translationFontSize - 1))}
+            className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
+            title="Decrease translation font size"
+          >
+            A
+          </button>
+          <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-6 text-center">{translationFontSize}</span>
+          <button
+            onClick={() => setTranslationFontSize(Math.min(18, translationFontSize + 1))}
+            className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors"
+            title="Increase translation font size"
+          >
+            A
+          </button>
+        </div>
       </div>
 
       {/* Live audio activity indicators — mode-aware */}

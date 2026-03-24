@@ -142,6 +142,10 @@ interface ConfigState {
   confidenceThreshold: number;
   confidenceHighlightEnabled: boolean;
 
+  // Typeset settings
+  transcriptFontSize: number;
+  translationFontSize: number;
+
   // OpenRouter catalog
   openrouterFavorites: string[];
   openrouterRecentlyUsed: string[];
@@ -187,6 +191,8 @@ interface ConfigState {
   setNoisePreset: (preset: string | null) => void;
   setConfidenceThreshold: (threshold: number) => void;
   setConfidenceHighlightEnabled: (enabled: boolean) => void;
+  setTranscriptFontSize: (size: number) => void;
+  setTranslationFontSize: (size: number) => void;
   toggleOpenRouterFavorite: (id: string) => void;
   addOpenRouterRecentlyUsed: (id: string) => void;
   removeOpenRouterRecentlyUsed: (id: string) => void;
@@ -224,6 +230,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
   noisePreset: null,
   confidenceThreshold: 0.7,
   confidenceHighlightEnabled: true,
+  transcriptFontSize: 13,
+  translationFontSize: 12,
   openrouterFavorites: [],
   openrouterRecentlyUsed: [],
   _loaded: false,
@@ -467,6 +475,14 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ confidenceHighlightEnabled: enabled });
     persistValue("confidenceHighlightEnabled", enabled);
   },
+  setTranscriptFontSize: (size) => {
+    set({ transcriptFontSize: size });
+    persistValue("transcriptFontSize", size);
+  },
+  setTranslationFontSize: (size) => {
+    set({ translationFontSize: size });
+    persistValue("translationFontSize", size);
+  },
   toggleOpenRouterFavorite: (id) => {
     const { openrouterFavorites } = useConfigStore.getState();
     const next = openrouterFavorites.includes(id)
@@ -535,6 +551,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
       const confidenceHighlightEnabled = await store.get<boolean>("confidenceHighlightEnabled");
       const openrouterFavorites = await store.get<string[]>("openrouterFavorites");
       const openrouterRecentlyUsed = await store.get<string[]>("openrouterRecentlyUsed");
+      const transcriptFontSize = await store.get<number>("transcriptFontSize");
+      const translationFontSize = await store.get<number>("translationFontSize");
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
@@ -666,6 +684,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
         ...(confidenceHighlightEnabled != null && { confidenceHighlightEnabled }),
         ...(openrouterFavorites != null && { openrouterFavorites }),
         ...(openrouterRecentlyUsed != null && { openrouterRecentlyUsed }),
+        transcriptFontSize: transcriptFontSize ?? 13,
+        translationFontSize: translationFontSize ?? 12,
       }));
 
       // Post-load: ensure local providers have a local_model_id so footer/backend use the right model

@@ -36,6 +36,8 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const meetingStartTime = useMeetingStore((s) => s.meetingStartTime);
   const confidenceThreshold = useConfigStore((s) => s.confidenceThreshold);
   const confidenceHighlightEnabled = useConfigStore((s) => s.confidenceHighlightEnabled);
+  const transcriptFontSize = useConfigStore((s) => s.transcriptFontSize ?? 13);
+  const translationFontSize = useConfigStore((s) => s.translationFontSize ?? 12);
 
   // Translation store subscriptions
   const translations = useTranslationStore((s) => s.translations);
@@ -233,15 +235,16 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
       {/* Text content + translation + bookmark note */}
       <div className="flex-1 min-w-0 relative">
         <span
-          className={`text-[0.8125rem] leading-[1.65] ${
+          className={`leading-[1.65] ${
             segment.is_final
-              ? "text-foreground/90"
+              ? "text-foreground"
               : "text-foreground/45 italic"
           } ${
             isLowConfidence
               ? "border-b border-dotted border-white/30 opacity-70"
               : ""
           }`}
+          style={{ fontSize: `${transcriptFontSize}px` }}
           title={
             isLowConfidence
               ? `Confidence: ${Math.round(segment.confidence * 100)}%`
@@ -253,7 +256,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
 
         {/* Inline translation — visible below the original text */}
         {autoTranslateActive && displayMode === "inline" && (
-          <div className="mt-1 text-[0.75rem] leading-[1.5] text-primary/55 italic">
+          <div className="mt-1 leading-[1.5] text-amber-400/70" style={{ fontSize: `${translationFontSize}px` }}>
             {isTranslating ? (
               <span className="text-muted-foreground/40 animate-pulse">Translating...</span>
             ) : translation ? (
@@ -262,15 +265,19 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
           </div>
         )}
 
-        {/* Hover translation tooltip — styled popup instead of native title */}
+        {/* Hover translation tooltip — solid high-contrast popup */}
         {showTranslationTooltip && hasHoverTranslation && (
-          <div className="absolute left-0 top-full mt-1 z-30 max-w-[380px] rounded-lg border border-border/30 bg-popover/95 backdrop-blur-sm px-3 py-2 shadow-xl">
-            <p className="text-[0.75rem] leading-[1.55] text-foreground/80 italic">
+          <div className="absolute left-0 top-full mt-1.5 z-50 max-w-[420px] rounded-lg border border-amber-500/20 bg-[#1a1a2e] px-3.5 py-2.5 shadow-2xl shadow-black/40">
+            <p className="text-[0.8125rem] leading-[1.6] text-amber-300/90">
               {translation.translated_text}
             </p>
-            <p className="mt-1 text-[0.6rem] text-muted-foreground/40 tracking-wide">
-              {translation.source_lang.toUpperCase()} → {translation.target_lang.toUpperCase()} · {translation.provider}
-            </p>
+            <div className="mt-1.5 flex items-center gap-1.5 text-[0.6rem] text-muted-foreground/50">
+              <span className="rounded bg-white/5 px-1.5 py-0.5 font-medium tracking-wider">
+                {translation.source_lang.toUpperCase()} → {translation.target_lang.toUpperCase()}
+              </span>
+              <span>·</span>
+              <span>{translation.provider}</span>
+            </div>
           </div>
         )}
 

@@ -138,10 +138,10 @@ pub fn parse_models_response(body: &serde_json::Value) -> Vec<OpenRouterModel> {
                 .unwrap_or("Other")
                 .to_string();
 
-            // Pricing
+            // Pricing — use fallbacks to avoid dropping models with missing fields
             let pricing_obj = m.get("pricing")?;
-            let prompt_price = parse_price(pricing_obj.get("prompt")?);
-            let completion_price = parse_price(pricing_obj.get("completion")?);
+            let prompt_price = pricing_obj.get("prompt").map(parse_price).unwrap_or(0.0);
+            let completion_price = pricing_obj.get("completion").map(parse_price).unwrap_or(0.0);
             let is_free = prompt_price == 0.0 && completion_price == 0.0;
 
             // Supported parameters → capabilities

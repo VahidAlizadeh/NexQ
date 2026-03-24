@@ -1,6 +1,7 @@
 use tauri::{command, State};
 
 use crate::llm::{LLMRouter, ProviderConfig};
+use crate::llm::openrouter_models;
 use crate::state::AppState;
 
 #[command]
@@ -143,8 +144,6 @@ pub async fn get_llm_providers() -> Result<String, String> {
         .map_err(|e| format!("Failed to serialize providers: {}", e))
 }
 
-use crate::llm::openrouter_models::{self, OpenRouterModelCache};
-
 #[command]
 pub async fn list_openrouter_models(
     force_refresh: bool,
@@ -192,7 +191,7 @@ pub async fn list_openrouter_models(
             .openrouter_cache
             .lock()
             .map_err(|e| format!("Failed to lock cache: {}", e))?;
-        *cache_guard = Some(OpenRouterModelCache::new(models.clone()));
+        *cache_guard = Some(openrouter_models::OpenRouterModelCache::new(models.clone()));
     }
 
     log::info!(

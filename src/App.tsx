@@ -40,7 +40,15 @@ function App() {
   useEffect(() => {
     loadConfig();
     useAIActionsStore.getState().loadConfigs();
-    useTranslationStore.getState().loadConfig();
+    useTranslationStore.getState().loadConfig().then(() => {
+      // Sync backend translation provider with persisted frontend setting
+      const { provider } = useTranslationStore.getState();
+      if (provider) {
+        import("./lib/ipc").then(({ setTranslationProvider }) => {
+          setTranslationProvider(provider).catch(() => { /* non-critical on startup */ });
+        });
+      }
+    });
     // Load scenario config (custom scenarios, overrides, active scenario)
     import("./stores/scenarioStore").then(({ useScenarioStore }) => {
       useScenarioStore.getState().loadScenarioConfig();

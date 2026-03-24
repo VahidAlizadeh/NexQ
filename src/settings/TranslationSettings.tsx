@@ -335,7 +335,7 @@ export function TranslationSettings() {
     setResponseMs(null);
 
     try {
-      // Store the key
+      // Store the key in CredentialManager
       await storeApiKey(currentProviderOption.credentialKey, apiKey.trim());
 
       // Store region for Microsoft
@@ -343,7 +343,8 @@ export function TranslationSettings() {
         await storeApiKey("translation_microsoft_region", azureRegion.trim());
       }
 
-      // Set provider on backend (with region for Microsoft)
+      // Temporarily set this provider on backend to test it
+      const previousProvider = provider; // the currently active provider
       await setTranslationProvider(
         selectedProvider,
         currentProviderOption.needsRegion ? azureRegion : undefined
@@ -353,6 +354,7 @@ export function TranslationSettings() {
       const result: TranslationConnectionStatus = await testTranslationConnection(selectedProvider);
 
       if (result.connected) {
+        // Test passed — keep this provider active on backend
         setHasStoredKey(true);
         setKeyDirty(false);
         setConnectionStatus("success");
@@ -362,15 +364,22 @@ export function TranslationSettings() {
         );
         setKeyStatusMap((prev) => ({ ...prev, [currentProviderOption.credentialKey]: true }));
         setTestedProviders((prev) => new Set(prev).add(selectedProvider));
-        // Update active provider in store
-        setStoreProvider(selectedProvider);
 
         // Load available languages
         try {
           const langs = await getTranslationLanguages();
           if (langs.length > 0) setAvailableLanguages(langs);
         } catch { /* ignore — fallback to defaults */ }
+
+        // Restore previous active provider on backend (don't change active yet — user must click Make Active)
+        if (previousProvider && previousProvider !== selectedProvider) {
+          await setTranslationProvider(previousProvider).catch(() => {});
+        }
       } else {
+        // Test failed — restore previous provider on backend
+        if (previousProvider) {
+          await setTranslationProvider(previousProvider).catch(() => {});
+        }
         setConnectionStatus("error");
         setStatusMessage(result.error || "Connection failed");
       }

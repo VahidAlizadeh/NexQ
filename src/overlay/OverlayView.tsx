@@ -3,6 +3,7 @@ import { useMeetingStore } from "../stores/meetingStore";
 import { useScenarioStore } from "../stores/scenarioStore";
 import { useCallLogStore } from "../stores/callLogStore";
 import { useAIActionsStore } from "../stores/aiActionsStore";
+import { useTranslationStore } from "../stores/translationStore";
 import { showToast } from "../stores/toastStore";
 import { TranscriptPanel } from "./TranscriptPanel";
 import { QuestionDetector } from "./QuestionDetector";
@@ -29,6 +30,7 @@ import {
   Terminal,
   BarChart3,
   Bookmark,
+  Globe,
 } from "lucide-react";
 import { formatDuration } from "../lib/utils";
 
@@ -48,6 +50,13 @@ export function OverlayView() {
   const toggleLog = useCallLogStore((s) => s.toggleOpen);
   const logOpen = useCallLogStore((s) => s.isOpen);
   const autoTrigger = useAIActionsStore((s) => s.configs.globalDefaults.autoTrigger);
+
+  const autoTranslateActive = useTranslationStore((s) => s.autoTranslateActive);
+  const setAutoTranslateActive = useTranslationStore((s) => s.setAutoTranslateActive);
+  const displayMode = useTranslationStore((s) => s.displayMode);
+  const setDisplayMode = useTranslationStore((s) => s.setDisplayMode);
+  const targetLang = useTranslationStore((s) => s.targetLang);
+  const provider = useTranslationStore((s) => s.provider);
 
   // Bookmark hotkey (Ctrl+B) — also returns addBookmarkAtNow for shortcut hook
   const addBookmarkAtNow = useBookmarkHotkey();
@@ -129,6 +138,48 @@ export function OverlayView() {
           <HeaderBtn icon={<Terminal className="h-3.5 w-3.5" />} active={devLogOpen} onClick={() => setDevLogOpen(p => !p)} tooltip="Dev Log (Ctrl+Shift+L)" />
           <HeaderBtn icon={<Settings className="h-3.5 w-3.5" />} onClick={() => setCurrentView("settings")} tooltip="Settings" />
           <HeaderBtn icon={<Minus className="h-3.5 w-3.5" />} onClick={() => setCurrentView("launcher")} tooltip="Minimize to Dashboard" />
+
+          {/* Translation controls */}
+          <button
+            onClick={() => setAutoTranslateActive(!autoTranslateActive)}
+            className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-all ${
+              autoTranslateActive
+                ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+                : "text-muted-foreground hover:bg-accent"
+            }`}
+            title="Toggle auto-translate"
+          >
+            <Globe className="h-3 w-3" />
+            Translate
+          </button>
+
+          {autoTranslateActive && (
+            <>
+              <div className="flex rounded-md border border-border/30 overflow-hidden">
+                <button
+                  onClick={() => setDisplayMode("inline")}
+                  className={`px-2 py-0.5 text-[10px] font-medium transition-all ${
+                    displayMode === "inline" ? "bg-primary/15 text-primary" : "text-muted-foreground/50"
+                  }`}
+                >
+                  Inline
+                </button>
+                <button
+                  onClick={() => setDisplayMode("hover")}
+                  className={`px-2 py-0.5 text-[10px] font-medium border-l border-border/30 transition-all ${
+                    displayMode === "hover" ? "bg-primary/15 text-primary" : "text-muted-foreground/50"
+                  }`}
+                >
+                  Hover
+                </button>
+              </div>
+              <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-success inline-block" />
+                {targetLang.toUpperCase()}
+              </span>
+            </>
+          )}
+
           <button
             onClick={handleEndMeeting}
             className="ml-1.5 flex items-center gap-1.5 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-1.5 text-xs font-semibold text-destructive transition-all duration-150 hover:bg-destructive/20 hover:border-destructive/30 hover:shadow-sm hover:shadow-destructive/10 cursor-pointer"

@@ -149,6 +149,12 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
             summaryGeneration.generate();
           }
         }}
+        onExtractActions={() => {
+          setActiveTab("actions");
+          if (!actionExtraction.isExtracting) {
+            actionExtraction.extract();
+          }
+        }}
         onSuggestBookmarks={() => {
           setActiveTab("bookmarks");
           if (!bookmarkSuggestions.isSuggesting) {
@@ -156,6 +162,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
           }
         }}
         isSummaryGenerating={summaryGeneration.isGenerating}
+        isActionsExtracting={actionExtraction.isExtracting}
         isBookmarksSuggesting={bookmarkSuggestions.isSuggesting}
       />
 

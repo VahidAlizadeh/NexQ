@@ -15,13 +15,21 @@ import type { Meeting, ActionItem } from "../lib/types";
 // normalises each item into a proper ActionItem with generated id.
 // ---------------------------------------------------------------------------
 function parseActionItemsJSON(raw: string): ActionItem[] {
-  // Strip markdown code fences
-  let cleaned = raw.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+  console.log("[actionItems] Raw LLM response:", raw.slice(0, 500));
+
+  // Strip thinking tags (Qwen3, DeepSeek) + markdown fences
+  let cleaned = raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*/gi, "")
+    .replace(/```(?:json)?\s*/g, "")
+    .replace(/```/g, "")
+    .trim();
 
   // Find the JSON array
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
   if (start === -1 || end === -1 || end <= start) {
+    console.error("[actionItems] No JSON array found. Cleaned:", cleaned.slice(0, 300));
     throw new Error("No JSON array found in response");
   }
 
@@ -30,13 +38,15 @@ function parseActionItemsJSON(raw: string): ActionItem[] {
 
   if (!Array.isArray(parsed)) throw new Error("Response is not an array");
 
-  return parsed.map((item: Record<string, unknown>) => ({
-    id: crypto.randomUUID(),
-    text: (item.text as string) ?? "",
-    assignee_speaker_id: (item.assignee_speaker_id as string) ?? undefined,
-    timestamp_ms: (item.timestamp_ms as number) ?? 0,
-    completed: false,
-  }));
+  return parsed
+    .map((item: Record<string, unknown>) => ({
+      id: crypto.randomUUID(),
+      text: ((item.text ?? item.action ?? item.description ?? "") as string).trim(),
+      assignee_speaker_id: (item.assignee_speaker_id as string) ?? undefined,
+      timestamp_ms: (item.timestamp_ms as number) ?? 0,
+      completed: false,
+    }))
+    .filter((item) => item.text.length > 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -157,15 +167,18 @@ export function useActionItemsExtraction(
         ? `Speaker list:\n${speakerList}\n\nExtract all action items. Return ONLY a JSON array.`
         : "Extract all action items. Return ONLY a JSON array.";
 
-      // Pass the full transcript (all segments) to the backend.
-      // The ActionItemsExtraction action config uses window_seconds=0 so nothing is trimmed.
-      const segments = meeting.transcript
-        .filter((s) => s.is_final)
-        .map((s) => ({
-          text: s.text,
-          speaker: s.speaker,
-          timestamp_ms: s.timestamp_ms,
-        }));
+      // Merge consecutive same-speaker segments to reduce prompt size
+      const finals = meeting.transcript.filter((s) => s.is_final);
+      const merged: { text: string; speaker: string; timestamp_ms: number }[] = [];
+      for (const seg of finals) {
+        const last = merged.length > 0 ? merged[merged.length - 1] : null;
+        if (last && last.speaker === seg.speaker) {
+          last.text += " " + seg.text;
+        } else {
+          merged.push({ text: seg.text, speaker: seg.speaker, timestamp_ms: seg.timestamp_ms });
+        }
+      }
+      const segments = merged;
 
       await invoke("generate_assist", {
         mode: "ActionItemsExtraction",

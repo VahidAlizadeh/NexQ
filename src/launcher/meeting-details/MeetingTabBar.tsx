@@ -10,11 +10,13 @@ interface MeetingTabBarProps {
   meeting: Meeting;
   onGenerateSummary?: () => void;
   onSuggestBookmarks?: () => void;
+  onExtractActions?: () => void;
   isSummaryGenerating?: boolean;
   isBookmarksSuggesting?: boolean;
+  isActionsExtracting?: boolean;
 }
 
-export function MeetingTabBar({ activeTab, setActiveTab, meeting, onGenerateSummary, onSuggestBookmarks, isSummaryGenerating, isBookmarksSuggesting }: MeetingTabBarProps) {
+export function MeetingTabBar({ activeTab, setActiveTab, meeting, onGenerateSummary, onSuggestBookmarks, onExtractActions, isSummaryGenerating, isBookmarksSuggesting, isActionsExtracting }: MeetingTabBarProps) {
   const actionCount = meeting.action_items?.length ?? 0;
   const bookmarkCount = meeting.bookmarks?.length ?? 0;
   const speakerCount = meeting.speakers?.length ?? 0;
@@ -78,6 +80,17 @@ export function MeetingTabBar({ activeTab, setActiveTab, meeting, onGenerateSumm
           >
             {isSummaryGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
             {meeting.summary ? "Regenerate Summary" : "Generate Summary"}
+          </button>
+        )}
+        {onExtractActions && (
+          <button
+            onClick={onExtractActions}
+            disabled={isActionsExtracting || meeting.transcript.length === 0}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-30 cursor-pointer"
+            title="Extract action items with AI"
+          >
+            {isActionsExtracting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            Extract Actions
           </button>
         )}
         {onSuggestBookmarks && (

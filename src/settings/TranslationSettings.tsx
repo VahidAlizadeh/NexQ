@@ -470,12 +470,12 @@ export function TranslationSettings() {
   const isLlm = selectedProvider === "llm";
 
   // ── "Make Active" gating logic ──
-  // Cloud: only after successful test. OPUS-MT: when model is active. LLM: always allowed.
+  // Cloud: allowed if key is stored (tested or not). OPUS-MT: when model is active. LLM: always.
   const canMakeActive = (() => {
     if (selectedProvider === provider) return false; // already active
-    if (isOpusMt) return opusMtHasActive; // OPUS-MT: allowed when a model is activated
-    if (isCloud) return testedProviders.has(selectedProvider); // cloud: must test first
-    if (isLlm) return true; // LLM: always available
+    if (isOpusMt) return opusMtHasActive;
+    if (isCloud) return testedProviders.has(selectedProvider) || keyStatusMap[currentProviderOption?.credentialKey || ""];
+    if (isLlm) return true;
     return false;
   })();
 
@@ -610,7 +610,23 @@ export function TranslationSettings() {
                   </button>
                 )}
 
-                {/* Make Active — only after successful test */}
+                {/* Test Connection — for stored keys not yet tested in this session */}
+                {hasStoredKey && !keyDirty && !testedProviders.has(selectedProvider) && (
+                  <button
+                    onClick={handleSaveAndTest}
+                    disabled={connectionStatus === "testing"}
+                    className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {connectionStatus === "testing" ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Wifi className="h-3.5 w-3.5" />
+                    )}
+                    Test Connection
+                  </button>
+                )}
+
+                {/* Make Active — allowed when key is stored */}
                 {canMakeActive && hasStoredKey && !keyDirty && (
                   <button
                     onClick={handleMakeActive}

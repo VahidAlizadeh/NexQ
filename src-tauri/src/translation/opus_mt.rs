@@ -142,26 +142,12 @@ impl TranslationProvider for OpusMtTranslator {
         source: Option<&str>,
         target: &str,
     ) -> Result<String, TranslationError> {
-        let source = source.unwrap_or("en");
-
         // Lazy-load the model on first translate call
         self.ensure_loaded()
             .map_err(|e| TranslationError::NotConfigured(e))?;
 
-        // Verify the loaded model matches the requested pair
-        let expected_id = format!("opus-mt-{}-{}", source, target);
-        {
-            let guard = self.loaded.lock()
-                .map_err(|_| TranslationError::Failed("Model lock error".into()))?;
-            if let Some((loaded_id, _)) = guard.as_ref() {
-                if loaded_id != &expected_id {
-                    return Err(TranslationError::NotConfigured(
-                        format!("Active model ({}) doesn't match requested pair {} → {}. Activate the correct model in Settings.", loaded_id, source, target)
-                    ));
-                }
-            }
-        }
-
+        // Use whatever model is loaded — the active model determines the translation direction.
+        // The user explicitly chose this pair when they activated the model.
         let text_owned = text.to_string();
 
         // Clone the Mutex Arc to move into the blocking thread

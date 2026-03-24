@@ -30,6 +30,8 @@ export function OpusMtModelManager() {
   const [filterLang, setFilterLang] = useState("all");
   const { downloads } = useModelDownload();
   const setStoreProvider = useTranslationStore((s) => s.setProvider);
+  const setTargetLang = useTranslationStore((s) => s.setTargetLang);
+  const setSourceLang = useTranslationStore((s) => s.setSourceLang);
 
   const loadModels = useCallback(async () => {
     try {
@@ -100,6 +102,14 @@ export function OpusMtModelManager() {
         // Activate the model and set OPUS-MT as the active provider (backend handles both)
         await activateOpusMtModel(modelId);
         setStoreProvider("opus-mt");
+
+        // Update source/target language to match the activated model
+        const model = models.find((m) => m.definition.model_id === modelId);
+        if (model) {
+          setSourceLang(model.definition.source_lang);
+          setTargetLang(model.definition.target_lang);
+        }
+
         showToast("Model activated — translation will load on first use", "success");
         loadModels();
       } catch (err: any) {

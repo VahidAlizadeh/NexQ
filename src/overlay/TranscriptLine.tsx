@@ -4,6 +4,7 @@
 // SP2 Task 7: Hover bookmark icon, right-click context menu, bookmarked line indicator.
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Bookmark as BookmarkIcon } from "lucide-react";
 import type { TranscriptSegment } from "../lib/types";
 import { useMeetingStore } from "../stores/meetingStore";
@@ -186,16 +187,12 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const [showTranslationTooltip, setShowTranslationTooltip] = useState(false);
   const hasHoverTranslation = displayMode === "hover" && !!translation;
   const lineRef = useRef<HTMLDivElement>(null);
-  const [tooltipY, setTooltipY] = useState(0);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Sync tooltip visibility when displayMode changes while already hovering
   useEffect(() => {
     if (isHovered && hasHoverTranslation) {
       setShowTranslationTooltip(true);
-      if (lineRef.current) {
-        const rect = lineRef.current.getBoundingClientRect();
-        setTooltipY(rect.bottom + 4);
-      }
     } else if (!hasHoverTranslation) {
       setShowTranslationTooltip(false);
     }
@@ -206,14 +203,11 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
       ref={lineRef}
       className={`group relative flex items-start gap-2.5 rounded-lg px-2 py-[7px] transition-colors duration-100 hover:bg-accent/25 border-l-[3px] transcript-line-enter`}
       style={{ borderLeftColor: isPending ? "transparent" : `${speakerHex}66` }}
-      onMouseEnter={() => {
+      onMouseEnter={(e) => {
         setIsHovered(true);
+        setMousePos({ x: e.clientX, y: e.clientY });
         if (hasHoverTranslation) {
           setShowTranslationTooltip(true);
-          if (lineRef.current) {
-            const rect = lineRef.current.getBoundingClientRect();
-            setTooltipY(rect.bottom + 4);
-          }
         }
       }}
       onMouseLeave={() => { setIsHovered(false); setShowTranslationTooltip(false); }}
@@ -292,14 +286,14 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
           </div>
         )}
 
-        {/* Hover translation tooltip — solid high-contrast popup */}
-        {showTranslationTooltip && hasHoverTranslation && (
+        {/* Hover translation tooltip — rendered via portal to bypass transform containing block */}
+        {showTranslationTooltip && hasHoverTranslation && createPortal(
           <div
-            className="fixed z-[9999] max-w-[420px] rounded-lg border border-white/10 px-3.5 py-2.5 shadow-2xl"
+            className="fixed z-[9999] max-w-[420px] rounded-lg border border-white/15 px-3.5 py-2.5 shadow-2xl pointer-events-none"
             style={{
-              backgroundColor: '#131320',
-              left: '80px',
-              top: `${tooltipY}px`,
+              backgroundColor: '#1a1a2e',
+              left: `${Math.min(mousePos.x + 16, window.innerWidth - 440)}px`,
+              top: `${Math.max(8, mousePos.y - 90)}px`,
             }}
           >
             <p style={{ fontSize: `${translationFontSize + 1}px`, color: translationTextColor }} className="leading-[1.6]">
@@ -312,7 +306,8 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
               <span>·</span>
               <span>{translation.provider}</span>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Bookmark note */}
@@ -334,8 +329,8 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
         </button>
       </div>
 
-      {/* Right-click context menu */}
-      {contextMenu && (
+      {/* Right-click context menu — rendered via portal to bypass transform containing block */}
+      {contextMenu && createPortal(
         <TranscriptContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
@@ -344,7 +339,8 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
           onAddNote={handleAddNote}
           onCopy={handleCopy}
           onClose={() => setContextMenu(null)}
-        />
+        />,
+        document.body
       )}
     </div>
   );

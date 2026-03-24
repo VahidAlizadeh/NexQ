@@ -89,36 +89,38 @@ impl OpusMtTranslator {
         log::info!("Loading OPUS-MT model: {} from {}", model_id, model_dir.display());
 
         // Use catch_unwind to prevent panics from poisoning the router mutex
-        let load_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let encoder = load_onnx_session(&encoder_path)?;
-            log_session_io("Encoder", &encoder);
+        // Load each component separately to get clear error messages
+        log::info!("Loading encoder from: {}", encoder_path.display());
+        let encoder = match load_onnx_session(&encoder_path) {
+            Ok(s) => s,
+            Err(e) => return Err(format!("Encoder load failed: {}", e)),
+        };
+        log_session_io("Encoder", &encoder);
 
-            let decoder = load_onnx_session(&decoder_path)?;
-            log_session_io("Decoder", &decoder);
+        log::info!("Loading decoder from: {}", decoder_path.display());
+        let decoder = match load_onnx_session(&decoder_path) {
+            Ok(s) => s,
+            Err(e) => return Err(format!("Decoder load failed: {}", e)),
+        };
+        log_session_io("Decoder", &decoder);
 
-            let tokenizer = tokenizers::Tokenizer::from_file(&tokenizer_path)
-                .map_err(|e| format!("Failed to load tokenizer: {}", e))?;
+        log::info!("Loading tokenizer from: {}", tokenizer_path.display());
+        let tokenizer = tokenizers::Tokenizer::from_file(&tokenizer_path)
+            .map_err(|e| format!("Tokenizer load failed: {}", e))?;
 
-            let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
+        let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
 
-            log::info!(
-                "OPUS-MT model loaded: {} (eos={}, dec_start={})",
-                model_id, eos_token_id, decoder_start_token_id
-            );
+        log::info!(
+            "OPUS-MT model loaded: {} (eos={}, dec_start={})",
+            model_id, eos_token_id, decoder_start_token_id
+        );
 
-            Ok::<LoadedModel, String>(LoadedModel {
-                encoder,
-                decoder,
-                tokenizer,
-                eos_token_id,
-                decoder_start_token_id,
-            })
-        }));
-
-        let loaded_model = match load_result {
-            Ok(Ok(model)) => model,
-            Ok(Err(e)) => return Err(e),
-            Err(_) => return Err("OPUS-MT model loading panicked — the model file may be corrupt or incompatible".to_string()),
+        let loaded_model = LoadedModel {
+            encoder,
+            decoder,
+            tokenizer,
+            eos_token_id,
+            decoder_start_token_id,
         };
 
         // Store the loaded model

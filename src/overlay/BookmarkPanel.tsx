@@ -1,19 +1,32 @@
 import { useBookmarkStore } from "../stores/bookmarkStore";
-import { formatDuration } from "../lib/utils";
+import { useMeetingStore } from "../stores/meetingStore";
+import { formatDurationLong } from "../lib/utils";
 import { Bookmark, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { MeetingBookmark } from "../lib/types";
+
+/** Scroll to a transcript line by segment ID and briefly highlight it */
+function scrollToSegment(segmentId?: string) {
+  if (!segmentId) return;
+  const el = document.querySelector(`[data-segment-id="${segmentId}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-1", "ring-primary/40");
+    setTimeout(() => el.classList.remove("ring-1", "ring-primary/40"), 1500);
+  }
+}
 
 export function BookmarkPanel() {
   const bookmarks = useBookmarkStore((s) => s.bookmarks);
   const removeBookmark = useBookmarkStore((s) => s.removeBookmark);
   const updateBookmarkNote = useBookmarkStore((s) => s.updateBookmarkNote);
-  const sorted = [...bookmarks].sort((a, b) => b.timestamp_ms - a.timestamp_ms);
+  const meetingStartTime = useMeetingStore((s) => s.meetingStartTime);
+  const sorted = [...bookmarks].sort((a, b) => a.timestamp_ms - b.timestamp_ms);
 
   if (sorted.length === 0) {
     return (
       <div className="flex items-center justify-center py-6 text-muted-foreground/40">
-        <p className="text-xs">No bookmarks yet. Press Ctrl+B or click a line to bookmark.</p>
+        <p className="text-xs">No bookmarks yet. Right-click a line or use Ctrl+B to bookmark.</p>
       </div>
     );
   }
@@ -31,6 +44,7 @@ export function BookmarkPanel() {
           <BookmarkRow
             key={b.id}
             bookmark={b}
+            meetingStartTime={meetingStartTime}
             onUpdateNote={(note) => updateBookmarkNote(b.id, note)}
             onRemove={() => removeBookmark(b.id)}
           />
@@ -42,23 +56,34 @@ export function BookmarkPanel() {
 
 function BookmarkRow({
   bookmark,
+  meetingStartTime,
   onUpdateNote,
   onRemove,
 }: {
   bookmark: MeetingBookmark;
+  meetingStartTime: number | null;
   onUpdateNote: (note: string) => void;
   onRemove: () => void;
 }) {
   const [editNote, setEditNote] = useState(bookmark.note ?? "");
   const [editing, setEditing] = useState(false);
 
+  // Convert epoch timestamp to elapsed time since meeting start
+  const elapsedMs = meetingStartTime
+    ? Math.max(0, bookmark.timestamp_ms - meetingStartTime)
+    : bookmark.timestamp_ms;
+
   return (
     <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-secondary/20">
-      <div className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5">
+      <button
+        onClick={() => scrollToSegment(bookmark.segment_id)}
+        className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 hover:bg-primary/20 transition-colors cursor-pointer"
+        title="Jump to line"
+      >
         <span className="tabular-nums text-[10px] font-semibold text-primary">
-          {formatDuration(bookmark.timestamp_ms)}
+          {formatDurationLong(elapsedMs)}
         </span>
-      </div>
+      </button>
       <div className="flex-1 min-w-0">
         {editing ? (
           <input

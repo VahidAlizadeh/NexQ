@@ -201,8 +201,9 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   return (
     <div
       ref={lineRef}
+      data-segment-id={segment.id}
       className={`group relative flex items-start gap-2.5 rounded-lg px-2 py-[7px] transition-colors duration-100 hover:bg-accent/25 border-l-[3px] transcript-line-enter`}
-      style={{ borderLeftColor: isPending ? "transparent" : `${speakerHex}66` }}
+      style={{ borderLeftColor: isBookmarked ? 'hsl(var(--primary))' : isPending ? "transparent" : `${speakerHex}66` }}
       onMouseEnter={(e) => {
         setIsHovered(true);
         setMousePos({ x: e.clientX, y: e.clientY });
@@ -220,11 +221,6 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
       >
         {isHovered ? fullTimestamp : shortTimestamp}
       </span>
-
-      {/* Bookmarked indicator */}
-      {isBookmarked && (
-        <BookmarkIcon className="mt-[5px] h-2.5 w-2.5 shrink-0 fill-primary text-primary opacity-60" />
-      )}
 
       {/* Speaker label — click to rename */}
       {isEditing ? (

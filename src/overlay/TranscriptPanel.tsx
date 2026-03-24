@@ -11,6 +11,16 @@ import { SpeakerNamingBanner } from "./SpeakerNamingBanner";
 import { mergeConsecutiveSegments } from "../lib/mergeSegments";
 import { Mic, MicOff, Volume2, VolumeX, Search, X, Radio } from "lucide-react";
 
+const TEXT_COLORS = [
+  { name: "White", value: "#e4e4e7" },
+  { name: "Warm", value: "#d6d3d1" },
+  { name: "Cyan", value: "#67e8f9" },
+  { name: "Amber", value: "#fbbf24" },
+  { name: "Emerald", value: "#6ee7b7" },
+  { name: "Rose", value: "#fda4af" },
+  { name: "Lavender", value: "#c4b5fd" },
+];
+
 export function TranscriptPanel() {
   const segments = useTranscriptStore((s) => s.segments);
   const searchQuery = useTranscriptStore((s) => s.searchQuery);
@@ -29,6 +39,10 @@ export function TranscriptPanel() {
   const translationFontSize = useConfigStore((s) => s.translationFontSize ?? 12);
   const setTranscriptFontSize = useConfigStore((s) => s.setTranscriptFontSize);
   const setTranslationFontSize = useConfigStore((s) => s.setTranslationFontSize);
+  const transcriptTextColor = useConfigStore((s) => s.transcriptTextColor ?? "#e4e4e7");
+  const translationTextColor = useConfigStore((s) => s.translationTextColor ?? "#fbbf24");
+  const setTranscriptTextColor = useConfigStore((s) => s.setTranscriptTextColor);
+  const setTranslationTextColor = useConfigStore((s) => s.setTranslationTextColor);
   const isInPerson = audioMode === "in_person";
   // In in-person mode, room audio comes via the "them" config (system audio / AudienceMix),
   // so use systemLevel for the Room bar. micLevel is for the user's mic (online mode).
@@ -273,6 +287,21 @@ export function TranscriptPanel() {
             A
           </button>
         </div>
+        <div className="flex items-center gap-0.5">
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c.value}
+              onClick={() => setTranscriptTextColor(c.value)}
+              className={`h-3.5 w-3.5 rounded-full border transition-all ${
+                transcriptTextColor === c.value
+                  ? "border-white/60 scale-110 ring-1 ring-white/30"
+                  : "border-white/10 hover:border-white/30"
+              }`}
+              style={{ backgroundColor: c.value }}
+              title={c.name}
+            />
+          ))}
+        </div>
         <div className="h-3 w-px bg-border/10" />
         <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground/40 font-medium">Translation</span>
         <div className="flex items-center gap-1">
@@ -291,6 +320,21 @@ export function TranscriptPanel() {
           >
             A
           </button>
+        </div>
+        <div className="flex items-center gap-0.5">
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c.value}
+              onClick={() => setTranslationTextColor(c.value)}
+              className={`h-3.5 w-3.5 rounded-full border transition-all ${
+                translationTextColor === c.value
+                  ? "border-white/60 scale-110 ring-1 ring-white/30"
+                  : "border-white/10 hover:border-white/30"
+              }`}
+              style={{ backgroundColor: c.value }}
+              title={c.name}
+            />
+          ))}
         </div>
       </div>
 

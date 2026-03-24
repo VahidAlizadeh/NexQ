@@ -38,6 +38,8 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const confidenceHighlightEnabled = useConfigStore((s) => s.confidenceHighlightEnabled);
   const transcriptFontSize = useConfigStore((s) => s.transcriptFontSize ?? 13);
   const translationFontSize = useConfigStore((s) => s.translationFontSize ?? 12);
+  const transcriptTextColor = useConfigStore((s) => s.transcriptTextColor ?? "#e4e4e7");
+  const translationTextColor = useConfigStore((s) => s.translationTextColor ?? "#fbbf24");
 
   // Translation store subscriptions
   const translations = useTranslationStore((s) => s.translations);
@@ -182,7 +184,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
 
   // Hover translation tooltip state
   const [showTranslationTooltip, setShowTranslationTooltip] = useState(false);
-  const hasHoverTranslation = autoTranslateActive && displayMode === "hover" && translation;
+  const hasHoverTranslation = displayMode === "hover" && !!translation;
 
   return (
     <div
@@ -244,7 +246,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
               ? "border-b border-dotted border-white/30 opacity-70"
               : ""
           }`}
-          style={{ fontSize: `${transcriptFontSize}px` }}
+          style={{ fontSize: `${transcriptFontSize}px`, color: segment.is_final ? transcriptTextColor : undefined }}
           title={
             isLowConfidence
               ? `Confidence: ${Math.round(segment.confidence * 100)}%`
@@ -255,8 +257,8 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
         </span>
 
         {/* Inline translation — visible below the original text */}
-        {autoTranslateActive && displayMode === "inline" && (
-          <div className="mt-1 leading-[1.5] text-amber-400/70" style={{ fontSize: `${translationFontSize}px` }}>
+        {displayMode === "inline" && (
+          <div className="mt-1 leading-[1.5]" style={{ fontSize: `${translationFontSize}px`, color: translationTextColor }}>
             {isTranslating ? (
               <span className="text-muted-foreground/40 animate-pulse">Translating...</span>
             ) : translation ? (
@@ -268,7 +270,7 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
         {/* Hover translation tooltip — solid high-contrast popup */}
         {showTranslationTooltip && hasHoverTranslation && (
           <div className="absolute left-0 top-full mt-1.5 z-50 max-w-[420px] rounded-lg border border-amber-500/20 bg-[#1a1a2e] px-3.5 py-2.5 shadow-2xl shadow-black/40">
-            <p className="text-[0.8125rem] leading-[1.6] text-amber-300/90">
+            <p style={{ fontSize: `${translationFontSize + 1}px`, color: translationTextColor }} className="leading-[1.6]">
               {translation.translated_text}
             </p>
             <div className="mt-1.5 flex items-center gap-1.5 text-[0.6rem] text-muted-foreground/50">

@@ -12,8 +12,19 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getModeLabel } from "../lib/utils";
 import type { AIResponse } from "../lib/types";
+import { useConfigStore } from "../stores/configStore";
 
 type TabId = "current" | "history-0" | "history-1" | string;
+
+const TEXT_COLORS = [
+  { name: "White", value: "#e4e4e7" },
+  { name: "Warm", value: "#d6d3d1" },
+  { name: "Cyan", value: "#67e8f9" },
+  { name: "Amber", value: "#fbbf24" },
+  { name: "Emerald", value: "#6ee7b7" },
+  { name: "Rose", value: "#fda4af" },
+  { name: "Lavender", value: "#c4b5fd" },
+];
 
 // Sub-PRD 6: Streaming markdown, response history tabs, pin/copy
 export function AIResponsePanel() {
@@ -25,6 +36,11 @@ export function AIResponsePanel() {
   const pinnedResponses = useStreamStore((s) => s.pinnedResponses);
   const pinResponse = useStreamStore((s) => s.pinResponse);
   const unpinResponse = useStreamStore((s) => s.unpinResponse);
+
+  const aiResponseFontSize = useConfigStore((s) => s.aiResponseFontSize ?? 12);
+  const aiResponseTextColor = useConfigStore((s) => s.aiResponseTextColor ?? "#d4d4d8");
+  const setAiResponseFontSize = useConfigStore((s) => s.setAiResponseFontSize);
+  const setAiResponseTextColor = useConfigStore((s) => s.setAiResponseTextColor);
 
   const [activeTab, setActiveTab] = useState<TabId>("current");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -141,7 +157,7 @@ export function AIResponsePanel() {
                 {currentMode ? getModeLabel(currentMode) : "Generating"}...
               </span>
             </div>
-            <div className="prose prose-sm prose-invert max-w-none text-xs leading-relaxed text-foreground/80">
+            <div className="prose prose-sm prose-invert max-w-none leading-relaxed" style={{ fontSize: `${aiResponseFontSize}px`, color: aiResponseTextColor }}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {currentContent}
               </ReactMarkdown>
@@ -187,7 +203,7 @@ export function AIResponsePanel() {
                 </div>
               </div>
             )}
-            <div className="prose prose-sm prose-invert max-w-none text-xs leading-relaxed text-foreground/80">
+            <div className="prose prose-sm prose-invert max-w-none leading-relaxed" style={{ fontSize: `${aiResponseFontSize}px`, color: aiResponseTextColor }}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {currentContent}
               </ReactMarkdown>
@@ -226,7 +242,7 @@ export function AIResponsePanel() {
                 />
               </div>
             </div>
-            <div className="prose prose-sm prose-invert max-w-none text-xs leading-relaxed text-foreground/80">
+            <div className="prose prose-sm prose-invert max-w-none leading-relaxed" style={{ fontSize: `${aiResponseFontSize}px`, color: aiResponseTextColor }}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {displayContent}
               </ReactMarkdown>
@@ -243,6 +259,29 @@ export function AIResponsePanel() {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Typeset controls */}
+      <div className="flex items-center gap-3 px-1 pt-1.5 border-t border-border/10">
+        <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground/40 font-medium">AI Text</span>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setAiResponseFontSize(Math.max(10, aiResponseFontSize - 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors" title="Smaller">A</button>
+          <span className="text-[0.6rem] tabular-nums text-muted-foreground/50 w-6 text-center">{aiResponseFontSize}</span>
+          <button onClick={() => setAiResponseFontSize(Math.min(20, aiResponseFontSize + 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.75rem] font-medium text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors" title="Larger">A</button>
+        </div>
+        <div className="flex items-center gap-0.5">
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c.value}
+              onClick={() => setAiResponseTextColor(c.value)}
+              className={`h-3 w-3 rounded-full border transition-all ${
+                aiResponseTextColor === c.value ? "border-white/60 scale-110" : "border-white/10 hover:border-white/30"
+              }`}
+              style={{ backgroundColor: c.value }}
+              title={c.name}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

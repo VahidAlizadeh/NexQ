@@ -145,6 +145,10 @@ interface ConfigState {
   // Typeset settings
   transcriptFontSize: number;
   translationFontSize: number;
+  transcriptTextColor: string;
+  translationTextColor: string;
+  aiResponseTextColor: string;
+  aiResponseFontSize: number;
 
   // OpenRouter catalog
   openrouterFavorites: string[];
@@ -193,6 +197,10 @@ interface ConfigState {
   setConfidenceHighlightEnabled: (enabled: boolean) => void;
   setTranscriptFontSize: (size: number) => void;
   setTranslationFontSize: (size: number) => void;
+  setTranscriptTextColor: (color: string) => void;
+  setTranslationTextColor: (color: string) => void;
+  setAiResponseTextColor: (color: string) => void;
+  setAiResponseFontSize: (size: number) => void;
   toggleOpenRouterFavorite: (id: string) => void;
   addOpenRouterRecentlyUsed: (id: string) => void;
   removeOpenRouterRecentlyUsed: (id: string) => void;
@@ -232,6 +240,10 @@ export const useConfigStore = create<ConfigState>((set) => ({
   confidenceHighlightEnabled: true,
   transcriptFontSize: 13,
   translationFontSize: 12,
+  transcriptTextColor: "#e4e4e7",
+  translationTextColor: "#fbbf24",
+  aiResponseTextColor: "#d4d4d8",
+  aiResponseFontSize: 12,
   openrouterFavorites: [],
   openrouterRecentlyUsed: [],
   _loaded: false,
@@ -483,6 +495,22 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ translationFontSize: size });
     persistValue("translationFontSize", size);
   },
+  setTranscriptTextColor: (color) => {
+    set({ transcriptTextColor: color });
+    persistValue("transcriptTextColor", color);
+  },
+  setTranslationTextColor: (color) => {
+    set({ translationTextColor: color });
+    persistValue("translationTextColor", color);
+  },
+  setAiResponseTextColor: (color) => {
+    set({ aiResponseTextColor: color });
+    persistValue("aiResponseTextColor", color);
+  },
+  setAiResponseFontSize: (size) => {
+    set({ aiResponseFontSize: size });
+    persistValue("aiResponseFontSize", size);
+  },
   toggleOpenRouterFavorite: (id) => {
     const { openrouterFavorites } = useConfigStore.getState();
     const next = openrouterFavorites.includes(id)
@@ -553,6 +581,10 @@ export const useConfigStore = create<ConfigState>((set) => ({
       const openrouterRecentlyUsed = await store.get<string[]>("openrouterRecentlyUsed");
       const transcriptFontSize = await store.get<number>("transcriptFontSize");
       const translationFontSize = await store.get<number>("translationFontSize");
+      const transcriptTextColor = await store.get<string>("transcriptTextColor");
+      const translationTextColor = await store.get<string>("translationTextColor");
+      const aiResponseTextColor = await store.get<string>("aiResponseTextColor");
+      const aiResponseFontSize = await store.get<number>("aiResponseFontSize");
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
@@ -686,6 +718,10 @@ export const useConfigStore = create<ConfigState>((set) => ({
         ...(openrouterRecentlyUsed != null && { openrouterRecentlyUsed }),
         transcriptFontSize: transcriptFontSize ?? 13,
         translationFontSize: translationFontSize ?? 12,
+        transcriptTextColor: transcriptTextColor ?? "#e4e4e7",
+        translationTextColor: translationTextColor ?? "#fbbf24",
+        aiResponseTextColor: aiResponseTextColor ?? "#d4d4d8",
+        aiResponseFontSize: aiResponseFontSize ?? 12,
       }));
 
       // Post-load: ensure local providers have a local_model_id so footer/backend use the right model

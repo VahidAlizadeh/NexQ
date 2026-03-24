@@ -119,6 +119,8 @@ export function AudioPlayer({
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const rafRef = useRef<number | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
 
   const {
     isPlaying,
@@ -136,18 +138,42 @@ export function AudioPlayer({
     pause,
   } = useAudioPlayerStore();
 
+  const setGainNode = useAudioPlayerStore((s) => s.setGainNode);
+
   // -------------------------------------------------------------------------
-  // Mount: wire up audio element to the store
+  // Mount: wire up audio element + Web Audio API for volume amplification
   // -------------------------------------------------------------------------
 
-  // Track blob URL for cleanup
   const blobUrlRef = useRef<string | null>(null);
+
+  // Set up Web Audio API GainNode (once per audio element lifetime)
+  const ensureGainNode = useCallback((audio: HTMLAudioElement) => {
+    if (sourceNodeRef.current) return; // already connected
+
+    try {
+      const ctx = audioCtxRef.current ?? new AudioContext();
+      audioCtxRef.current = ctx;
+
+      const source = ctx.createMediaElementSource(audio);
+      sourceNodeRef.current = source;
+
+      const gain = ctx.createGain();
+      gain.gain.value = useAudioPlayerStore.getState().volume;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      setGainNode(gain);
+
+      // Keep audio.volume at 1.0 — GainNode handles all volume control
+      audio.volume = 1.0;
+    } catch (err) {
+      console.warn("Web Audio API setup failed, falling back to audio.volume:", err);
+    }
+  }, [setGainNode]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Revoke any previous blob URL
     if (blobUrlRef.current) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
@@ -157,13 +183,19 @@ export function AudioPlayer({
     setSyncContext(meetingStartMs, recordingOffsetMs);
     setDuration(durationMs);
 
-    const handleEnded = () => {
-      pause();
+    const handleEnded = () => { pause(); };
+
+    // Resume AudioContext on play (browser requires user gesture)
+    const handlePlay = () => {
+      if (audioCtxRef.current?.state === "suspended") {
+        audioCtxRef.current.resume();
+      }
     };
 
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("play", handlePlay);
 
-    // Load audio file via Tauri fs plugin and create a blob URL
+    // Load audio file and set up gain node after loading
     const loadAudio = async () => {
       try {
         const bytes = await readFile(recordingPath);
@@ -173,6 +205,9 @@ export function AudioPlayer({
         blobUrlRef.current = url;
         audio.src = url;
         audio.preload = "auto";
+
+        // Connect GainNode after src is set
+        ensureGainNode(audio);
       } catch (err) {
         console.error("Failed to load audio file:", err);
       }
@@ -181,11 +216,13 @@ export function AudioPlayer({
 
     return () => {
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("play", handlePlay);
       if (blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
       }
       setAudioElement(null);
+      setGainNode(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingPath]);
@@ -309,12 +346,12 @@ export function AudioPlayer({
         <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-muted-foreground/50">
           <path d="M2 4.5h1.5L6 2.5v7L3.5 7.5H2a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5z" />
           {volume > 0 && <path d="M7.5 3.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" strokeWidth="1" />}
-          {volume > 0.5 && <path d="M9 2a5 5 0 0 1 0 8" fill="none" stroke="currentColor" strokeWidth="1" />}
+          {volume > 1 && <path d="M9 2a5 5 0 0 1 0 8" fill="none" stroke="currentColor" strokeWidth="1" />}
         </svg>
         <input
           type="range"
           min="0"
-          max="100"
+          max="200"
           value={Math.round(volume * 100)}
           onChange={(e) => setVolume(Number(e.target.value) / 100)}
           className="w-16 h-1 accent-indigo-400 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"

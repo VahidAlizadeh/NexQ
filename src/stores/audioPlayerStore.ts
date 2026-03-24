@@ -117,10 +117,14 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
   },
 
   setVolume: (volume: number) => {
-    const clamped = Math.max(0, Math.min(1, volume));
-    const { audioElement } = get();
-    if (audioElement) {
-      audioElement.volume = clamped;
+    const clamped = Math.max(0, Math.min(2, volume));
+    const { gainNode, audioElement } = get();
+    if (gainNode) {
+      // GainNode handles full range (0-2x)
+      gainNode.gain.value = clamped;
+    } else if (audioElement) {
+      // Fallback: audio.volume only supports 0-1
+      audioElement.volume = Math.min(1, clamped);
     }
     set({ volume: clamped });
   },

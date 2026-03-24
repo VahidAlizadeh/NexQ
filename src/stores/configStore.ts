@@ -189,6 +189,8 @@ interface ConfigState {
   setConfidenceHighlightEnabled: (enabled: boolean) => void;
   toggleOpenRouterFavorite: (id: string) => void;
   addOpenRouterRecentlyUsed: (id: string) => void;
+  removeOpenRouterRecentlyUsed: (id: string) => void;
+  clearOpenRouterRecentlyUsed: () => void;
   loadConfig: () => Promise<void>;
 }
 
@@ -478,6 +480,16 @@ export const useConfigStore = create<ConfigState>((set) => ({
     const next = [id, ...openrouterRecentlyUsed.filter((r) => r !== id)].slice(0, 5);
     set({ openrouterRecentlyUsed: next });
     persistValue("openrouterRecentlyUsed", next);
+  },
+  removeOpenRouterRecentlyUsed: (id) => {
+    const { openrouterRecentlyUsed } = useConfigStore.getState();
+    const next = openrouterRecentlyUsed.filter((r) => r !== id);
+    set({ openrouterRecentlyUsed: next });
+    persistValue("openrouterRecentlyUsed", next);
+  },
+  clearOpenRouterRecentlyUsed: () => {
+    set({ openrouterRecentlyUsed: [] });
+    persistValue("openrouterRecentlyUsed", []);
   },
 
   /**

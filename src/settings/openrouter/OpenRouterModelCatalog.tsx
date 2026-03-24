@@ -20,6 +20,8 @@ export function OpenRouterModelCatalog({ models }: OpenRouterModelCatalogProps) 
   const recentlyUsed = useConfigStore((s) => s.openrouterRecentlyUsed);
   const toggleFavorite = useConfigStore((s) => s.toggleOpenRouterFavorite);
   const addRecentlyUsed = useConfigStore((s) => s.addOpenRouterRecentlyUsed);
+  const removeRecentlyUsed = useConfigStore((s) => s.removeOpenRouterRecentlyUsed);
+  const clearRecentlyUsed = useConfigStore((s) => s.clearOpenRouterRecentlyUsed);
 
   // Filter/sort state (local, resets on leave)
   const [search, setSearch] = useState("");
@@ -138,6 +140,8 @@ export function OpenRouterModelCatalog({ models }: OpenRouterModelCatalogProps) 
         recentIds={recentlyUsed}
         models={models}
         onSelect={handleSelect}
+        onRemove={removeRecentlyUsed}
+        onClearAll={clearRecentlyUsed}
       />
 
       {/* Favorites */}

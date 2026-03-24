@@ -31,7 +31,7 @@ const COLOR_PLAYHEAD = "#818cf8";                        // indigo — playhead 
 const COLOR_BOOKMARK = "#f59e0b";                        // amber — bookmark dots
 const COLOR_TOPIC = "rgba(16, 185, 129, 0.40)";         // emerald — topic dividers
 
-const BAR_GAP_RATIO = 0.25;   // fraction of bar slot taken by gap
+const BAR_GAP_RATIO = 0.08;   // minimal gap for smooth continuous look
 const PLAYHEAD_WIDTH = 2;     // px (logical)
 const BOOKMARK_RADIUS = 2.5;  // px (logical) — ~5 px diameter
 const BOOKMARK_GLOW_BLUR = 6; // px shadow blur for bookmark dots
@@ -91,26 +91,35 @@ export function WaveformCanvas({
     const gapW = slotW * BAR_GAP_RATIO;
     const barW = Math.max(1, slotW - gapW);
 
-    // Auto-normalize: find max peak so even quiet recordings fill the waveform
+    // Auto-normalize: find max peak amplitude
     let maxAmplitude = 0;
     for (let i = 0; i < numBars; i++) {
       const [pMin, pMax] = peaks[i];
       maxAmplitude = Math.max(maxAmplitude, Math.abs(pMin), Math.abs(pMax));
     }
-    const ampScale = maxAmplitude > 0.01 ? 0.85 / maxAmplitude : 1;
+    const ampScale = maxAmplitude > 0.01 ? 1.0 / maxAmplitude : 1;
 
-    // --- waveform bars ---
+    // --- waveform bars with sqrt scaling for perceptual accuracy ---
+    // sqrt compresses dynamic range: quiet parts become more visible,
+    // loud parts don't all clip to the same height.
+    const minBarH = 1.5;  // minimum bar height for silence
+    const maxBarH = logicalH * 0.92;
+
     for (let i = 0; i < numBars; i++) {
       const [min, max] = peaks[i];
-      const amplitude = Math.max(Math.abs(min), Math.abs(max)) * ampScale;
-      const barH = Math.max(2, amplitude * logicalH);
+      const raw = Math.max(Math.abs(min), Math.abs(max)) * ampScale;
+      // sqrt scaling for perceptual loudness representation
+      const scaled = Math.sqrt(raw);
+      const barH = Math.max(minBarH, scaled * maxBarH);
       const x = i * slotW + gapW / 2;
       const y = (logicalH - barH) / 2;
 
       const barCenter = x + barW / 2;
       ctx.fillStyle = barCenter <= playheadX ? COLOR_PLAYED : COLOR_UNPLAYED;
+      // Use roundRect with small radius for smooth continuous look
+      const radius = Math.min(barW / 2, 1.5);
       ctx.beginPath();
-      ctx.roundRect(x, y, barW, barH, barW / 2);
+      ctx.roundRect(x, y, barW, barH, radius);
       ctx.fill();
     }
 

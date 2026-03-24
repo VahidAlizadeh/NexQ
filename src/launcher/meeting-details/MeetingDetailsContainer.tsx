@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Meeting } from "../../lib/types";
-import { getMeeting } from "../../lib/ipc";
-import { onTranscriptFinal } from "../../lib/events";
+import type { Meeting, RecordingInfo, WaveformData } from "../../lib/types";
+import { getMeeting, getRecordingInfo } from "../../lib/ipc";
+import { onTranscriptFinal, onRecordingReady } from "../../lib/events";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { useMeetingStore } from "../../stores/meetingStore";
 import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
@@ -17,6 +18,7 @@ import { AIInteractionLog } from "./AIInteractionLog";
 import { SpeakersTab } from "./SpeakersTab";
 import { ActionItemsTab } from "./ActionItemsTab";
 import { BookmarksTab } from "./BookmarksTab";
+import { AudioPlayer, AudioPlayerSkeleton } from "../../components/AudioPlayer";
 import { Loader2 } from "lucide-react";
 
 interface MeetingDetailsProps {
@@ -31,6 +33,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const [activeTab, setActiveTab] = useState<MeetingTab>("transcript");
   const [expandedInteraction, setExpandedInteraction] = useState<string | null>(null);
   const [scrollToSegmentIndex, setScrollToSegmentIndex] = useState<number | null>(null);
+  const [recordingInfo, setRecordingInfo] = useState<RecordingInfo | null>(null);
+  const [waveformData, setWaveformData] = useState<WaveformData | null>(null);
+  const [recordingProcessing, setRecordingProcessing] = useState(false);
 
   const loadMeeting = useCallback(async () => {
     setLoading(true);
@@ -61,6 +66,39 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     });
     return () => { unlistenPromise.then((unlisten) => unlisten()); };
   }, [isActiveMeeting]);
+
+  // Load recording info when meeting loads
+  useEffect(() => {
+    if (!meeting?.id) return;
+    getRecordingInfo(meeting.id).then((info) => {
+      if (info) {
+        setRecordingInfo(info);
+        fetch(convertFileSrc(info.waveform_path))
+          .then((r) => r.json())
+          .then(setWaveformData)
+          .catch(console.error);
+      }
+    });
+  }, [meeting?.id]);
+
+  // Listen for recording_ready event (fires when post-meeting processing completes)
+  useEffect(() => {
+    const unlisten = onRecordingReady((data) => {
+      if (data.meeting_id === meeting?.id) {
+        setRecordingProcessing(false);
+        getRecordingInfo(meeting.id).then((info) => {
+          if (info) {
+            setRecordingInfo(info);
+            fetch(convertFileSrc(info.waveform_path))
+              .then((r) => r.json())
+              .then(setWaveformData)
+              .catch(console.error);
+          }
+        });
+      }
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [meeting?.id]);
 
   // Hooks
   const stats = useMeetingStats(meeting);
@@ -172,6 +210,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
             segments={meeting.transcript}
             search={search}
             meetingStartTime={new Date(meeting.start_time).getTime()}
+            recordingOffsetMs={recordingInfo?.offset_ms ?? 0}
             speakers={meeting.speakers}
             searchInputRef={searchInputRef}
             bookmarks={meeting.bookmarks}
@@ -228,6 +267,22 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
           />
         )}
       </div>
+
+      {/* Audio Player — sticky bottom bar */}
+      {recordingProcessing && <AudioPlayerSkeleton />}
+      {recordingInfo && !recordingProcessing && (
+        <AudioPlayer
+          meetingId={meeting.id}
+          meetingStartMs={new Date(meeting.start_time).getTime()}
+          recordingPath={recordingInfo.path}
+          recordingSize={recordingInfo.size_bytes}
+          recordingOffsetMs={recordingInfo.offset_ms}
+          durationMs={recordingInfo.duration_ms}
+          waveformData={waveformData}
+          bookmarks={meeting.bookmarks}
+          topicSections={meeting.topic_sections}
+        />
+      )}
     </div>
   );
 }

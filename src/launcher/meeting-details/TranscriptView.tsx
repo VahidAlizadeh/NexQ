@@ -1,6 +1,8 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import type { TranscriptSegment, SpeakerIdentity, MeetingBookmark } from "../../lib/types";
 import type { TranscriptSearchState } from "../../hooks/useTranscriptSearch";
+import { useAudioPlayerStore } from "../../stores/audioPlayerStore";
+import { useAudioTranscriptSync } from "../../hooks/useAudioTranscriptSync";
 import {
   formatTimestamp,
   getSpeakerLabel,
@@ -16,6 +18,8 @@ interface TranscriptViewProps {
   segments: TranscriptSegment[];
   search: TranscriptSearchState;
   meetingStartTime?: number;
+  /** Recording offset in ms — used for audio-transcript sync */
+  recordingOffsetMs?: number;
   /** Saved speakers from meeting — used for post-meeting label/color resolution */
   speakers?: SpeakerIdentity[];
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
@@ -39,8 +43,10 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "hsl(var(--muted-foreground))",
 };
 
-export function TranscriptView({ segments, search, meetingStartTime, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged, initialScrollToIndex, onScrollHandled }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime, recordingOffsetMs = 0, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged, initialScrollToIndex, onScrollHandled }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // Map-based refs keyed by segment ID — used by useAudioTranscriptSync
+  const segmentRefsMap = useRef<Map<string, HTMLElement>>(new Map());
   const localSearchInputRef = useRef<HTMLInputElement | null>(null);
   const setInputRef = useCallback((el: HTMLInputElement | null) => {
     localSearchInputRef.current = el;
@@ -50,6 +56,19 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; segmentIndex: number } | null>(null);
   const [noteEdit, setNoteEdit] = useState<{ bookmarkId: string; note: string } | null>(null);
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Audio player store — for active segment highlighting and click-to-seek
+  const activeSegmentId = useAudioPlayerStore((s) => s.activeSegmentId);
+  const isPlaying = useAudioPlayerStore((s) => s.isPlaying);
+  const seekToTimestamp = useAudioPlayerStore((s) => s.seekToTimestamp);
+
+  // Bidirectional sync: audio position → active transcript segment + auto-scroll
+  useAudioTranscriptSync(
+    segments,
+    meetingStartTime ?? 0,
+    recordingOffsetMs,
+    segmentRefsMap,
+  );
 
   const toElapsed = (ms: number) =>
     meetingStartTime ? Math.max(0, ms - meetingStartTime) : ms;
@@ -237,8 +256,12 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
     segmentRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  const handleSegmentClick = (index: number) => {
+  const handleSegmentClick = (index: number, segment: TranscriptSegment) => {
     setSelectedIndex(selectedIndex === index ? null : index);
+    // Click-to-seek: only seeks when audio is already playing
+    if (isPlaying) {
+      seekToTimestamp(segment.timestamp_ms);
+    }
   };
 
   if (segments.length === 0) {
@@ -322,21 +345,38 @@ export function TranscriptView({ segments, search, meetingStartTime, speakers, s
             const isSelected = i === selectedIndex;
             const segBookmark = segment.id ? bookmarkBySegment.get(segment.id) : undefined;
             const isBookmarked = !!segBookmark;
+            const isActiveSegment = activeSegmentId !== null && segment.originalIds.includes(activeSegmentId);
 
             return (
               <div
                 key={segment.id || i}
-                ref={(el) => { segmentRefs.current[i] = el; }}
-                onClick={() => handleSegmentClick(i)}
+                ref={(el) => {
+                  segmentRefs.current[i] = el;
+                  // Populate map for all original IDs in this merged segment
+                  if (el) {
+                    for (const id of segment.originalIds) {
+                      segmentRefsMap.current.set(id, el);
+                    }
+                  } else {
+                    for (const id of segment.originalIds) {
+                      segmentRefsMap.current.delete(id);
+                    }
+                  }
+                }}
+                onClick={() => handleSegmentClick(i, segment)}
                 onContextMenu={meetingId ? (e) => handleContextMenu(e, i) : undefined}
                 className={`group relative flex items-start gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all duration-100 border-l-2 ${
-                  segment.speaker === "User" ? "border-l-speaker-user/20" : "border-l-speaker-interviewer/20"
+                  isActiveSegment
+                    ? "border-l-indigo-400 bg-indigo-500/[0.08]"
+                    : segment.speaker === "User" ? "border-l-speaker-user/20" : "border-l-speaker-interviewer/20"
                 } ${
                   isSelected
                     ? "bg-primary/10 ring-1 ring-primary/20"
                     : isSearchMatch
                       ? "bg-highlight/10 ring-1 ring-highlight/20"
-                      : "hover:bg-secondary/20"
+                      : isActiveSegment
+                        ? ""
+                        : "hover:bg-secondary/20"
                 }`}
               >
                 {/* Timestamp */}

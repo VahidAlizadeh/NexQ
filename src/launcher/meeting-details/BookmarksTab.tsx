@@ -49,7 +49,13 @@ export function BookmarksTab({ meeting, onBookmarkUpdated, onNavigateToBookmark,
           </button>
         )}
         {suggestions?.error && (
-          <p className="mt-2 text-[11px] text-red-400">{suggestions.error}</p>
+          suggestions.error.startsWith("info:") ? (
+            <p className="mt-3 max-w-[260px] text-center text-[11px] leading-relaxed text-muted-foreground/50">
+              {suggestions.error.slice(5)}
+            </p>
+          ) : (
+            <p className="mt-2 text-[11px] text-red-400">{suggestions.error}</p>
+          )
         )}
       </div>
     );
@@ -87,7 +93,13 @@ export function BookmarksTab({ meeting, onBookmarkUpdated, onNavigateToBookmark,
       </div>
 
       {suggestions?.error && (
-        <p className="mb-2 px-1 text-[11px] text-red-400">{suggestions.error}</p>
+        suggestions.error.startsWith("info:") ? (
+          <p className="mb-2 px-1 text-[11px] leading-relaxed text-muted-foreground/50">
+            {suggestions.error.slice(5)}
+          </p>
+        ) : (
+          <p className="mb-2 px-1 text-[11px] text-red-400">{suggestions.error}</p>
+        )
       )}
 
       {/* AI Suggestions section */}

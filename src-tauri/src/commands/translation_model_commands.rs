@@ -79,7 +79,7 @@ pub async fn delete_opus_mt_model(
     mgr.delete_model(&model_id)
 }
 
-/// Activate a downloaded OPUS-MT model and pre-load its ONNX sessions.
+/// Activate a downloaded OPUS-MT model. ONNX sessions load lazily on first translate().
 #[command]
 pub async fn activate_opus_mt_model(
     app: AppHandle,
@@ -87,7 +87,7 @@ pub async fn activate_opus_mt_model(
 ) -> Result<(), String> {
     let state = app.state::<AppState>();
 
-    // Activate in the manager
+    // Activate in the manager (persists to active_model.txt)
     {
         let mgr = state
             .opus_mt_manager
@@ -99,7 +99,9 @@ pub async fn activate_opus_mt_model(
         mgr.activate_model(&model_id)?;
     }
 
-    // Update the router's active model ID and re-set the provider to trigger model loading
+    // Update the router's active model ID so set_provider() passes it to the translator.
+    // Also re-create the provider so it picks up the new active model ID.
+    // ONNX sessions are NOT loaded here — they load lazily on the first translate() call.
     if let Some(translation) = &state.translation {
         let mut router = translation
             .lock()
@@ -107,13 +109,11 @@ pub async fn activate_opus_mt_model(
 
         router.set_opus_mt_active_model(Some(model_id.clone()));
 
-        if let Some(active_type) = router.active_type() {
-            if matches!(active_type, crate::translation::TranslationProviderType::OpusMt) {
-                log::info!("Pre-loading OPUS-MT model {} for active provider", model_id);
-                let _ = router.set_provider(crate::translation::TranslationProviderType::OpusMt);
-            }
-        }
+        // Re-create the provider with the new active model ID
+        // (set_provider just sets the model ID, no ONNX loading)
+        let _ = router.set_provider(crate::translation::TranslationProviderType::OpusMt);
     }
 
+    log::info!("OPUS-MT model activated: {} (ONNX will load on first translate)", model_id);
     Ok(())
 }

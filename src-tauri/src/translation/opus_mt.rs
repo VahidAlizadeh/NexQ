@@ -1,10 +1,13 @@
 // OPUS-MT local translation provider with ONNX inference.
 // Uses ort (ONNX Runtime) for encoder-decoder inference and the
 // tokenizers crate for SentencePiece tokenization.
+//
+// Model loading is LAZY: the ONNX sessions are loaded on the first
+// translate() call, NOT during set_provider(). This prevents panics
+// from poisoning the TranslationRouter's Mutex.
 
 use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::Mutex as TokioMutex;
+use std::sync::Mutex as StdMutex;
 
 use super::*;
 use super::opus_mt_registry;
@@ -20,16 +23,24 @@ struct LoadedModel {
 
 pub struct OpusMtTranslator {
     models_dir: Option<PathBuf>,
-    /// Currently loaded model: (model_id, sessions).
-    /// Only one model is loaded at a time to limit memory usage (~300-450 MB per model).
-    loaded: Option<(String, Arc<TokioMutex<LoadedModel>>)>,
+    /// The model ID that SHOULD be loaded (set by activation).
+    active_model_id: Option<String>,
+    /// Currently loaded model — behind a std::sync::Mutex for interior mutability.
+    /// translate() can lazy-load without needing &mut self.
+    loaded: StdMutex<Option<(String, LoadedModel)>>,
 }
+
+// Safety: LoadedModel contains ort::Session which is Send+Sync in ort v2.
+// The Mutex provides thread-safe access.
+unsafe impl Send for OpusMtTranslator {}
+unsafe impl Sync for OpusMtTranslator {}
 
 impl OpusMtTranslator {
     pub fn new() -> Self {
         Self {
             models_dir: None,
-            loaded: None,
+            active_model_id: None,
+            loaded: StdMutex::new(None),
         }
     }
 
@@ -37,15 +48,28 @@ impl OpusMtTranslator {
         self.models_dir = Some(path);
     }
 
-    /// Load a model from disk into ONNX sessions.
-    pub fn load_model(&mut self, model_id: &str) -> Result<(), String> {
-        // Already loaded?
-        if let Some((loaded_id, _)) = &self.loaded {
-            if loaded_id == model_id {
-                return Ok(());
+    pub fn set_active_model_id(&mut self, model_id: Option<String>) {
+        self.active_model_id = model_id;
+    }
+
+    /// Attempt to load a model from disk. Called lazily from translate().
+    /// Returns the loaded model under the lock, or an error.
+    fn ensure_loaded(&self) -> Result<(), String> {
+        let model_id = self.active_model_id.as_deref()
+            .ok_or("No OPUS-MT model activated. Activate a model in Settings → Translation.")?;
+
+        // Check if already loaded
+        {
+            let guard = self.loaded.lock()
+                .map_err(|_| "OPUS-MT model lock error".to_string())?;
+            if let Some((loaded_id, _)) = guard.as_ref() {
+                if loaded_id == model_id {
+                    return Ok(());
+                }
             }
         }
 
+        // Need to load — do the heavy work OUTSIDE any external lock
         let models_dir = self.models_dir.as_ref()
             .ok_or("OPUS-MT models directory not configured")?;
 
@@ -64,46 +88,46 @@ impl OpusMtTranslator {
 
         log::info!("Loading OPUS-MT model: {} from {}", model_id, model_dir.display());
 
-        let encoder = load_onnx_session(&encoder_path)?;
-        log_session_io("Encoder", &encoder);
+        // Use catch_unwind to prevent panics from poisoning the router mutex
+        let load_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let encoder = load_onnx_session(&encoder_path)?;
+            log_session_io("Encoder", &encoder);
 
-        let decoder = load_onnx_session(&decoder_path)?;
-        log_session_io("Decoder", &decoder);
+            let decoder = load_onnx_session(&decoder_path)?;
+            log_session_io("Decoder", &decoder);
 
-        let tokenizer = tokenizers::Tokenizer::from_file(&tokenizer_path)
-            .map_err(|e| format!("Failed to load tokenizer: {}", e))?;
+            let tokenizer = tokenizers::Tokenizer::from_file(&tokenizer_path)
+                .map_err(|e| format!("Failed to load tokenizer: {}", e))?;
 
-        let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
+            let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
 
-        log::info!(
-            "OPUS-MT model loaded: {} (eos={}, dec_start={})",
-            model_id, eos_token_id, decoder_start_token_id
-        );
+            log::info!(
+                "OPUS-MT model loaded: {} (eos={}, dec_start={})",
+                model_id, eos_token_id, decoder_start_token_id
+            );
 
-        // Unload previous model
-        self.loaded = None;
-
-        self.loaded = Some((
-            model_id.to_string(),
-            Arc::new(TokioMutex::new(LoadedModel {
+            Ok::<LoadedModel, String>(LoadedModel {
                 encoder,
                 decoder,
                 tokenizer,
                 eos_token_id,
                 decoder_start_token_id,
-            })),
-        ));
+            })
+        }));
+
+        let loaded_model = match load_result {
+            Ok(Ok(model)) => model,
+            Ok(Err(e)) => return Err(e),
+            Err(_) => return Err("OPUS-MT model loading panicked — the model file may be corrupt or incompatible".to_string()),
+        };
+
+        // Store the loaded model
+        let mut guard = self.loaded.lock()
+            .map_err(|_| "OPUS-MT model lock error".to_string())?;
+        *guard = Some((model_id.to_string(), loaded_model));
 
         Ok(())
     }
-
-    /// Unload the currently loaded model to free memory.
-    pub fn unload(&mut self) {
-        if let Some((id, _)) = self.loaded.take() {
-            log::info!("Unloaded OPUS-MT model: {}", id);
-        }
-    }
-
 }
 
 #[async_trait]
@@ -120,35 +144,39 @@ impl TranslationProvider for OpusMtTranslator {
     ) -> Result<String, TranslationError> {
         let source = source.unwrap_or("en");
 
-        // We need &mut self to load the model, but the trait gives us &self.
-        // The caller (TranslationRouter) holds the Arc<dyn TranslationProvider>,
-        // so we use interior mutability via the TokioMutex on LoadedModel.
-        // For model loading, we need a different approach — pre-load via load_model().
-
-        // Find the loaded model
-        let model_arc = self.loaded
-            .as_ref()
-            .map(|(_, m)| Arc::clone(m))
-            .ok_or_else(|| TranslationError::NotConfigured(
-                format!("No OPUS-MT model loaded. Activate a {} → {} model in Settings → Translation.", source, target)
-            ))?;
+        // Lazy-load the model on first translate call
+        self.ensure_loaded()
+            .map_err(|e| TranslationError::NotConfigured(e))?;
 
         // Verify the loaded model matches the requested pair
-        if let Some((loaded_id, _)) = &self.loaded {
-            let expected_id = format!("opus-mt-{}-{}", source, target);
-            if loaded_id != &expected_id {
-                return Err(TranslationError::NotConfigured(
-                    format!("Active model ({}) doesn't match requested pair {} → {}. Activate the correct model in Settings.", loaded_id, source, target)
-                ));
+        let expected_id = format!("opus-mt-{}-{}", source, target);
+        {
+            let guard = self.loaded.lock()
+                .map_err(|_| TranslationError::Failed("Model lock error".into()))?;
+            if let Some((loaded_id, _)) = guard.as_ref() {
+                if loaded_id != &expected_id {
+                    return Err(TranslationError::NotConfigured(
+                        format!("Active model ({}) doesn't match requested pair {} → {}. Activate the correct model in Settings.", loaded_id, source, target)
+                    ));
+                }
             }
         }
 
         let text_owned = text.to_string();
 
-        // Run inference on a blocking thread (ONNX is CPU-bound)
+        // Clone the Mutex Arc to move into the blocking thread
+        // We need to extract the loaded model lock in the blocking thread
+        let loaded_ptr = &self.loaded as *const StdMutex<Option<(String, LoadedModel)>>;
+        // Safety: the OpusMtTranslator lives behind an Arc in the router,
+        // and we await the spawn_blocking result before returning.
+        let loaded_ref = unsafe { &*loaded_ptr };
+
         let result = tokio::task::spawn_blocking(move || {
-            let mut model = model_arc.blocking_lock();
-            translate_blocking(&text_owned, &mut model)
+            let mut guard = loaded_ref.lock()
+                .map_err(|_| "Model lock error during inference".to_string())?;
+            let (_, model) = guard.as_mut()
+                .ok_or_else(|| "Model unloaded during inference".to_string())?;
+            translate_blocking(&text_owned, model)
         })
         .await
         .map_err(|e| TranslationError::Failed(format!("Inference task failed: {}", e)))?
@@ -164,7 +192,6 @@ impl TranslationProvider for OpusMtTranslator {
     }
 
     async fn supported_languages(&self) -> Result<Vec<Language>, TranslationError> {
-        // Return languages from the catalog
         let mut langs: Vec<Language> = Vec::new();
         let mut seen = std::collections::HashSet::new();
 
@@ -208,7 +235,6 @@ impl TranslationProvider for OpusMtTranslator {
             });
         }
 
-        // Count downloaded models
         let model_count = opus_mt_registry::all_models()
             .iter()
             .filter(|m| {
@@ -228,24 +254,21 @@ impl TranslationProvider for OpusMtTranslator {
             });
         }
 
-        let has_loaded = self.loaded.is_some();
+        let has_loaded = self.loaded.lock()
+            .map(|g| g.is_some())
+            .unwrap_or(false);
 
         Ok(ConnectionStatus {
-            connected: has_loaded,
+            connected: has_loaded || self.active_model_id.is_some(),
             language_count: model_count,
             response_ms: 0,
-            error: if has_loaded {
-                None
-            } else {
-                Some("Models downloaded but none activated".into())
-            },
+            error: None,
         })
     }
 }
 
 // ── ONNX inference helpers ──
 
-/// Load an ONNX session from a file path.
 fn load_onnx_session(path: &std::path::Path) -> Result<ort::session::Session, String> {
     ort::session::Session::builder()
         .map_err(|e| format!("Failed to create session builder: {}", e))?
@@ -255,7 +278,6 @@ fn load_onnx_session(path: &std::path::Path) -> Result<ort::session::Session, St
         .map_err(|e| format!("Failed to load ONNX model {}: {}", path.display(), e))
 }
 
-/// Log session input/output names for debugging.
 fn log_session_io(name: &str, session: &ort::session::Session) {
     let inputs: Vec<String> = session.inputs().iter().map(|i| i.name().to_string()).collect();
     let outputs: Vec<String> = session.outputs().iter().map(|o| o.name().to_string()).collect();
@@ -263,9 +285,7 @@ fn log_session_io(name: &str, session: &ort::session::Session) {
     log::info!("{} outputs: {:?}", name, outputs);
 }
 
-/// Extract EOS and decoder start token IDs from the tokenizer.
 fn extract_special_tokens(tokenizer: &tokenizers::Tokenizer) -> (i64, i64) {
-    // MarianMT convention: </s> is EOS (usually id=0), <pad> is decoder start
     let eos_id = tokenizer
         .token_to_id("</s>")
         .map(|id| id as i64)
@@ -276,7 +296,6 @@ fn extract_special_tokens(tokenizer: &tokenizers::Tokenizer) -> (i64, i64) {
         .map(|id| id as i64)
         .unwrap_or(eos_id);
 
-    // decoder_start_token_id is typically <pad> for MarianMT
     (eos_id, pad_id)
 }
 
@@ -306,7 +325,7 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
     )
     .map_err(|e| format!("Attention mask error: {}", e))?;
 
-    // 2. Run encoder — build inputs as Vec<(Cow<str>, SessionInputValue)>
+    // 2. Run encoder
     let enc_ids_tensor = ort::value::Tensor::from_array(input_ids_arr.clone())
         .map_err(|e| format!("Encoder input_ids tensor: {}", e))?;
     let enc_mask_tensor = ort::value::Tensor::from_array(attention_mask_arr.clone())
@@ -325,7 +344,6 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
         .run(encoder_inputs)
         .map_err(|e| format!("Encoder inference failed: {}", e))?;
 
-    // Extract encoder hidden states: (shape, &[f32])
     let (enc_shape, enc_data) = encoder_outputs[0]
         .try_extract_tensor::<f32>()
         .map_err(|e| format!("Failed to extract encoder output: {}", e))?;
@@ -346,7 +364,6 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
         )
         .map_err(|e| format!("Decoder input error: {}", e))?;
 
-        // Build decoder inputs
         let dec_ids_tensor = ort::value::Tensor::from_array(dec_ids_arr)
             .map_err(|e| format!("Decoder input_ids tensor: {}", e))?;
         let dec_mask_tensor = ort::value::Tensor::from_array(attention_mask_arr.clone())
@@ -368,7 +385,6 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
             .run(decoder_inputs)
             .map_err(|e| format!("Decoder inference failed: {}", e))?;
 
-        // Extract logits: shape [1, dec_len, vocab_size]
         let (logits_shape, logits_data) = decoder_outputs[0]
             .try_extract_tensor::<f32>()
             .map_err(|e| format!("Failed to extract decoder output: {}", e))?;
@@ -377,7 +393,6 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
         let vocab_size = logits_dims.last().copied().unwrap_or(0);
         let last_pos = dec_len - 1;
 
-        // argmax over vocabulary at the last position
         let offset = last_pos * vocab_size;
         let mut max_val = f32::NEG_INFINITY;
         let mut max_idx: i64 = 0;
@@ -389,7 +404,6 @@ fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, Str
             }
         }
 
-        // Check for EOS
         if max_idx == model.eos_token_id {
             break;
         }

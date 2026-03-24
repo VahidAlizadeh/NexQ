@@ -19,7 +19,6 @@ import {
   deleteOpusMtModel,
   activateOpusMtModel,
   cancelOpusMtDownload,
-  setTranslationProvider,
 } from "../lib/ipc";
 import { useTranslationStore } from "../stores/translationStore";
 import type { OpusMtModelStatus } from "../lib/types";
@@ -98,11 +97,10 @@ export function OpusMtModelManager() {
   const handleActivate = useCallback(
     async (modelId: string) => {
       try {
+        // Activate the model and set OPUS-MT as the active provider (backend handles both)
         await activateOpusMtModel(modelId);
-        // Set OPUS-MT as the active translation provider
-        await setTranslationProvider("opus-mt");
         setStoreProvider("opus-mt");
-        showToast("Model activated", "success");
+        showToast("Model activated — translation will load on first use", "success");
         loadModels();
       } catch (err: any) {
         showToast(`Activation failed: ${err}`, "error");

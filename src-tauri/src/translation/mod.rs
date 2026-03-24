@@ -262,11 +262,10 @@ impl TranslationRouter {
                 if let Some(dir) = &self.opus_mt_models_dir {
                     translator.set_models_dir(dir.clone());
                 }
-                // Pre-load the active model so translate() works immediately
+                // Set the active model ID — ONNX sessions load lazily on first translate()
+                // to avoid panicking inside the router's Mutex lock.
                 if let Some(active_id) = &self.opus_mt_active_model_id {
-                    if let Err(e) = translator.load_model(active_id) {
-                        log::warn!("Failed to pre-load OPUS-MT model {}: {}", active_id, e);
-                    }
+                    translator.set_active_model_id(Some(active_id.clone()));
                 }
                 Box::new(translator)
             }

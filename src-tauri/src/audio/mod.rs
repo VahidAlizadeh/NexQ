@@ -230,9 +230,10 @@ impl AudioCaptureManager {
     }
 
     /// Stop all audio capture.
-    pub fn stop_capture(&mut self) {
+    /// Returns (wav_path, start_time_ms) if a recording was active.
+    pub fn stop_capture(&mut self) -> Option<(std::path::PathBuf, u64)> {
         if !self.is_capturing {
-            return;
+            return None;
         }
 
         log::info!("Stopping audio capture pipeline");
@@ -252,8 +253,8 @@ impl AudioCaptureManager {
             let _ = thread.join();
         }
 
-        // Stop recording
-        self.stop_recording_internal();
+        // Stop recording — capture info for post-meeting pipeline
+        let recording_info = self.stop_recording_internal();
 
         // Reset VADs
         self.mic_vad.reset();
@@ -261,6 +262,8 @@ impl AudioCaptureManager {
 
         self.is_capturing = false;
         log::info!("Audio capture pipeline stopped");
+
+        recording_info
     }
 
     /// Check if capture is active.
@@ -423,16 +426,22 @@ impl AudioCaptureManager {
         }
     }
 
-    fn stop_recording_internal(&mut self) {
+    /// Stop the active recorder and return (wav_path, start_time_ms) if one was running.
+    pub fn stop_recording_internal(&mut self) -> Option<(std::path::PathBuf, u64)> {
         if let Some(rec) = self.recorder.take() {
+            let start_time_ms = rec.start_time_ms;
             match rec.stop() {
                 Ok(path) => {
                     log::info!("Recording saved to: {}", path.display());
+                    Some((path, start_time_ms))
                 }
                 Err(e) => {
                     log::error!("Failed to stop recording: {}", e);
+                    None
                 }
             }
+        } else {
+            None
         }
     }
 }
@@ -481,4 +490,160 @@ pub struct AudioLevel {
     pub source: AudioSource,
     pub level: f32,
     pub peak: f32,
+}
+
+/// Post-meeting recording pipeline.
+///
+/// Steps:
+/// 1. Extract waveform peaks from WAV (CPU-bound, runs in spawn_blocking)
+/// 2. Encode WAV → OGG/Opus (CPU-bound, runs in spawn_blocking)
+/// 3. If Opus succeeds: delete WAV, use .ogg as recording_path
+///    If Opus fails: keep WAV, use .wav as recording_path (graceful fallback)
+/// 4. Write waveform JSON to <recordings_dir>/<meeting_id>.waveform.json
+/// 5. Update DB with recording_path, recording_size, waveform_path, recording_offset_ms
+/// 6. Emit "recording_ready" to frontend
+///
+/// Called via tokio::spawn from end_meeting — does NOT block the IPC response.
+pub async fn process_recording(
+    wav_path: std::path::PathBuf,
+    meeting_id: String,
+    recording_offset_ms: i64,
+    db: std::sync::Arc<std::sync::Mutex<crate::db::DatabaseManager>>,
+    app: tauri::AppHandle,
+) {
+    use tauri::Emitter;
+
+    log::info!(
+        "Post-meeting pipeline starting for meeting {} (wav: {}, offset: {}ms)",
+        meeting_id,
+        wav_path.display(),
+        recording_offset_ms
+    );
+
+    let wav_path_clone = wav_path.clone();
+    let meeting_id_clone = meeting_id.clone();
+
+    // ── Step 1: Extract waveform peaks ────────────────────────────────────────
+    let waveform_path = wav_path.with_extension("waveform.json");
+    let waveform_path_clone = waveform_path.clone();
+    let wav_for_waveform = wav_path.clone();
+
+    let waveform_result = tokio::task::spawn_blocking(move || {
+        match crate::audio::waveform::extract_peaks(&wav_for_waveform) {
+            Ok(data) => {
+                match crate::audio::waveform::write_waveform_json(&data, &waveform_path_clone) {
+                    Ok(()) => {
+                        log::info!("Waveform written to: {}", waveform_path_clone.display());
+                        Ok(waveform_path_clone)
+                    }
+                    Err(e) => {
+                        log::error!("Failed to write waveform JSON: {}", e);
+                        Err(e)
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to extract waveform peaks: {}", e);
+                Err(e)
+            }
+        }
+    })
+    .await;
+
+    let waveform_path_result = match waveform_result {
+        Ok(Ok(p)) => Some(p),
+        Ok(Err(_)) => None,
+        Err(e) => {
+            log::error!("Waveform task panicked: {:?}", e);
+            None
+        }
+    };
+
+    // ── Step 2: Encode WAV → Opus ──────────────────────────────────────────────
+    let opus_path = wav_path_clone.with_extension("ogg");
+    let opus_path_clone = opus_path.clone();
+    let wav_for_encode = wav_path_clone.clone();
+
+    let encode_result = tokio::task::spawn_blocking(move || {
+        crate::audio::encoder::encode_wav_to_opus(&wav_for_encode, &opus_path_clone)
+    })
+    .await;
+
+    let (recording_path, recording_size) = match encode_result {
+        Ok(Ok(size)) => {
+            // Opus encoding succeeded — delete the WAV to save space
+            if let Err(e) = std::fs::remove_file(&wav_path_clone) {
+                log::warn!("Failed to delete WAV after Opus encoding: {}", e);
+            }
+            log::info!("Opus encoding succeeded ({} bytes), WAV deleted", size);
+            (opus_path, size as i64)
+        }
+        Ok(Err(e)) => {
+            // Encoding failed — fall back to WAV
+            log::warn!("Opus encoding failed ({}), keeping WAV as fallback", e);
+            let wav_size = std::fs::metadata(&wav_path_clone)
+                .map(|m| m.len() as i64)
+                .unwrap_or(0);
+            (wav_path_clone.clone(), wav_size)
+        }
+        Err(e) => {
+            log::error!("Opus encoding task panicked: {:?}", e);
+            let wav_size = std::fs::metadata(&wav_path_clone)
+                .map(|m| m.len() as i64)
+                .unwrap_or(0);
+            (wav_path_clone.clone(), wav_size)
+        }
+    };
+
+    // ── Step 3: Update DB ──────────────────────────────────────────────────────
+    let recording_path_str = recording_path.to_string_lossy().to_string();
+    let waveform_path_str = waveform_path_result
+        .as_ref()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    let db_result = {
+        let db_guard = db.lock();
+        match db_guard {
+            Ok(guard) => {
+                crate::db::meetings::update_meeting_recording(
+                    guard.connection(),
+                    &meeting_id_clone,
+                    &recording_path_str,
+                    recording_size,
+                    &waveform_path_str,
+                    recording_offset_ms,
+                )
+                .map_err(|e| e.to_string())
+            }
+            Err(e) => Err(format!("DB lock poisoned: {}", e)),
+        }
+    };
+
+    if let Err(e) = db_result {
+        log::error!("Failed to update DB with recording info: {}", e);
+    } else {
+        log::info!(
+            "DB updated for meeting {}: path={}, size={}, offset={}ms",
+            meeting_id_clone,
+            recording_path_str,
+            recording_size,
+            recording_offset_ms
+        );
+    }
+
+    // ── Step 4: Emit "recording_ready" to frontend ─────────────────────────────
+    let payload = serde_json::json!({
+        "meeting_id": meeting_id_clone,
+        "recording_path": recording_path_str,
+        "recording_size": recording_size,
+        "waveform_path": waveform_path_str,
+        "recording_offset_ms": recording_offset_ms,
+    });
+
+    if let Err(e) = app.emit("recording_ready", &payload) {
+        log::error!("Failed to emit recording_ready event: {}", e);
+    } else {
+        log::info!("Emitted recording_ready for meeting {}", meeting_id_clone);
+    }
 }

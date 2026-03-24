@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{Arc, Mutex};
 
@@ -13,6 +14,15 @@ use crate::stt::local_engines::ModelManager;
 use crate::stt::provider::DualPassConfig;
 use crate::stt::STTRouter;
 use std::sync::RwLock;
+
+/// Recording info captured when stop_capture runs, consumed by end_meeting
+/// to trigger the post-meeting processing pipeline.
+pub struct PendingRecording {
+    /// Path to the raw WAV file
+    pub wav_path: PathBuf,
+    /// Unix epoch milliseconds when recording started
+    pub start_time_ms: u64,
+}
 
 /// Active scenario prompts pushed from the frontend when a meeting starts.
 /// The intelligence pipeline reads these instead of hardcoded prompt_templates.
@@ -74,6 +84,11 @@ pub struct AppState {
     /// Active scenario prompts — pushed by the frontend at meeting start.
     /// Intelligence pipeline reads these for scenario-aware prompt assembly.
     pub active_scenario: Arc<RwLock<ActiveScenario>>,
+    /// Recording info stored by stop_capture, consumed by end_meeting.
+    /// This bridges the gap: frontend calls stopCapture() then endMeeting()
+    /// in sequence; by the time end_meeting runs the recorder is stopped and
+    /// the WAV path + start time are waiting here.
+    pub pending_recording: Arc<Mutex<Option<PendingRecording>>>,
 }
 
 impl AppState {
@@ -97,6 +112,7 @@ impl AppState {
             original_default_device: Arc::new(Mutex::new(None)),
             ipolicy_target_endpoint: Arc::new(Mutex::new(None)),
             active_scenario: Arc::new(RwLock::new(ActiveScenario::default())),
+            pending_recording: Arc::new(Mutex::new(None)),
         }
     }
 }

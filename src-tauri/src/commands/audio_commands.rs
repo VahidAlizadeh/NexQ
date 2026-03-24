@@ -277,19 +277,38 @@ pub async fn stop_capture(app: AppHandle) -> Result<(), String> {
     // Restore original default capture device if IPolicyConfig override was active
     restore_default_device_if_overridden(&state, &app);
 
-    let mut guard = state
-        .audio
-        .lock()
-        .map_err(|_| "Audio state lock poisoned".to_string())?;
+    let recording_info = {
+        let mut guard = state
+            .audio
+            .lock()
+            .map_err(|_| "Audio state lock poisoned".to_string())?;
 
-    match guard.as_mut() {
-        Some(mgr) => {
-            mgr.stop_capture();
-            log::info!("Audio capture stopped via command");
-            Ok(())
+        match guard.as_mut() {
+            Some(mgr) => {
+                let info = mgr.stop_capture();
+                log::info!("Audio capture stopped via command");
+                info
+            }
+            None => return Err("No audio manager initialized".to_string()),
         }
-        None => Err("No audio manager initialized".to_string()),
+    };
+
+    // Store recording info for end_meeting to pick up.
+    // The frontend calls stopCapture() then endMeeting() in sequence, so
+    // we park the info here and end_meeting consumes it.
+    if let Some((wav_path, start_time_ms)) = recording_info {
+        let mut pending = state
+            .pending_recording
+            .lock()
+            .map_err(|_| "Pending recording lock poisoned".to_string())?;
+        *pending = Some(crate::state::PendingRecording {
+            wav_path,
+            start_time_ms,
+        });
+        log::info!("Recording info stored for post-meeting pipeline");
     }
+
+    Ok(())
 }
 
 /// Get current audio levels for UI meters.

@@ -1,4 +1,4 @@
-use tauri::{command, State};
+use tauri::{command, AppHandle, State};
 
 use crate::db::meetings::{
     self, MeetingActionItem, MeetingBookmark, MeetingSpeaker, MeetingTopicSection,
@@ -73,47 +73,100 @@ pub async fn start_meeting(
 pub async fn end_meeting(
     meeting_id: String,
     state: State<'_, AppState>,
+    app: AppHandle,
 ) -> Result<(), String> {
-    let db = state
+    let db_arc = state
         .database
         .as_ref()
-        .ok_or_else(|| "Database not initialized".to_string())?;
+        .ok_or_else(|| "Database not initialized".to_string())?
+        .clone();
 
-    let db = db
-        .lock()
-        .map_err(|e| format!("Failed to lock database: {}", e))?;
+    let (meeting_start_time, end_time, duration_seconds) = {
+        let db = db_arc
+            .lock()
+            .map_err(|e| format!("Failed to lock database: {}", e))?;
 
-    // Get the meeting to calculate duration
-    let meeting = meetings::get_meeting(db.connection(), &meeting_id)
-        .map_err(|e| format!("Failed to get meeting: {}", e))?;
+        // Get the meeting to calculate duration + extract start_time for offset calc
+        let meeting = meetings::get_meeting(db.connection(), &meeting_id)
+            .map_err(|e| format!("Failed to get meeting: {}", e))?;
 
-    let end_time = chrono::Utc::now().to_rfc3339();
+        let end_time = chrono::Utc::now().to_rfc3339();
 
-    // Calculate duration
-    let duration_seconds = chrono::DateTime::parse_from_rfc3339(&end_time)
-        .ok()
-        .and_then(|end| {
-            chrono::DateTime::parse_from_rfc3339(&meeting.start_time)
-                .ok()
-                .map(|start| (end - start).num_seconds())
-        });
+        // Calculate duration
+        let duration_seconds = chrono::DateTime::parse_from_rfc3339(&end_time)
+            .ok()
+            .and_then(|end| {
+                chrono::DateTime::parse_from_rfc3339(&meeting.start_time)
+                    .ok()
+                    .map(|start| (end - start).num_seconds())
+            });
 
-    let update = MeetingUpdate {
-        title: None,
-        end_time: Some(end_time),
-        duration_seconds,
-        transcript: None,
-        ai_interactions: None,
-        summary: None,
-        config_snapshot: None,
-        recording_path: None,
-        recording_size: None,
-        waveform_path: None,
-        recording_offset_ms: None,
+        let update = MeetingUpdate {
+            title: None,
+            end_time: Some(end_time.clone()),
+            duration_seconds,
+            transcript: None,
+            ai_interactions: None,
+            summary: None,
+            config_snapshot: None,
+            recording_path: None,
+            recording_size: None,
+            waveform_path: None,
+            recording_offset_ms: None,
+        };
+
+        meetings::update_meeting(db.connection(), &meeting_id, &update)
+            .map_err(|e| format!("Failed to end meeting: {}", e))?;
+
+        (meeting.start_time, end_time, duration_seconds)
     };
 
-    meetings::update_meeting(db.connection(), &meeting_id, &update)
-        .map_err(|e| format!("Failed to end meeting: {}", e))
+    // ── Post-meeting recording pipeline ───────────────────────────────────────
+    // Take the pending recording info stored by stop_capture (if any).
+    // This is populated when recording_enabled was true for this meeting.
+    let pending = {
+        let mut lock = state
+            .pending_recording
+            .lock()
+            .map_err(|_| "Pending recording lock poisoned".to_string())?;
+        lock.take()
+    };
+
+    if let Some(recording) = pending {
+        // Calculate offset: how many ms into the meeting did recording start?
+        // meeting_start_epoch_ms is parsed from the ISO 8601 start_time.
+        let recording_offset_ms: i64 = chrono::DateTime::parse_from_rfc3339(&meeting_start_time)
+            .ok()
+            .map(|start| {
+                let start_ms = start.timestamp_millis();
+                recording.start_time_ms as i64 - start_ms
+            })
+            .unwrap_or(0)
+            .max(0); // clamp to 0 if recording started before the meeting (shouldn't happen)
+
+        log::info!(
+            "Spawning post-meeting pipeline for meeting {} (offset={}ms)",
+            meeting_id,
+            recording_offset_ms
+        );
+
+        // Spawn the pipeline — don't await, return the IPC response immediately
+        tokio::spawn(crate::audio::process_recording(
+            recording.wav_path,
+            meeting_id,
+            recording_offset_ms,
+            db_arc,
+            app,
+        ));
+    } else {
+        log::info!(
+            "Meeting {} ended with no pending recording (recording not enabled or already consumed)",
+            meeting_id
+        );
+    }
+
+    let _ = (end_time, duration_seconds); // suppress unused warnings
+    Ok(())
 }
 
 #[command]

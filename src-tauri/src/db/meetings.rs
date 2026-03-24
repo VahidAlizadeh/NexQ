@@ -351,6 +351,30 @@ pub fn update_meeting(
     Ok(())
 }
 
+/// Update recording-related fields on a meeting after post-processing completes.
+pub fn update_meeting_recording(
+    conn: &Connection,
+    id: &str,
+    recording_path: &str,
+    recording_size: i64,
+    waveform_path: &str,
+    recording_offset_ms: i64,
+) -> Result<(), DatabaseError> {
+    let rows = conn.execute(
+        "UPDATE meetings SET recording_path = ?1, recording_size = ?2, waveform_path = ?3, recording_offset_ms = ?4 WHERE id = ?5",
+        params![recording_path, recording_size, waveform_path, recording_offset_ms, id],
+    )?;
+
+    if rows == 0 {
+        return Err(DatabaseError::NotFound(format!(
+            "Meeting {} not found",
+            id
+        )));
+    }
+
+    Ok(())
+}
+
 /// Delete a meeting and all its related data (feature tables + segments).
 pub fn delete_meeting(conn: &Connection, id: &str) -> Result<(), DatabaseError> {
     // Delete from feature tables first

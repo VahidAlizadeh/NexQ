@@ -25,6 +25,8 @@ pub struct RecorderHandle {
     writer_thread: Option<std::thread::JoinHandle<Option<PathBuf>>>,
     /// Path where the recording will be saved
     output_path: PathBuf,
+    /// Unix epoch milliseconds when recording started
+    pub start_time_ms: u64,
 }
 
 enum RecorderMessage {
@@ -147,10 +149,16 @@ pub fn start_recording(meeting_id: &str) -> Result<RecorderHandle, String> {
         })
         .map_err(|e| format!("Failed to spawn recorder thread: {}", e))?;
 
+    let start_time_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64;
+
     Ok(RecorderHandle {
         sample_tx: Some(tx),
         writer_thread: Some(writer_thread),
         output_path,
+        start_time_ms,
     })
 }
 
@@ -224,12 +232,16 @@ fn recorder_thread_fn(
 /// A thread-safe wrapper for RecorderHandle that allows concurrent writes.
 pub struct SharedRecorder {
     inner: Arc<Mutex<Option<RecorderHandle>>>,
+    /// Unix epoch ms when recording started (copied at construction for lock-free reads).
+    pub start_time_ms: u64,
 }
 
 impl SharedRecorder {
     pub fn new(handle: RecorderHandle) -> Self {
+        let start_time_ms = handle.start_time_ms;
         Self {
             inner: Arc::new(Mutex::new(Some(handle))),
+            start_time_ms,
         }
     }
 
@@ -264,6 +276,7 @@ impl Clone for SharedRecorder {
     fn clone(&self) -> Self {
         Self {
             inner: Arc::clone(&self.inner),
+            start_time_ms: self.start_time_ms,
         }
     }
 }

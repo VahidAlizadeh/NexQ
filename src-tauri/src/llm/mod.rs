@@ -3,6 +3,7 @@ pub mod custom;
 pub mod gemini;
 pub mod ollama;
 pub mod openai_compat;
+pub mod openrouter_models;
 pub mod provider;
 pub mod stream_parser;
 

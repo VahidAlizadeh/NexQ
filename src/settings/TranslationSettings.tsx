@@ -470,11 +470,11 @@ export function TranslationSettings() {
   const isLlm = selectedProvider === "llm";
 
   // ── "Make Active" gating logic ──
-  // Cloud: allowed if key is stored (tested or not). OPUS-MT: when model is active. LLM: always.
+  // Cloud: ONLY after successful test in this session. OPUS-MT: when model is active. LLM: always.
   const canMakeActive = (() => {
     if (selectedProvider === provider) return false; // already active
     if (isOpusMt) return opusMtHasActive;
-    if (isCloud) return testedProviders.has(selectedProvider) || keyStatusMap[currentProviderOption?.credentialKey || ""];
+    if (isCloud) return testedProviders.has(selectedProvider) && !keyDirty;
     if (isLlm) return true;
     return false;
   })();
@@ -594,11 +594,11 @@ export function TranslationSettings() {
                   </button>
                 </div>
 
-                {/* Save & Test — shown when user has typed a new key */}
-                {(keyDirty || (!hasStoredKey && apiKey.trim())) && (
+                {/* State 1: Key is new or changed → Save & Test */}
+                {keyDirty && apiKey.trim() && (
                   <button
                     onClick={handleSaveAndTest}
-                    disabled={!apiKey.trim() || connectionStatus === "testing"}
+                    disabled={connectionStatus === "testing"}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                   >
                     {connectionStatus === "testing" ? (
@@ -610,12 +610,12 @@ export function TranslationSettings() {
                   </button>
                 )}
 
-                {/* Test Connection — for stored keys not yet tested in this session */}
+                {/* State 2: Key stored, not yet tested this session → Test Connection */}
                 {hasStoredKey && !keyDirty && !testedProviders.has(selectedProvider) && (
                   <button
                     onClick={handleSaveAndTest}
                     disabled={connectionStatus === "testing"}
-                    className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                   >
                     {connectionStatus === "testing" ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -626,8 +626,8 @@ export function TranslationSettings() {
                   </button>
                 )}
 
-                {/* Make Active — allowed when key is stored */}
-                {canMakeActive && hasStoredKey && !keyDirty && (
+                {/* State 3: Test passed, key not changed → Make Active */}
+                {canMakeActive && (
                   <button
                     onClick={handleMakeActive}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"

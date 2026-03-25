@@ -58,8 +58,7 @@ const DEFAULT_PROMPTS: Record<string, string> = {
 function createDefaultConfigs(): AllActionConfigs {
   return {
     globalDefaults: {
-      transcriptWindowSeconds: 120,
-      ragTopK: 5,
+      transcriptWindowSeconds: 300,
       temperature: 0.3,
       autoTrigger: true,
     },

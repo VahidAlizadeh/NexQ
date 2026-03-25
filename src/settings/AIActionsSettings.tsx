@@ -56,7 +56,6 @@ const LENGTH_OPTIONS = [
   { label: "Detailed", value: "detailed" },
 ];
 
-const RAG_CHUNK_OPTIONS = [3, 5, 7, 10, 15, 20];
 
 /** Help content for each setting — shown via HelpButton/HelpPanel toggle */
 const HELP: Record<string, { title: string; body: string }> = {
@@ -87,10 +86,6 @@ const HELP: Record<string, { title: string; body: string }> = {
   transcriptWindow: {
     title: "Transcript Window",
     body: "How many minutes of recent conversation the AI reads before responding.\n\nShort (1-5 min) \u2014 focused on the immediate topic, faster responses. Good for quick meetings.\nLong (10-30 min) \u2014 broader context for complex, multi-topic discussions that reference earlier points.",
-  },
-  ragChunks: {
-    title: "RAG Chunks",
-    body: "Number of document segments retrieved per query from your uploaded files.\n\nFewer (3-5) \u2014 faster, focused on the most relevant excerpts only.\nMore (10-20) \u2014 broader document coverage but higher latency and token cost.\n\nOnly applies when RAG context is enabled for an action.",
   },
 };
 
@@ -581,28 +576,19 @@ export function AIActionsSettings() {
 
               <div className="h-px bg-border/20" />
 
-              {/* RAG Chunks */}
+              {/* RAG Chunks — reference to Context Strategy */}
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     RAG Chunks
-                    <HelpButton id="ragChunks" activeId={openHelp} onToggle={toggleHelp} />
                   </label>
-                  <select
-                    value={configs.globalDefaults.ragTopK}
-                    onChange={(e) =>
-                      handleGlobalDefaultChange("ragTopK", Number(e.target.value))
-                    }
-                    className="rounded-md border border-border/50 bg-secondary/30 px-2.5 py-1 text-xs text-foreground cursor-pointer focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                  >
-                    {RAG_CHUNK_OPTIONS.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="text-xs text-muted-foreground/60">
+                    Set in Context Strategy
+                  </span>
                 </div>
-                {openHelp === "ragChunks" && <HelpPanel id="ragChunks" />}
+                <p className="mt-1 text-meta text-muted-foreground/50">
+                  Document chunks per query are controlled by "Results to Retrieve (top-K)" in Context Strategy. Per-action overrides available in each action's Override Defaults.
+                </p>
               </div>
             </div>
           </div>
@@ -972,7 +958,7 @@ function ActionCard({
                         }
                         className="rounded border border-border/50 bg-secondary/30 px-2 py-1 text-meta text-foreground focus:border-primary/50 focus:outline-none"
                       >
-                        {RAG_CHUNK_OPTIONS.map((v) => (
+                        {[3, 5, 7, 10, 15, 20].map((v) => (
                           <option key={v} value={v}>
                             {v}
                           </option>

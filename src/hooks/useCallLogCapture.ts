@@ -55,6 +55,15 @@ export function useCallLogCapture() {
           includeRag: event.include_rag,
           includeInstructions: event.include_instructions,
           includeQuestion: event.include_question,
+          // Enriched metadata
+          temperature: event.temperature ?? null,
+          ragQuery: event.rag_query ?? null,
+          ragChunks: event.rag_chunks ?? [],
+          ragChunksFiltered: event.rag_chunks_filtered ?? 0,
+          ragTotalCandidates: event.rag_total_candidates ?? 0,
+          transcriptWindowSeconds: event.transcript_window_seconds ?? null,
+          transcriptSegmentsCount: event.transcript_segments_count ?? null,
+          transcriptSegmentsTotal: event.transcript_segments_total ?? null,
           // Legacy fields (empty for new entries)
           snapshotTranscript: "",
           snapshotContext: "",

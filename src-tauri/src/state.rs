@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::audio::AudioCaptureManager;
 use crate::context::ContextManager;
+use crate::tray::TrayManager;
 use crate::credentials::CredentialManager;
 use crate::db::DatabaseManager;
 use crate::intelligence::IntelligenceEngine;
@@ -96,6 +97,8 @@ pub struct AppState {
     pub pending_recording: Arc<Mutex<Option<PendingRecording>>>,
     /// In-memory cache for OpenRouter model catalog (TTL: 4 hours).
     pub openrouter_cache: Arc<Mutex<Option<OpenRouterModelCache>>>,
+    /// Tray icon manager — initialized after the tray handle is available.
+    pub tray_manager: Arc<Mutex<Option<TrayManager>>>,
 }
 
 impl AppState {
@@ -123,6 +126,7 @@ impl AppState {
             active_scenario: Arc::new(RwLock::new(ActiveScenario::default())),
             pending_recording: Arc::new(Mutex::new(None)),
             openrouter_cache: Arc::new(Mutex::new(None)),
+            tray_manager: Arc::new(Mutex::new(None)),
         }
     }
 }

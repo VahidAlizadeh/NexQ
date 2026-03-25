@@ -246,7 +246,7 @@ export function TranscriptPanel() {
         onWheel={cancelScrollAnimation}
         onTouchMove={cancelScrollAnimation}
         data-scroll-container
-        className="absolute inset-0 overflow-y-auto px-1 py-1"
+        className="absolute inset-0 overflow-y-auto px-1 pt-1 pb-8"
       >
         {filteredSegments.map((seg) => (
           <TranscriptLine

@@ -220,8 +220,12 @@ export function TranslationSettings() {
   // ── Load OPUS-MT model status for badge display + language filtering ──
   // Refreshes when the active provider changes (e.g., after activating a new model)
 
-  const refreshOpusMtModels = useCallback(() => {
-    listOpusMtModels().then(setOpusMtModels).catch(() => {});
+  const refreshOpusMtModels = useCallback((fresh?: OpusMtModelStatus[]) => {
+    if (fresh) {
+      setOpusMtModels(fresh);
+    } else {
+      listOpusMtModels().then(setOpusMtModels).catch(() => {});
+    }
   }, []);
 
   useEffect(() => {

@@ -24,7 +24,7 @@ import { useTranslationStore } from "../stores/translationStore";
 import type { OpusMtModelStatus } from "../lib/types";
 import { showToast } from "../stores/toastStore";
 
-export function OpusMtModelManager({ onModelsChanged }: { onModelsChanged?: () => void }) {
+export function OpusMtModelManager({ onModelsChanged }: { onModelsChanged?: (models?: OpusMtModelStatus[]) => void }) {
   const [models, setModels] = useState<OpusMtModelStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterLang, setFilterLang] = useState("all");
@@ -91,8 +91,8 @@ export function OpusMtModelManager({ onModelsChanged }: { onModelsChanged?: () =
       try {
         await deleteOpusMtModel(modelId);
         showToast("Model deleted", "success");
-        loadModels();
-        onModelsChanged?.();
+        const fresh = await loadModels();
+        onModelsChanged?.(fresh);
       } catch (err: any) {
         showToast(`Delete failed: ${err}`, "error");
       }
@@ -115,8 +115,8 @@ export function OpusMtModelManager({ onModelsChanged }: { onModelsChanged?: () =
         }
 
         showToast("Model activated — translation will load on first use", "success");
-        loadModels();
-        onModelsChanged?.();
+        const fresh = await loadModels();
+        onModelsChanged?.(fresh);
       } catch (err: any) {
         showToast(`Activation failed: ${err}`, "error");
       }

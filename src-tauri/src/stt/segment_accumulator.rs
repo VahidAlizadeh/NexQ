@@ -68,7 +68,13 @@ impl SegmentAccumulator {
             } else {
                 result.text.clone()
             };
-            let id = format!("acc_{}", self.segment_counter + 1);
+            // Use the current segment's ID so the interim replaces it in-place,
+            // not a new ID which would create a duplicate line in the UI.
+            let id = if self.has_active {
+                format!("acc_{}", self.segment_counter)
+            } else {
+                format!("acc_{}", self.segment_counter + 1)
+            };
             return vec![AccumulatorOutput {
                 id,
                 text: display_text,

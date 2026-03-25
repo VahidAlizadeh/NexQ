@@ -3,7 +3,6 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::state::AppState;
 
 /// Single click: toggle launcher window visibility.
-/// Does NOT touch the overlay — overlay is managed by meeting flow only.
 pub fn handle_single_click(app: &AppHandle) {
     if let Some(launcher) = app.get_webview_window("launcher") {
         if launcher.is_visible().unwrap_or(false) {
@@ -15,32 +14,13 @@ pub fn handle_single_click(app: &AppHandle) {
     }
 }
 
-/// Double-click: context-aware smart action.
-/// Idle → emit start meeting (frontend handles overlay).
-/// Meeting → bring overlay to front.
+/// Double-click: show and focus launcher (same as single-click but always shows).
+/// On Windows, Click fires before DoubleClick, so single-click already toggled.
+/// We just ensure the launcher is visible and focused.
 pub fn handle_double_click(app: &AppHandle) {
-    let state = app.state::<AppState>();
-    let tray_mgr = state.tray_manager.clone();
-
-    let meeting_active = {
-        let mgr = tray_mgr.lock().unwrap();
-        mgr.as_ref().map_or(false, |m| m.meeting_active)
-    };
-
-    if meeting_active {
-        // Bring overlay to front
-        if let Some(overlay) = app.get_webview_window("overlay") {
-            let _ = overlay.show();
-            let _ = overlay.set_focus();
-        }
-    } else {
-        // Emit start meeting — frontend handles showing overlay after meeting setup completes
-        let _ = app.emit("tray_start_meeting", ());
-        // Show launcher so user sees the meeting starting
-        if let Some(launcher) = app.get_webview_window("launcher") {
-            let _ = launcher.show();
-            let _ = launcher.set_focus();
-        }
+    if let Some(launcher) = app.get_webview_window("launcher") {
+        let _ = launcher.show();
+        let _ = launcher.set_focus();
     }
 }
 
@@ -54,6 +34,5 @@ pub fn handle_middle_click(app: &AppHandle) {
         if manager.meeting_active {
             let _ = app.emit("tray_toggle_mic", ());
         }
-        // Else: no-op silently
     }
 }

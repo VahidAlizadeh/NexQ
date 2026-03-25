@@ -87,8 +87,11 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   setCurrentView: (view) => {
     const current = get().currentView;
     // When navigating to settings, remember where we came from
-    if (view === "settings") {
+    // Guard: don't overwrite previousView if we're already on settings
+    if (view === "settings" && current !== "settings") {
       set({ currentView: view, previousView: current });
+    } else if (view === "settings" && current === "settings") {
+      // Already on settings — don't overwrite previousView
     } else {
       set({ currentView: view, previousView: null });
     }

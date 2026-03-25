@@ -11,6 +11,8 @@ import {
   HelpCircle,
   Sparkles,
   BookOpen,
+  Search,
+  Database,
 } from "lucide-react";
 
 // -- Types -------------------------------------------------------------------
@@ -71,6 +73,144 @@ export function PromptViewer({ entry }: PromptViewerProps) {
   );
 }
 
+// -- Token Budget ------------------------------------------------------------
+
+function TokenBudget({ entry }: { entry: LogEntry }) {
+  const est = (text: string) => Math.ceil((text || "").length / 4);
+  const system = est(entry.actualSystemPrompt);
+  const userTotal = est(entry.actualUserPrompt);
+  const rag = entry.ragChunks?.reduce((sum, c) => sum + est(c.text), 0) ?? 0;
+  const total = system + userTotal;
+
+  const items = [
+    { label: "System", tokens: system, color: "text-muted-foreground" },
+    { label: "Transcript", tokens: Math.max(0, userTotal - rag), color: "text-success" },
+    { label: "RAG", tokens: rag, color: "text-info" },
+  ].filter((i) => i.tokens > 0);
+
+  return (
+    <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 px-3 py-1.5 border-b border-border/20 text-meta text-muted-foreground/60">
+      <span className="font-medium">Tokens:</span>
+      {items.map((item, i) => (
+        <span key={item.label}>
+          {i > 0 && <span className="mx-0.5">&middot;</span>}
+          <span className={item.color}>{item.label}</span>{" "}
+          <span className="tabular-nums">{item.tokens.toLocaleString()}</span>
+        </span>
+      ))}
+      <span className="mx-0.5">&rarr;</span>
+      <span className="font-semibold tabular-nums">~{total.toLocaleString()}</span>
+    </div>
+  );
+}
+
+// -- RAG Chunks Section ------------------------------------------------------
+
+function RagChunksSection({ entry }: { entry: LogEntry }) {
+  const [expanded, setExpanded] = useState(false);
+  const [expandedChunks, setExpandedChunks] = useState<Set<number>>(new Set());
+
+  if (!entry.includeRag) return null;
+
+  const chunks = entry.ragChunks ?? [];
+  const filtered = entry.ragChunksFiltered ?? 0;
+  const query = entry.ragQuery;
+  const hasChunks = chunks.length > 0;
+
+  const toggleChunk = (idx: number) => {
+    setExpandedChunks((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const allText = chunks.map((c) =>
+    `[${c.source}, chunk ${c.chunk_index}] (score: ${c.normalized_score.toFixed(2)})\n${c.text}`
+  ).join("\n---\n");
+
+  return (
+    <div className="border-b border-border/20">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent/20 transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+        ) : (
+          <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+        )}
+        <span className="flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-meta font-medium bg-info/10 text-info border-info/20">
+          <Database className="h-2.5 w-2.5" />
+          {hasChunks ? `${chunks.length} chunks` : "0 relevant"}
+        </span>
+        <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+          RAG CHUNKS
+        </span>
+        <SectionCopyButton text={allText} />
+      </button>
+
+      {expanded && (
+        <div className="px-3 pb-3 space-y-1">
+          {query && (
+            <div className="flex items-start gap-1.5 rounded-md bg-secondary/20 px-2.5 py-1.5 mb-2">
+              <Search className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground/50" />
+              <p className="text-meta text-muted-foreground/60 break-words">
+                <span className="font-medium">Query:</span> {query.length > 200 ? query.slice(0, 200) + "..." : query}
+              </p>
+            </div>
+          )}
+
+          {hasChunks ? (
+            <>
+              {chunks.map((chunk, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => toggleChunk(idx)}
+                  className="flex w-full items-start gap-2 rounded-md bg-secondary/20 px-2.5 py-1.5 text-left hover:bg-secondary/30 transition-colors"
+                >
+                  {expandedChunks.has(idx) ? (
+                    <ChevronDown className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground/60" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground/60" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-meta font-semibold text-info/80">#{idx + 1}</span>
+                      <span className="text-meta text-muted-foreground truncate">{chunk.source} (chunk {chunk.chunk_index})</span>
+                      <span className="text-meta font-mono tabular-nums text-info/70">{chunk.normalized_score.toFixed(2)}</span>
+                    </div>
+                    {expandedChunks.has(idx) ? (
+                      <p className="mt-1 font-mono text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">
+                        {chunk.text}
+                      </p>
+                    ) : (
+                      <p className="text-meta text-muted-foreground/50 truncate">
+                        {chunk.text.slice(0, 80)}...
+                      </p>
+                    )}
+                  </div>
+                </button>
+              ))}
+              {filtered > 0 && (
+                <p className="text-meta text-muted-foreground/50 px-2.5 py-1">
+                  {filtered} chunk{filtered !== 1 ? "s" : ""} filtered (below threshold)
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="rounded-md bg-secondary/20 px-2.5 py-2 text-meta text-muted-foreground/50">
+              No relevant chunks found
+              {filtered > 0 && <span> &mdash; {filtered} candidates below threshold</span>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // -- Structured View ---------------------------------------------------------
 
 function StructuredView({ entry }: { entry: LogEntry }) {
@@ -79,9 +219,15 @@ function StructuredView({ entry }: { entry: LogEntry }) {
     [entry.actualUserPrompt]
   );
 
+  // Filter out RAG sections — we render them via RagChunksSection instead
+  const nonRagSections = sections.filter(
+    (s) => s.type !== "context" || (!s.title.includes("Relevant Context") && !s.title.includes("RAG") && !s.title.includes("Reference"))
+  );
+
   return (
     <div className="flex flex-col gap-0.5">
-      {/* System prompt (collapsed by default) */}
+      <TokenBudget entry={entry} />
+
       {entry.actualSystemPrompt && (
         <CollapsibleSection
           title="SYSTEM PROMPT"
@@ -91,8 +237,7 @@ function StructuredView({ entry }: { entry: LogEntry }) {
         />
       )}
 
-      {/* User message sections */}
-      {sections.map((section, i) => (
+      {nonRagSections.map((section, i) => (
         <CollapsibleSection
           key={i}
           title={section.title || "USER MESSAGE"}
@@ -102,7 +247,8 @@ function StructuredView({ entry }: { entry: LogEntry }) {
         />
       ))}
 
-      {/* Response */}
+      <RagChunksSection entry={entry} />
+
       {(entry.responseContentClean || entry.status === "streaming") && (
         <CollapsibleSection
           title={

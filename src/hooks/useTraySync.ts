@@ -31,6 +31,7 @@ function computeTrayState(
 export function useTraySync() {
   const prevState = useRef<TrayState>("idle");
   const prevRecording = useRef(false);
+  const initialized = useRef(false);
 
   const isRecording = useMeetingStore((s) => s.isRecording);
   const overlayHidden = useMeetingStore((s) => s.overlayHidden);
@@ -39,7 +40,7 @@ export function useTraySync() {
   const isStreaming = useStreamStore((s) => s.isStreaming);
   const isIndexing = useRagStore((s) => s.isIndexing);
 
-  // Sync tray state on store changes
+  // Sync tray state on store changes — skip initial idle (icon already set by Rust setup)
   useEffect(() => {
     const newState = computeTrayState(
       isRecording, mutedYou, overlayHidden, isStreaming, isIndexing
@@ -47,10 +48,14 @@ export function useTraySync() {
 
     if (newState !== prevState.current) {
       prevState.current = newState;
-      setTrayState(newState).catch((e) =>
-        console.warn("[useTraySync] Failed to set tray state:", e)
-      );
+      // Skip the first "idle" → "idle" non-transition; only call IPC when state truly changes
+      if (initialized.current || newState !== "idle") {
+        setTrayState(newState).catch((e) =>
+          console.warn("[useTraySync] Failed to set tray state:", e)
+        );
+      }
     }
+    initialized.current = true;
   }, [isRecording, mutedYou, overlayHidden, isStreaming, isIndexing]);
 
   // Sync meeting start/stop time
@@ -68,6 +73,7 @@ export function useTraySync() {
   }, [isRecording]);
 
   // Rebuild tray menu when meeting state or recent meetings change
+  // Delay initial rebuild to let WebView2 settle (Rust setup already built the idle menu)
   useEffect(() => {
     const recent = recentMeetings.slice(0, 3).map((m: MeetingSummary) => ({
       id: m.id,
@@ -75,8 +81,15 @@ export function useTraySync() {
       startTime: m.start_time || "",
       duration: m.duration_seconds ?? 0,
     }));
-    rebuildTrayMenu(isRecording, recent).catch((e) =>
-      console.warn("[useTraySync] Failed to rebuild tray menu:", e)
-    );
+
+    // Delay first rebuild by 1s to avoid race with WebView2 init
+    const delay = initialized.current ? 0 : 1000;
+    const timer = setTimeout(() => {
+      rebuildTrayMenu(isRecording, recent).catch((e) =>
+        console.warn("[useTraySync] Failed to rebuild tray menu:", e)
+      );
+    }, delay);
+
+    return () => clearTimeout(timer);
   }, [isRecording, recentMeetings]);
 }

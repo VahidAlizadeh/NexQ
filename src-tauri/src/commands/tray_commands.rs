@@ -21,13 +21,15 @@ pub async fn set_tray_state(
 
     manager.current_state = state;
 
-    // Update icon
+    // Update icon — log errors but don't propagate (tray may not be ready during init)
     let icon = manager.icon_set.get(state);
     if let Some(tray) = app.tray_by_id("main") {
-        tray.set_icon(Some(icon)).map_err(|e| e.to_string())?;
+        if let Err(e) = tray.set_icon(Some(icon)) {
+            log::warn!("Failed to set tray icon: {}", e);
+        }
     }
 
-    // Update tooltip
+    // Update tooltip — log errors but don't propagate
     let tooltip_text = tooltip::build_tooltip(
         state,
         manager.meeting_start_time,
@@ -35,7 +37,9 @@ pub async fn set_tray_state(
         manager.custom_tooltip.as_deref(),
     );
     if let Some(tray) = app.tray_by_id("main") {
-        tray.set_tooltip(Some(&tooltip_text)).map_err(|e| e.to_string())?;
+        if let Err(e) = tray.set_tooltip(Some(&tooltip_text)) {
+            log::warn!("Failed to set tray tooltip: {}", e);
+        }
     }
 
     // Start pulse animation for recording
@@ -170,7 +174,9 @@ pub async fn rebuild_tray_menu(
     };
 
     if let Some(tray) = app.tray_by_id("main") {
-        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+        if let Err(e) = tray.set_menu(Some(menu)) {
+            log::warn!("Failed to set tray menu: {}", e);
+        }
     }
 
     Ok(())

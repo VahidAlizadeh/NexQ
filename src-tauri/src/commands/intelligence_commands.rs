@@ -3,6 +3,7 @@ use tauri::{command, AppHandle, Emitter, State};
 use crate::intelligence::action_config::{AllActionConfigs, InstructionPresets};
 use crate::intelligence::IntelligenceEngine;
 use crate::llm::provider::GenerationParams;
+use crate::llm::provider::RagChunkInfo;
 use crate::rag;
 use crate::state::AppState;
 
@@ -94,6 +95,15 @@ fn build_transcript_from_segments(segments_json: &str, window_seconds: u64, incl
         .join("\n")
 }
 
+/// Count total segments in the JSON, regardless of window filtering.
+fn count_total_segments(segments_json: &str) -> usize {
+    #[derive(serde::Deserialize)]
+    struct Seg { text: String }
+    serde_json::from_str::<Vec<Seg>>(segments_json)
+        .map(|s| s.len())
+        .unwrap_or(0)
+}
+
 #[command]
 pub async fn generate_assist(
     mode: String,
@@ -137,6 +147,28 @@ pub async fn generate_assist(
 
     let (action_cfg, global_defaults) = action_config_snapshot;
 
+    // Compute include_question early for effective_question logic
+    let include_question = action_cfg.as_ref().map(|c| c.include_detected_question).unwrap_or(true);
+
+    // Construct effective question: prefer user-clicked question over backend's last detected
+    let effective_question = if let Some(ref cq) = custom_question {
+        if include_question {
+            Some(crate::intelligence::question_detector::DetectedQuestion {
+                text: cq.clone(),
+                confidence: 1.0,
+                timestamp_ms: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as u64,
+                source: "user-selected".to_string(),
+            })
+        } else {
+            last_question
+        }
+    } else {
+        last_question
+    };
+
     // Determine transcript window: per-action override or global default
     let window_seconds = action_cfg
         .as_ref()
@@ -168,12 +200,25 @@ pub async fn generate_assist(
         }
     }
 
+    let total_segments = transcript_segments.as_ref()
+        .map(|s| count_total_segments(s))
+        .unwrap_or(0);
+    let included_segments = transcript_text.lines()
+        .filter(|l| l.starts_with("["))
+        .count();
+
     // Resolve per-action settings
+    // Read default top-K from RagConfig (Context Strategy) — single source of truth
+    let rag_default_top_k = state.rag.as_ref()
+        .and_then(|r| r.lock().ok())
+        .map(|r| r.config().top_k)
+        .unwrap_or(5);
+    let rag_top_k = action_cfg.as_ref().and_then(|c| c.rag_top_k).unwrap_or(rag_default_top_k);
+
     let include_rag = action_cfg.as_ref().map(|c| c.include_rag_chunks).unwrap_or(true);
     let include_transcript = action_cfg.as_ref().map(|c| c.include_transcript).unwrap_or(true);
-    let include_question = action_cfg.as_ref().map(|c| c.include_detected_question).unwrap_or(true);
+    // include_question already computed above
     let include_instructions = action_cfg.as_ref().map(|c| c.include_custom_instructions).unwrap_or(true);
-    let rag_top_k = action_cfg.as_ref().and_then(|c| c.rag_top_k).unwrap_or(global_defaults.rag_top_k);
 
     // Resolve base system prompt: per-action config > active scenario > hardcoded template.
     // Active scenario is set by the frontend at meeting start based on the selected AI scenario.
@@ -208,13 +253,15 @@ pub async fn generate_assist(
         max_tokens: None,
     };
 
-    // Get context — RAG chunks only.
-    // Composed instructions now go in system prompt (above), not here.
-    // Key principle: NEVER fall back to full file dump. If RAG fails, just skip RAG chunks.
+    // RAG metadata for StreamStartEvent
+    let mut rag_query_text: Option<String> = None;
+    let mut rag_chunk_infos: Vec<RagChunkInfo> = Vec::new();
+    let mut rag_chunks_filtered: usize = 0;
+    let mut rag_total_candidates: usize = 0;
+
     let context_text = {
         let mut parts: Vec<String> = Vec::new();
 
-        // RAG chunks (if action includes them AND RAG is enabled globally)
         if include_rag {
             let rag_enabled = state.rag.as_ref()
                 .and_then(|r| r.lock().ok())
@@ -222,31 +269,54 @@ pub async fn generate_assist(
                 .unwrap_or(false);
 
             if rag_enabled {
-                let query = last_question.as_ref()
-                    .map(|q| q.text.clone())
-                    .unwrap_or_else(|| transcript_text.chars().take(500).collect());
+                // Dual-source RAG query: combine detected question + transcript excerpt
+                let question_text = effective_question.as_ref().map(|q| q.text.clone());
+                let transcript_excerpt: String = transcript_text.chars().rev().take(500).collect::<String>().chars().rev().collect();
 
-                let rag_result = if let (Some(rag_arc), Some(db_arc)) =
-                    (state.rag.as_ref(), state.database.as_ref()) {
-                    let (mut config, embedder_url, embedding_model) = {
-                        let rag_guard = rag_arc.lock().map_err(|e| e.to_string())?;
-                        (rag_guard.config().clone(), rag_guard.embedder_url(), rag_guard.embedding_model())
-                    };
-                    config.top_k = rag_top_k;
-                    rag::RagManager::search_async(db_arc, &query, &config, &embedder_url, &embedding_model).await
-                } else {
-                    Err("RAG not initialized".to_string())
+                let query = match (&question_text, transcript_excerpt.is_empty()) {
+                    (Some(q), false) => format!("{}\n\n{}", q, transcript_excerpt),
+                    (Some(q), true) => q.clone(),
+                    (None, false) => transcript_excerpt,
+                    (None, true) => String::new(),
                 };
 
-                match rag_result {
-                    Ok(chunks) if !chunks.is_empty() => {
-                        parts.push(rag::prompt_builder::build_rag_context(&chunks, ""));
-                    }
-                    Ok(_) => {
-                        log::debug!("RAG search returned no results for mode={}", mode);
-                    }
-                    Err(e) => {
-                        log::warn!("RAG search failed for mode={}: {}", mode, e);
+                rag_query_text = if query.is_empty() { None } else { Some(query.clone()) };
+
+                if !query.is_empty() {
+                    let rag_result = if let (Some(rag_arc), Some(db_arc)) =
+                        (state.rag.as_ref(), state.database.as_ref()) {
+                        let (mut config, embedder_url, embedding_model) = {
+                            let rag_guard = rag_arc.lock().map_err(|e| e.to_string())?;
+                            (rag_guard.config().clone(), rag_guard.embedder_url(), rag_guard.embedding_model())
+                        };
+                        config.top_k = rag_top_k;
+                        rag::RagManager::search_async(db_arc, &query, &config, &embedder_url, &embedding_model).await
+                    } else {
+                        Err("RAG not initialized".to_string())
+                    };
+
+                    match rag_result {
+                        Ok(chunks) => {
+                            for c in &chunks {
+                                rag_chunk_infos.push(RagChunkInfo {
+                                    source: c.source_file.clone(),
+                                    chunk_index: c.chunk_index,
+                                    text: c.text.clone(),
+                                    normalized_score: c.normalized_score,
+                                    raw_score: c.score,
+                                });
+                            }
+                            rag_total_candidates = rag_top_k;
+                            if chunks.len() < rag_top_k {
+                                rag_chunks_filtered = rag_top_k - chunks.len();
+                            }
+                            if !chunks.is_empty() {
+                                parts.push(rag::prompt_builder::build_rag_context(&chunks, ""));
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("RAG search failed for mode={}: {}", mode, e);
+                        }
                     }
                 }
             }
@@ -255,7 +325,6 @@ pub async fn generate_assist(
         parts.join("\n\n")
     };
 
-    // include_context = whether context_text has content to include
     let include_context = !context_text.is_empty();
 
     // Get the LLM provider and model info
@@ -292,7 +361,7 @@ pub async fn generate_assist(
         &mode_clone,
         custom_question.as_deref(),
         transcript_text,
-        last_question,
+        effective_question,
         context_text,
         include_context,
         include_transcript,
@@ -303,6 +372,14 @@ pub async fn generate_assist(
         model,
         provider_name,
         params,
+        temperature,
+        rag_query_text,
+        rag_chunk_infos,
+        rag_chunks_filtered,
+        rag_total_candidates,
+        window_seconds,
+        included_segments,
+        total_segments,
         app_handle,
         cancel_flag,
     )

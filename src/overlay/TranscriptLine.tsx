@@ -15,6 +15,10 @@ import { useTranslationStore } from "../stores/translationStore";
 import { TranscriptContextMenu } from "./TranscriptContextMenu";
 import { showBookmarkToast } from "./BookmarkToast";
 
+// Module-level singleton: ensures only one hover tooltip is visible at a time.
+// When a new line is hovered, it dismisses the previous tooltip first.
+let dismissActiveTooltip: (() => void) | null = null;
+
 interface TranscriptLineProps {
   segment: TranscriptSegment;
   /** Optional search query to highlight matches */
@@ -189,14 +193,32 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
   const lineRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
+  // Dismiss this tooltip (used by module-level singleton + scroll handler)
+  const dismissTooltip = () => {
+    setShowTranslationTooltip(false);
+    setIsHovered(false);
+    if (dismissActiveTooltip === dismissTooltip) dismissActiveTooltip = null;
+  };
+
   // Sync tooltip visibility when displayMode changes while already hovering
   useEffect(() => {
     if (isHovered && hasHoverTranslation) {
       setShowTranslationTooltip(true);
+      dismissActiveTooltip = dismissTooltip;
     } else if (!hasHoverTranslation) {
       setShowTranslationTooltip(false);
     }
   }, [isHovered, hasHoverTranslation]);
+
+  // Dismiss tooltip when scroll container scrolls (auto-scroll moves line from under cursor)
+  useEffect(() => {
+    if (!showTranslationTooltip || !lineRef.current) return;
+    const scrollParent = lineRef.current.closest("[data-scroll-container]") as HTMLElement | null;
+    if (!scrollParent) return;
+    const handleScroll = () => dismissTooltip();
+    scrollParent.addEventListener("scroll", handleScroll, { passive: true });
+    return () => scrollParent.removeEventListener("scroll", handleScroll);
+  }, [showTranslationTooltip]);
 
   return (
     <div
@@ -205,13 +227,16 @@ export function TranscriptLine({ segment, searchQuery }: TranscriptLineProps) {
       className={`group relative flex items-start gap-2.5 rounded-lg px-2 py-[7px] transition-colors duration-100 hover:bg-accent/25 border-l-[3px] transcript-line-enter`}
       style={{ borderLeftColor: isBookmarked ? 'hsl(var(--primary))' : isPending ? "transparent" : `${speakerHex}66` }}
       onMouseEnter={(e) => {
+        // Dismiss any other line's tooltip first (singleton)
+        dismissActiveTooltip?.();
         setIsHovered(true);
         setMousePos({ x: e.clientX, y: e.clientY });
         if (hasHoverTranslation) {
           setShowTranslationTooltip(true);
+          dismissActiveTooltip = dismissTooltip;
         }
       }}
-      onMouseLeave={() => { setIsHovered(false); setShowTranslationTooltip(false); }}
+      onMouseLeave={dismissTooltip}
       onContextMenu={handleContextMenu}
     >
       {/* Timestamp */}

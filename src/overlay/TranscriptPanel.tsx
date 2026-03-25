@@ -245,6 +245,7 @@ export function TranscriptPanel() {
         onScroll={handleScroll}
         onWheel={cancelScrollAnimation}
         onTouchMove={cancelScrollAnimation}
+        data-scroll-container
         className="absolute inset-0 overflow-y-auto px-1 py-1"
       >
         {filteredSegments.map((seg) => (

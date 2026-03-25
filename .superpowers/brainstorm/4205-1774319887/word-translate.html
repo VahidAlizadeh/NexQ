@@ -1,0 +1,146 @@
+<h2>How should word/phrase select-to-translate work?</h2>
+<p class="subtitle">This is independent from full-line translation — it's for looking up specific words or phrases</p>
+
+<div class="cards">
+  <!-- Option A: Select text popup -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0a0a0b;">
+      <div style="font-family: system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">I think we should focus on the Q2 roadmap first</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; position: relative;">
+          <span style="color: #e06c75; font-weight: 600; font-size: 11px; min-width: 40px;">Them</span>
+          <span style="color: #e0e0e0;">The <span style="background: rgba(99, 140, 255, 0.25); border-radius: 2px; padding: 0 2px;">deadline is critical</span> and we can't afford delays</span>
+          <!-- Popup above selection -->
+          <div style="position: absolute; left: 60px; top: -52px; background: #1e1e22; border: 1px solid #444; border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 10; white-space: nowrap;">
+            <div style="font-size: 14px; color: #e0e0e0; font-weight: 500;">la fecha límite es crítica</div>
+            <div style="font-size: 10px; color: #666; margin-top: 3px; display: flex; align-items: center; gap: 8px;">
+              <span>EN → ES</span>
+              <span style="color: #444;">·</span>
+              <span>Microsoft Translator</span>
+              <span style="color: #444;">·</span>
+              <span style="cursor: pointer; color: #6d9eeb;">📋 Copy</span>
+            </div>
+            <!-- Arrow -->
+            <div style="position: absolute; bottom: -6px; left: 40px; width: 12px; height: 12px; background: #1e1e22; border-right: 1px solid #444; border-bottom: 1px solid #444; transform: rotate(45deg);"></div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">Understood, let's reprioritize the backlog today</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Select Text → Popup Above</h3>
+      <p>Drag to select any word(s) in the transcript. A floating bubble appears above the selection with the translation. Dismisses on click elsewhere. Like Google Translate extension.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Double-click word -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0a0a0b;">
+      <div style="font-family: system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">I think we should focus on the Q2 roadmap first</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; position: relative;">
+          <span style="color: #e06c75; font-weight: 600; font-size: 11px; min-width: 40px;">Them</span>
+          <span style="color: #e0e0e0;">The deadline is <span style="background: rgba(99, 140, 255, 0.3); border-radius: 3px; padding: 1px 3px; border-bottom: 2px solid #638cff;">critical</span> and we can't afford delays</span>
+          <!-- Tooltip below the word -->
+          <div style="position: absolute; left: 148px; top: 24px; background: #1e1e22; border: 1px solid #444; border-radius: 8px; padding: 8px 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 10;">
+            <div style="font-size: 13px; color: #e0e0e0; font-weight: 500;">crítico/a</div>
+            <div style="font-size: 11px; color: #888; margin-top: 2px;">adj. — of decisive importance</div>
+            <div style="font-size: 10px; color: #555; margin-top: 4px;">Double-click to translate a word</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">Understood, let's reprioritize the backlog today</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Double-Click Word → Tooltip Below</h3>
+      <p>Double-click any single word to see its translation below with brief definition. For phrases, drag-select. More precise targeting but limited to individual words on double-click.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Right-click context menu -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0a0a0b;">
+      <div style="font-family: system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">I think we should focus on the Q2 roadmap first</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; position: relative;">
+          <span style="color: #e06c75; font-weight: 600; font-size: 11px; min-width: 40px;">Them</span>
+          <span style="color: #e0e0e0;">The <span style="background: rgba(99, 140, 255, 0.2); border-radius: 2px;">deadline is critical</span> and we can't afford delays</span>
+          <!-- Context menu -->
+          <div style="position: absolute; left: 100px; top: 22px; background: #1e1e22; border: 1px solid #3a3a3a; border-radius: 8px; padding: 4px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 10; min-width: 200px; font-size: 12px;">
+            <div style="padding: 8px 14px; color: #e0e0e0; display: flex; align-items: center; gap: 8px; background: rgba(99,140,255,0.1);">
+              <span style="font-size: 14px;">🌐</span> Translate to Spanish
+            </div>
+            <div style="border-top: 1px solid #2a2a2a; margin: 2px 0;"></div>
+            <div style="padding: 8px 14px; color: #999; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px;">📋</span> Copy
+            </div>
+            <div style="padding: 8px 14px; color: #999; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px;">🔖</span> Bookmark
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">Understood, let's reprioritize the backlog today</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Select + Right-Click Context Menu</h3>
+      <p>Select text, right-click to see "Translate to [language]" in the existing context menu alongside Copy, Bookmark, etc. Integrates with existing right-click behavior. Extra click required.</p>
+    </div>
+  </div>
+
+  <!-- Option D: Combined -->
+  <div class="card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0a0a0b;">
+      <div style="font-family: system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">I think we should focus on the Q2 roadmap first</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; position: relative;">
+          <span style="color: #e06c75; font-weight: 600; font-size: 11px; min-width: 40px;">Them</span>
+          <span style="color: #e0e0e0;">The <span style="background: rgba(99, 140, 255, 0.25); border-radius: 2px; padding: 0 2px;">deadline is critical</span> and we can't afford delays</span>
+          <!-- Mini action bar that appears on text selection -->
+          <div style="position: absolute; left: 56px; top: -28px; background: #1e1e22; border: 1px solid #444; border-radius: 8px; padding: 4px 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 10; display: flex; gap: 2px;">
+            <div style="padding: 4px 8px; border-radius: 5px; background: rgba(99,140,255,0.15); color: #6d9eeb; font-size: 11px; cursor: pointer; font-weight: 500;">Translate</div>
+            <div style="padding: 4px 8px; border-radius: 5px; color: #888; font-size: 11px; cursor: pointer;">Copy</div>
+            <div style="padding: 4px 8px; border-radius: 5px; color: #888; font-size: 11px; cursor: pointer;">🔖</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="color: #6d9eeb; font-weight: 600; font-size: 11px; min-width: 40px;">You</span>
+          <span style="color: #e0e0e0;">Understood, let's reprioritize the backlog today</span>
+        </div>
+      </div>
+      <div style="margin-top: 16px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; text-align: center;">
+        <div style="font-size: 11px; color: #666;">Select text → mini toolbar appears → click Translate → popup with result</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>D — Select → Mini Toolbar → Translate</h3>
+      <p>Select any text and a floating mini toolbar appears (like Notion/Medium). Click "Translate" to see the result in a popup. Clean, discoverable, non-intrusive. Also works for double-click on single word.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+  <h3 style="margin: 0 0 8px 0; font-size: 14px;">Recommendation</h3>
+  <p style="margin: 0; font-size: 13px; color: #999;"><strong>D (Mini Toolbar)</strong> — most polished and discoverable. Works for both single words and phrases. The toolbar can also host Copy and Bookmark, consolidating actions. Falls back gracefully if translation is disabled.</p>
+</div>

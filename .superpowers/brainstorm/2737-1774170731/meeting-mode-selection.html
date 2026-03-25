@@ -1,0 +1,82 @@
+<h2>How should users pick the meeting type?</h2>
+<p class="subtitle">This is the entry point — the first thing users see when starting a meeting. Which pattern feels right for NexQ?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Two Distinct Buttons on Dashboard</h3>
+      <p>The launcher always shows two buttons side-by-side: <strong>"Online Meeting"</strong> and <strong>"In-Person Meeting"</strong>. User picks before anything starts. Clear, zero ambiguity, always visible.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Fastest path — one click</li>
+          <li>Always discoverable</li>
+          <li>No extra modal/step</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Takes more dashboard space</li>
+          <li>May feel cluttered if more modes are added later</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Modal Prompt After "Start Meeting"</h3>
+      <p>Keep the single "Start Meeting" button. After clicking, a modal asks: <strong>"What type of meeting?"</strong> with Online / In-Person options. Then proceeds to start.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Dashboard stays clean — one primary CTA</li>
+          <li>Scales to more modes easily</li>
+          <li>Good place to show a brief explainer per mode</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Extra click every time</li>
+          <li>Users who always use the same mode get annoyed</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Segmented Toggle + Single Start Button</h3>
+      <p>A small segmented control (pill toggle) on the dashboard: <strong>Online | In-Person</strong>. It remembers the last selection. The "Start Meeting" button starts whichever mode is active. One glance shows what you'll get.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Remembers preference — power users love this</li>
+          <li>Still one-click to start</li>
+          <li>Compact, doesn't clutter dashboard</li>
+          <li>Clear visual state of what mode is selected</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Toggle could be missed by new users</li>
+          <li>Risk of starting wrong mode if toggle is forgotten</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Smart Default + Quick Switch</h3>
+      <p>App detects likely mode (e.g., if system audio device is active → Online, if only mic → In-Person). Shows a subtle indicator: <strong>"Starting as Online Meeting ▾"</strong> that's clickable to switch. Combines intelligence with manual override.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Zero friction for the common case</li>
+          <li>Feels smart and premium</li>
+          <li>Still overridable</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Auto-detection could be wrong → wrong meeting type started</li>
+          <li>More complex to implement</li>
+          <li>"Magic" can feel unpredictable</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

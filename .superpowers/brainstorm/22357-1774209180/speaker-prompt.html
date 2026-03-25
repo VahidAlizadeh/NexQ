@@ -1,0 +1,80 @@
+<h2>Speaker Detection Prompt — Redesign</h2>
+<p class="subtitle">When Deepgram detects a new speaker, this banner appears at the top of the transcript panel</p>
+
+<div class="section">
+  <h3>Current Design (Save or Dismiss only)</h3>
+  <div style="background: #1a1625; border-radius: 12px; padding: 16px; border: 1px solid rgba(168,85,247,0.2); margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="color: #a855f7; font-size: 14px;">👤+</span>
+      <span style="font-size: 13px; color: #9ca3af;">New speaker detected: <span style="color: #a855f7; font-weight: 600;">Speaker 3</span></span>
+      <input type="text" placeholder="Enter name..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.2); border-radius: 6px; padding: 4px 8px; font-size: 12px; color: #e5e7eb; outline: none;" />
+      <button style="background: rgba(168,85,247,0.15); color: #a855f7; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 500; cursor: pointer;">Save</button>
+      <button style="background: none; border: none; color: #6b7280; cursor: pointer; font-size: 14px;">✕</button>
+    </div>
+    <div style="margin-top: 8px; font-size: 11px; color: #6b7280; font-style: italic;">Problem: No way to reject false detection or merge with existing speaker</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Proposed Design — Two Actions</h3>
+  <div style="background: #1a1625; border-radius: 12px; padding: 16px; border: 1px solid rgba(168,85,247,0.2);">
+    <!-- Row 1: Detection info -->
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+      <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center;">
+        <span style="color: #22c55e; font-size: 13px;">👤</span>
+      </div>
+      <div>
+        <div style="font-size: 13px; color: #e5e7eb; font-weight: 500;">New speaker detected</div>
+        <div style="font-size: 11px; color: #6b7280;">Identified as <span style="color: #22c55e; font-weight: 600;">Speaker 3</span> by Deepgram diarization</div>
+      </div>
+      <button style="margin-left: auto; background: none; border: none; color: #4b5563; cursor: pointer; font-size: 14px; padding: 2px;" title="Dismiss (auto-dismisses in 10s)">✕</button>
+    </div>
+
+    <!-- Row 2: Two action paths -->
+    <div style="display: flex; gap: 8px;">
+      <!-- Action A: Name this speaker -->
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
+        <div style="font-size: 11px; color: #9ca3af; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Name this speaker</div>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" placeholder="e.g. Professor Smith" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.25); border-radius: 6px; padding: 5px 8px; font-size: 12px; color: #e5e7eb; outline: none;" />
+          <button style="background: rgba(168,85,247,0.2); color: #a855f7; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;">Save</button>
+        </div>
+      </div>
+
+      <!-- Action B: Merge into existing -->
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
+        <div style="font-size: 11px; color: #9ca3af; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Actually this is...</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button style="background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+            Speaker 1
+          </button>
+          <button style="background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span>
+            Speaker 2
+          </button>
+          <button style="background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #a855f7;"></span>
+            Room
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timer indicator -->
+    <div style="margin-top: 8px; height: 2px; background: rgba(255,255,255,0.05); border-radius: 1px; overflow: hidden;">
+      <div style="width: 70%; height: 100%; background: rgba(168,85,247,0.3); border-radius: 1px;"></div>
+    </div>
+    <div style="font-size: 10px; color: #4b5563; margin-top: 3px;">Auto-dismisses in 7s</div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px;">
+  <h3>Behavior</h3>
+  <ul style="font-size: 13px; color: #d1d5db; line-height: 1.8;">
+    <li><strong>Name this speaker</strong> — renames speaker_3 to the entered name. All past & future segments with speaker_3 show the new name.</li>
+    <li><strong>"Actually this is..."</strong> — merges speaker_3 into the clicked speaker. All segments with speaker_3 get reassigned. speaker_3 is removed from the store.</li>
+    <li><strong>Dismiss (✕ or timeout)</strong> — keeps the default name "Speaker 3". No merge, no rename.</li>
+    <li><strong>Timer bar</strong> — visual countdown, auto-dismisses after 10s so it doesn't block the UI during fast-paced meetings.</li>
+  </ul>
+</div>

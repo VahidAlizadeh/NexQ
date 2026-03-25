@@ -1,0 +1,115 @@
+<h2>Bookmarking a Transcript Line</h2>
+<p class="subtitle">How should the user interact with a transcript line to bookmark it or add a note?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Hover Action Icons</h3>
+      <p>Small icons appear on hover at the right edge of each line: bookmark icon + note icon. Click bookmark to toggle, click note to open inline input below the line.</p>
+      <div style="background: #1a1625; border-radius: 10px; padding: 12px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <!-- Normal line -->
+        <div style="padding: 6px 8px; border-radius: 6px; border-left: 2px solid #22c55e; margin-bottom: 4px;">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-size: 9px; color: #4b5563; font-family: monospace;">2:14</span>
+            <span style="font-size: 11px; color: #22c55e; font-weight: 600;">Prof Smith</span>
+          </div>
+          <div style="font-size: 12px; color: #d1d5db; margin-top: 2px; padding-left: 36px;">We need to revisit the timeline for Q3 deliverables.</div>
+        </div>
+        <!-- Hovered line -->
+        <div style="padding: 6px 8px; border-radius: 6px; border-left: 2px solid #3b82f6; margin-bottom: 4px; background: rgba(255,255,255,0.02); position: relative;">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-size: 9px; color: #4b5563; font-family: monospace;">2:31</span>
+            <span style="font-size: 11px; color: #3b82f6; font-weight: 600;">Speaker 2</span>
+          </div>
+          <div style="font-size: 12px; color: #d1d5db; margin-top: 2px; padding-left: 36px;">The client pushed back on the original deadline, so we have two extra weeks.</div>
+          <!-- Hover icons -->
+          <div style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px;">
+            <button style="background: rgba(168,85,247,0.15); border: none; border-radius: 4px; padding: 3px 5px; cursor: pointer; font-size: 11px; color: #a855f7;" title="Bookmark">🔖</button>
+            <button style="background: rgba(255,255,255,0.05); border: none; border-radius: 4px; padding: 3px 5px; cursor: pointer; font-size: 11px; color: #6b7280;" title="Add note">📝</button>
+          </div>
+        </div>
+        <!-- Bookmarked line -->
+        <div style="padding: 6px 8px; border-radius: 6px; border-left: 2px solid #a855f7; margin-bottom: 4px; background: rgba(168,85,247,0.03);">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-size: 9px; color: #4b5563; font-family: monospace;">2:45</span>
+            <span style="font-size: 11px; color: #22c55e; font-weight: 600;">Prof Smith</span>
+            <span style="font-size: 9px; color: #a855f7; margin-left: auto;">🔖</span>
+          </div>
+          <div style="font-size: 12px; color: #d1d5db; margin-top: 2px; padding-left: 36px;">Let's lock that in — two weeks extension, final delivery March 28th.</div>
+          <div style="font-size: 10px; color: #9ca3af; margin-top: 4px; padding-left: 36px; font-style: italic; background: rgba(168,85,247,0.05); border-radius: 4px; padding: 4px 8px 4px 36px;">📝 Key decision: deadline extended to March 28</div>
+        </div>
+      </div>
+      <p style="font-size: 11px; color: #6b7280; margin-top: 8px;">Pro: Discoverable, clean. Con: Hover doesn't work on touch.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Click Line → Context Menu</h3>
+      <p>Clicking any transcript line shows a small floating menu with: Bookmark, Add Note, Copy Text. Quick and contextual.</p>
+      <div style="background: #1a1625; border-radius: 10px; padding: 12px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <!-- Normal line -->
+        <div style="padding: 6px 8px; border-radius: 6px; border-left: 2px solid #22c55e; margin-bottom: 4px;">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-size: 9px; color: #4b5563; font-family: monospace;">2:14</span>
+            <span style="font-size: 11px; color: #22c55e; font-weight: 600;">Prof Smith</span>
+          </div>
+          <div style="font-size: 12px; color: #d1d5db; margin-top: 2px; padding-left: 36px;">We need to revisit the timeline for Q3 deliverables.</div>
+        </div>
+        <!-- Clicked line with context menu -->
+        <div style="padding: 6px 8px; border-radius: 6px; border-left: 2px solid #3b82f6; margin-bottom: 4px; background: rgba(59,130,246,0.05); position: relative;">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-size: 9px; color: #4b5563; font-family: monospace;">2:31</span>
+            <span style="font-size: 11px; color: #3b82f6; font-weight: 600;">Speaker 2</span>
+          </div>
+          <div style="font-size: 12px; color: #d1d5db; margin-top: 2px; padding-left: 36px;">The client pushed back on the original deadline, so we have two extra weeks.</div>
+          <!-- Context menu -->
+          <div style="position: absolute; right: 8px; top: -4px; background: #1e1832; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10;">
+            <button style="display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 5px 10px; font-size: 11px; color: #d1d5db; cursor: pointer; border-radius: 4px; white-space: nowrap;" onmouseover="this.style.background='rgba(168,85,247,0.1)'" onmouseout="this.style.background='none'">🔖 Bookmark</button>
+            <button style="display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 5px 10px; font-size: 11px; color: #d1d5db; cursor: pointer; border-radius: 4px; white-space: nowrap;" onmouseover="this.style.background='rgba(168,85,247,0.1)'" onmouseout="this.style.background='none'">📝 Add Note</button>
+            <button style="display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 5px 10px; font-size: 11px; color: #d1d5db; cursor: pointer; border-radius: 4px; white-space: nowrap;" onmouseover="this.style.background='rgba(168,85,247,0.1)'" onmouseout="this.style.background='none'">📋 Copy Text</button>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 11px; color: #6b7280; margin-top: 8px;">Pro: Extensible (can add more actions later), works same on live + past meetings. Con: Extra click to get to action.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hover Icons + Right-Click Context Menu</h3>
+      <p>Hover shows bookmark icon (quick toggle). Right-click (or long press) shows full context menu with note, copy, etc. Best of both: fast one-click bookmark, rich menu when needed.</p>
+      <div style="background: #1a1625; border-radius: 10px; padding: 12px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <!-- Hovered line with quick icon -->
+        <div style="padding: 6px 8px; border-radius: 6px; border-left: 2px solid #3b82f6; margin-bottom: 4px; background: rgba(255,255,255,0.02); position: relative;">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-size: 9px; color: #4b5563; font-family: monospace;">2:31</span>
+            <span style="font-size: 11px; color: #3b82f6; font-weight: 600;">Speaker 2</span>
+          </div>
+          <div style="font-size: 12px; color: #d1d5db; margin-top: 2px; padding-left: 36px;">The client pushed back on the original deadline.</div>
+          <div style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);">
+            <button style="background: rgba(168,85,247,0.15); border: none; border-radius: 4px; padding: 3px 5px; cursor: pointer; font-size: 11px; color: #a855f7;" title="Bookmark (click) • More options (right-click)">🔖</button>
+          </div>
+        </div>
+        <div style="font-size: 10px; color: #4b5563; text-align: center; padding: 4px;">↑ hover = bookmark icon &nbsp;&nbsp;|&nbsp;&nbsp; right-click = full menu ↓</div>
+        <!-- Right-click context menu shown -->
+        <div style="padding: 6px 8px; border-radius: 6px; border-left: 2px solid #22c55e; margin-bottom: 4px; position: relative; background: rgba(34,197,94,0.03);">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-size: 9px; color: #4b5563; font-family: monospace;">2:45</span>
+            <span style="font-size: 11px; color: #22c55e; font-weight: 600;">Prof Smith</span>
+          </div>
+          <div style="font-size: 12px; color: #d1d5db; margin-top: 2px; padding-left: 36px;">Let's lock that in — final delivery March 28th.</div>
+          <div style="position: absolute; right: 40px; top: -2px; background: #1e1832; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <button style="display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 5px 10px; font-size: 11px; color: #d1d5db; cursor: pointer; border-radius: 4px; white-space: nowrap;">🔖 Bookmark</button>
+            <button style="display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 5px 10px; font-size: 11px; color: #d1d5db; cursor: pointer; border-radius: 4px; white-space: nowrap;">📝 Add Note</button>
+            <button style="display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 5px 10px; font-size: 11px; color: #d1d5db; cursor: pointer; border-radius: 4px; white-space: nowrap;">📋 Copy Text</button>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 11px; color: #6b7280; margin-top: 8px;">Pro: Fastest bookmark (one click), extensible menu, works live + past. Con: Right-click is non-obvious, hover requires mouse.</p>
+    </div>
+  </div>
+</div>

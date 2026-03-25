@@ -193,37 +193,10 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         quality_rating: 3,
         target_prefix: "",
     },
-    OpusMtModelDefinition {
-        model_id: "opus-mt-en-fa",
-        display_name: "English → Farsi",
-        source_lang: "en",
-        source_name: "English",
-        target_lang: "fa",
-        target_name: "Farsi",
-        size_bytes: 540_000_000,
-        encoder_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-en-fa/encoder_model.onnx",
-        decoder_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-en-fa/decoder_model_merged.onnx",
-        tokenizer_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-en-fa/tokenizer.json",
-        config_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-en-fa/config.json",
-        quality_rating: 3,
-        target_prefix: ">>pes<<",
-    },
+    // No dedicated en↔fa OPUS-MT model exists. The multi-language model
+    // (opus-mt-en-iir) scores only 3.4 BLEU for Persian — unusable quality.
+    // Use LLM Translation provider for Farsi instead.
     // ── X → English ──
-    OpusMtModelDefinition {
-        model_id: "opus-mt-fa-en",
-        display_name: "Farsi → English",
-        source_lang: "fa",
-        source_name: "Farsi",
-        target_lang: "en",
-        target_name: "English",
-        size_bytes: 540_000_000,
-        encoder_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-fa-en/encoder_model.onnx",
-        decoder_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-fa-en/decoder_model_merged.onnx",
-        tokenizer_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-fa-en/tokenizer.json",
-        config_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-fa-en/config.json",
-        quality_rating: 3,
-        target_prefix: "",
-    },
     OpusMtModelDefinition {
         model_id: "opus-mt-es-en",
         display_name: "Spanish → English",

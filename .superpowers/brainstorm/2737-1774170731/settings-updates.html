@@ -1,0 +1,206 @@
+<h2>Settings Panel Updates</h2>
+<p class="subtitle">Three areas of change: Audio config relabeling, AI Scenarios section, and Noise Presets</p>
+
+<h3>1. Audio Configuration — "Them / Room" Relabel</h3>
+<p class="subtitle">The existing "Them" party config gets contextual labeling to communicate its dual purpose</p>
+
+<div class="mockup" style="max-width:500px;">
+  <div class="mockup-header">Audio Settings (updated)</div>
+  <div class="mockup-body" style="background:#0f0f1a; padding:20px; font-family:system-ui; font-size:13px;">
+
+    <!-- You section -->
+    <div style="margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+        <div style="font-size:13px; font-weight:600; color:#22c55e;">You</div>
+        <div style="font-size:10px; color:#555; padding:2px 6px; border-radius:3px; background:rgba(255,255,255,0.04);">Online meetings only</div>
+      </div>
+      <div style="font-size:11px; color:#666; margin-bottom:10px;">Your microphone — used in online meetings to capture your voice</div>
+      <div style="padding:8px 12px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="color:#aaa; font-size:12px;">Device: MacBook Pro Microphone</span>
+        <span style="color:#555; font-size:11px;">▾</span>
+      </div>
+      <div style="padding:8px 12px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#aaa; font-size:12px;">STT: Web Speech API</span>
+        <span style="color:#555; font-size:11px;">▾</span>
+      </div>
+    </div>
+
+    <!-- Them/Room section -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+        <div style="font-size:13px; font-weight:600; color:#f97316;">Them</div>
+        <div style="font-size:11px; color:#666;">/</div>
+        <div style="font-size:13px; font-weight:600; color:#a855f7;">Room</div>
+      </div>
+      <div style="font-size:11px; color:#666; margin-bottom:10px; line-height:1.5;">
+        <strong style="color:#f97316;">Online:</strong> System audio or input device capturing the remote party<br/>
+        <strong style="color:#a855f7;">In-Person:</strong> Room microphone capturing all speakers
+      </div>
+      <div style="padding:8px 12px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="color:#aaa; font-size:12px;">Device: Rode NT-USB Microphone</span>
+        <span style="color:#555; font-size:11px;">▾</span>
+      </div>
+      <div style="padding:8px 12px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="color:#aaa; font-size:12px;">STT: Deepgram</span>
+        <span style="color:#555; font-size:11px;">▾</span>
+      </div>
+
+      <!-- Diarization toggle (contextual) -->
+      <div style="padding:8px 12px; border-radius:6px; background:rgba(168,85,247,0.06); border:1px solid rgba(168,85,247,0.15); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:12px; color:#ccc;">Speaker Diarization</div>
+          <div style="font-size:10px; color:#666;">Separate speakers in in-person mode (cloud STT only)</div>
+        </div>
+        <div style="width:34px; height:18px; border-radius:9px; background:#a855f7; position:relative;">
+          <div style="width:14px; height:14px; border-radius:50%; background:white; position:absolute; right:2px; top:2px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info callout -->
+    <div style="padding:10px 12px; border-radius:6px; background:rgba(74,108,247,0.06); border-left:3px solid rgba(74,108,247,0.4); margin-bottom:8px;">
+      <div style="font-size:11px; color:#888; line-height:1.5;">
+        <strong style="color:#aaa;">💡 How this works:</strong> The device and STT provider configured here are used as <strong style="color:#f97316;">Them</strong> in online meetings (remote party audio) or as <strong style="color:#a855f7;">Room</strong> in in-person meetings (everyone's audio via one mic).
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:32px;">2. AI Scenarios Section (new)</h3>
+<p class="subtitle">Scenario management, prompt editing, and custom scenario creation</p>
+
+<div class="mockup" style="max-width:500px;">
+  <div class="mockup-header">AI Scenarios (new settings section)</div>
+  <div class="mockup-body" style="background:#0f0f1a; padding:20px; font-family:system-ui; font-size:13px;">
+
+    <!-- Scenario selector -->
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+      <span style="font-size:12px; color:#888;">Active Scenario:</span>
+      <div style="padding:6px 12px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <span style="color:#e0e0e0; font-size:13px;">Team Meeting</span>
+        <span style="color:#555;">▾</span>
+      </div>
+    </div>
+
+    <!-- Prompt cards -->
+    <div style="display:flex; flex-direction:column; gap:10px;">
+
+      <div style="border-radius:8px; border:1px solid rgba(255,255,255,0.06); overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.03); cursor:pointer;">
+          <div style="font-size:12px; font-weight:500; color:#ccc;">System Prompt</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:10px; color:#555;">Modified</span>
+            <span style="font-size:11px; color:#888;">▾</span>
+          </div>
+        </div>
+        <div style="padding:10px 12px; background:rgba(255,255,255,0.015);">
+          <div style="font-size:11px; color:#999; line-height:1.6; font-family:monospace;">You are an AI assistant in a team meeting. Track decisions made, action items assigned, and key discussion points. Attribute statements to speakers by name when available...</div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <div style="padding:4px 10px; border-radius:4px; background:rgba(74,108,247,0.1); color:#4a6cf7; font-size:10px; cursor:pointer;">Edit</div>
+            <div style="padding:4px 10px; border-radius:4px; background:rgba(255,255,255,0.04); color:#666; font-size:10px; cursor:pointer;">Reset to default</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-radius:8px; border:1px solid rgba(255,255,255,0.06); overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.03); cursor:pointer;">
+          <div style="font-size:12px; font-weight:500; color:#ccc;">Summary Prompt</div>
+          <span style="font-size:11px; color:#888;">▸</span>
+        </div>
+      </div>
+
+      <div style="border-radius:8px; border:1px solid rgba(255,255,255,0.06); overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.03); cursor:pointer;">
+          <div style="font-size:12px; font-weight:500; color:#ccc;">Question Detection Prompt</div>
+          <span style="font-size:11px; color:#888;">▸</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <div style="padding:6px 14px; border-radius:6px; border:1px dashed rgba(255,255,255,0.1); color:#666; font-size:11px; cursor:pointer; text-align:center; flex:1;">+ Create Custom Scenario</div>
+      <div style="padding:6px 14px; border-radius:6px; border:1px dashed rgba(255,255,255,0.1); color:#666; font-size:11px; cursor:pointer; text-align:center; flex:1;">Clone This Scenario</div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:32px;">3. Noise Presets (new)</h3>
+<p class="subtitle">Environment-aware audio tuning for in-person meetings</p>
+
+<div class="mockup" style="max-width:500px;">
+  <div class="mockup-header">Noise Environment (new settings section)</div>
+  <div class="mockup-body" style="background:#0f0f1a; padding:20px; font-family:system-ui; font-size:13px;">
+
+    <div style="font-size:11px; color:#666; margin-bottom:12px;">Optimizes VAD sensitivity and noise filtering for your environment. Primarily affects in-person meetings.</div>
+
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:rgba(74,108,247,0.06); border:1px solid rgba(74,108,247,0.15); cursor:pointer;">
+        <div style="font-size:16px;">🔇</div>
+        <div style="flex:1;">
+          <div style="font-size:12px; font-weight:500; color:#4a6cf7;">Quiet Office</div>
+          <div style="font-size:10px; color:#666;">Low noise, high sensitivity — catches soft speech</div>
+        </div>
+        <div style="width:14px; height:14px; border-radius:50%; border:2px solid #4a6cf7; display:flex; align-items:center; justify-content:center;">
+          <div style="width:7px; height:7px; border-radius:50%; background:#4a6cf7;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:rgba(255,255,255,0.03); cursor:pointer;">
+        <div style="font-size:16px;">🏫</div>
+        <div style="flex:1;">
+          <div style="font-size:12px; font-weight:500; color:#ccc;">Classroom</div>
+          <div style="font-size:10px; color:#666;">Moderate noise, echo tolerant — handles shuffling, chatter</div>
+        </div>
+        <div style="width:14px; height:14px; border-radius:50%; border:2px solid #444;"></div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:rgba(255,255,255,0.03); cursor:pointer;">
+        <div style="font-size:16px;">🏢</div>
+        <div style="flex:1;">
+          <div style="font-size:12px; font-weight:500; color:#ccc;">Conference Hall</div>
+          <div style="font-size:10px; color:#666;">High noise, aggressive filtering — large rooms, reverb</div>
+        </div>
+        <div style="width:14px; height:14px; border-radius:50%; border:2px solid #444;"></div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:rgba(255,255,255,0.03); cursor:pointer;">
+        <div style="font-size:16px;">☕</div>
+        <div style="flex:1;">
+          <div style="font-size:12px; font-weight:500; color:#ccc;">Café / Open Space</div>
+          <div style="font-size:10px; color:#666;">Variable noise, balanced sensitivity — music, conversations nearby</div>
+        </div>
+        <div style="width:14px; height:14px; border-radius:50%; border:2px solid #444;"></div>
+      </div>
+    </div>
+
+    <!-- Advanced toggle -->
+    <div style="margin-top:12px; padding:8px 12px; border-radius:6px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:11px; color:#666;">Advanced: Custom VAD sensitivity & noise gate</span>
+      <span style="font-size:11px; color:#555;">▸</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:32px;">4. Confidence Threshold</h3>
+<div class="mockup" style="max-width:500px;">
+  <div class="mockup-header">Transcription Settings (addition to existing)</div>
+  <div class="mockup-body" style="background:#0f0f1a; padding:16px; font-family:system-ui; font-size:13px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <div>
+        <div style="font-size:12px; color:#ccc;">Low Confidence Highlighting</div>
+        <div style="font-size:10px; color:#666;">Underline words below this confidence threshold</div>
+      </div>
+      <div style="width:34px; height:18px; border-radius:9px; background:#4a6cf7; position:relative;">
+        <div style="width:14px; height:14px; border-radius:50%; background:white; position:absolute; right:2px; top:2px;"></div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,0.08); position:relative;">
+        <div style="width:70%; height:100%; border-radius:2px; background:#4a6cf7;"></div>
+        <div style="position:absolute; left:70%; top:-4px; width:12px; height:12px; border-radius:50%; background:#4a6cf7; border:2px solid #0f0f1a; transform:translateX(-50%);"></div>
+      </div>
+      <span style="font-size:12px; color:#aaa; font-variant-numeric:tabular-nums; min-width:32px;">0.70</span>
+    </div>
+  </div>
+</div>

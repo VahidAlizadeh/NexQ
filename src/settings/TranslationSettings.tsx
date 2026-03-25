@@ -724,7 +724,7 @@ export function TranslationSettings() {
           )}
 
           {/* ── OPUS-MT Model Manager ── */}
-          {isOpusMt && <OpusMtModelManager />}
+          {isOpusMt && <OpusMtModelManager onModelsChanged={refreshOpusMtModels} />}
 
           {/* ── LLM local provider — Test Connection ── */}
           {isLlm && (

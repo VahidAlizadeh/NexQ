@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Meeting, RecordingInfo } from "../../lib/types";
-import { getMeeting, getRecordingInfo } from "../../lib/ipc";
-import { onTranscriptFinal, onRecordingReady } from "../../lib/events";
+import type { Meeting, RecordingInfo, TranslationResult } from "../../lib/types";
+import { getMeeting, getRecordingInfo, getAllMeetingTranslations, translateSegments } from "../../lib/ipc";
+import { onTranscriptFinal, onRecordingReady, onTranslationResult, onTranslationError } from "../../lib/events";
 import { useMeetingStore } from "../../stores/meetingStore";
+import { useTranslationStore } from "../../stores/translationStore";
+import { useConfigStore } from "../../stores/configStore";
 import { useMeetingStats } from "../../hooks/useMeetingStats";
 import { useTranscriptSearch } from "../../hooks/useTranscriptSearch";
 import { useSummaryGeneration } from "../../hooks/useSummaryGeneration";
@@ -18,6 +20,7 @@ import { AIInteractionLog } from "./AIInteractionLog";
 import { SpeakersTab } from "./SpeakersTab";
 import { ActionItemsTab } from "./ActionItemsTab";
 import { BookmarksTab } from "./BookmarksTab";
+import { PostMeetingTranslationToolbar } from "./PostMeetingTranslationToolbar";
 import { AudioPlayer, AudioPlayerSkeleton } from "../../components/AudioPlayer";
 import { Loader2 } from "lucide-react";
 
@@ -35,6 +38,19 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const [scrollToSegmentIndex, setScrollToSegmentIndex] = useState<number | null>(null);
   const [recordingInfo, setRecordingInfo] = useState<RecordingInfo | null>(null);
   const [recordingProcessing, setRecordingProcessing] = useState(false);
+
+  // Translation state for post-meeting view
+  const [translations, setTranslations] = useState<Map<string, TranslationResult>>(new Map());
+  const [translatingSegments, setTranslatingSegments] = useState<Set<string>>(new Set());
+  const [translationsVisible, setTranslationsVisible] = useState(true);
+  const [retranslating, setRetranslating] = useState(false);
+
+  // Translation store selectors
+  const displayMode = useTranslationStore((s) => s.displayMode);
+  const setDisplayMode = useTranslationStore((s) => s.setDisplayMode);
+  const currentTargetLang = useTranslationStore((s) => s.targetLang);
+  const autoTranslateEnabled = useTranslationStore((s) => s.autoTranslateEnabled);
+  const showPostMeetingTranslation = useConfigStore((s) => s.showPostMeetingTranslation);
 
   const loadMeeting = useCallback(async () => {
     setLoading(true);
@@ -91,6 +107,61 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     return () => { unlisten.then((fn) => fn()); };
   }, [meeting?.id]);
 
+  // Load all translations for this meeting
+  useEffect(() => {
+    if (!meetingId) return;
+    getAllMeetingTranslations(meetingId).then((results) => {
+      const map = new Map<string, TranslationResult>();
+      // Results are ordered by created_at DESC — first match per segment wins
+      for (const r of results) {
+        if (r.segment_id && !map.has(r.segment_id)) {
+          map.set(r.segment_id, r);
+        }
+      }
+      // Second pass: override with currentTargetLang matches
+      for (const r of results) {
+        if (r.segment_id && r.target_lang === currentTargetLang) {
+          map.set(r.segment_id, r);
+        }
+      }
+      setTranslations(map);
+    }).catch((err) => {
+      console.error("[MeetingDetails] Failed to load translations:", err);
+    });
+  }, [meetingId, currentTargetLang]);
+
+  // Listen for new translation results (from on-demand translating)
+  useEffect(() => {
+    const unlistenResult = onTranslationResult((result) => {
+      if (result.segment_id) {
+        setTranslations((prev) => {
+          const next = new Map(prev);
+          next.set(result.segment_id!, result);
+          return next;
+        });
+        setTranslatingSegments((prev) => {
+          const next = new Set(prev);
+          next.delete(result.segment_id!);
+          return next;
+        });
+      }
+    });
+    const unlistenError = onTranslationError((error) => {
+      if (error.segment_id) {
+        setTranslatingSegments((prev) => {
+          const next = new Set(prev);
+          next.delete(error.segment_id!);
+          return next;
+        });
+      }
+      setRetranslating(false);
+    });
+    return () => {
+      unlistenResult.then((fn) => fn());
+      unlistenError.then((fn) => fn());
+    };
+  }, []);
+
   // Audio keyboard shortcuts (Space, Arrow keys, [ ])
   useAudioKeyboardShortcuts();
 
@@ -133,6 +204,60 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [activeTab, summaryGeneration, meeting]);
+
+  // On-demand translate a single segment
+  const handleTranslateSegment = useCallback(async (segmentId: string, text: string) => {
+    if (!meetingId || !currentTargetLang) return;
+    setTranslatingSegments((prev) => new Set(prev).add(segmentId));
+    try {
+      await translateSegments([segmentId], [text], meetingId, currentTargetLang);
+    } catch (err) {
+      console.error("[MeetingDetails] Translate segment failed:", err);
+      setTranslatingSegments((prev) => {
+        const next = new Set(prev);
+        next.delete(segmentId);
+        return next;
+      });
+    }
+  }, [meetingId, currentTargetLang]);
+
+  // Retranslate a single mismatched segment
+  const handleRetranslateSegment = useCallback(async (segmentId: string, text: string) => {
+    await handleTranslateSegment(segmentId, text);
+  }, [handleTranslateSegment]);
+
+  // Retranslate all mismatched segments
+  const handleRetranslateAll = useCallback(async () => {
+    if (!meeting || !currentTargetLang) return;
+    const mismatched = meeting.transcript
+      .filter((s) => s.id && translations.has(s.id) && translations.get(s.id)!.target_lang !== currentTargetLang)
+      .map((s) => ({ id: s.id!, text: s.text }));
+    if (mismatched.length === 0) return;
+    setRetranslating(true);
+    for (const seg of mismatched) {
+      setTranslatingSegments((prev) => new Set(prev).add(seg.id));
+    }
+    try {
+      await translateSegments(
+        mismatched.map((s) => s.id),
+        mismatched.map((s) => s.text),
+        meeting.id,
+        currentTargetLang,
+      );
+    } catch (err) {
+      console.error("[MeetingDetails] Retranslate all failed:", err);
+    } finally {
+      setRetranslating(false);
+    }
+  }, [meeting, translations, currentTargetLang]);
+
+  // Translation toolbar stats
+  const totalSegments = meeting?.transcript.length ?? 0;
+  const translatedCount = meeting?.transcript.filter((s) => s.id && translations.has(s.id)).length ?? 0;
+  const mismatchedCount = meeting?.transcript.filter(
+    (s) => s.id && translations.has(s.id) && translations.get(s.id)!.target_lang !== currentTargetLang
+  ).length ?? 0;
+  const showToolbar = showPostMeetingTranslation && (translations.size > 0 || autoTranslateEnabled);
 
   // Export
   const handleExport = useCallback(async () => {
@@ -200,19 +325,41 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
       <div className="flex-1 overflow-y-auto" role="tabpanel">
         {activeTab === "transcript" && (
-          <TranscriptView
-            segments={meeting.transcript}
-            search={search}
-            meetingStartTime={new Date(meeting.start_time).getTime()}
-            recordingOffsetMs={recordingInfo?.offset_ms ?? 0}
-            speakers={meeting.speakers}
-            searchInputRef={searchInputRef}
-            bookmarks={meeting.bookmarks}
-            meetingId={meeting.id}
-            onBookmarksChanged={(bookmarks) => setMeeting((prev) => prev ? { ...prev, bookmarks } : prev)}
-            initialScrollToIndex={scrollToSegmentIndex}
-            onScrollHandled={() => setScrollToSegmentIndex(null)}
-          />
+          <>
+            {showToolbar && (
+              <PostMeetingTranslationToolbar
+                translatedCount={translatedCount}
+                totalSegments={totalSegments}
+                mismatchedCount={mismatchedCount}
+                displayMode={displayMode}
+                onDisplayModeChange={setDisplayMode}
+                onRetranslateAll={handleRetranslateAll}
+                visible={translationsVisible}
+                onToggleVisibility={() => setTranslationsVisible((v) => !v)}
+                retranslating={retranslating}
+              />
+            )}
+            <TranscriptView
+              segments={meeting.transcript}
+              search={search}
+              meetingStartTime={new Date(meeting.start_time).getTime()}
+              recordingOffsetMs={recordingInfo?.offset_ms ?? 0}
+              speakers={meeting.speakers}
+              searchInputRef={searchInputRef}
+              bookmarks={meeting.bookmarks}
+              meetingId={meeting.id}
+              onBookmarksChanged={(bookmarks) => setMeeting((prev) => prev ? { ...prev, bookmarks } : prev)}
+              initialScrollToIndex={scrollToSegmentIndex}
+              onScrollHandled={() => setScrollToSegmentIndex(null)}
+              translations={translations}
+              translatingSegments={translatingSegments}
+              translationDisplayMode={displayMode}
+              currentTargetLang={currentTargetLang}
+              showTranslations={translationsVisible}
+              onTranslateSegment={handleTranslateSegment}
+              onRetranslateSegment={handleRetranslateSegment}
+            />
+          </>
         )}
         {activeTab === "summary" && (
           <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />

@@ -119,7 +119,25 @@ function App() {
     }).then((unlisten) => unlisteners.push(unlisten));
 
     listen("tray_toggle_stealth", () => {
-      useMeetingStore.getState().toggleOverlayHidden();
+      const store = useMeetingStore.getState();
+      const willHide = !store.overlayHidden;
+      store.toggleOverlayHidden();
+      // Hide/show overlay window and toggle capture stealth
+      import("@tauri-apps/api/webviewWindow").then(({ WebviewWindow }) => {
+        const overlay = WebviewWindow.getByLabel("overlay");
+        if (overlay) {
+          if (willHide) {
+            overlay.hide().catch(() => {});
+          } else {
+            overlay.show().catch(() => {});
+          }
+        }
+      }).catch(() => {});
+      import("../lib/ipc").then(({ setStealthMode }) => {
+        setStealthMode(willHide).catch((e) =>
+          console.warn("[App] Failed to set stealth mode:", e)
+        );
+      }).catch(() => {});
     }).then((unlisten) => unlisteners.push(unlisten));
 
     listen("tray_show_overlay", () => {

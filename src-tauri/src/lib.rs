@@ -388,24 +388,28 @@ pub fn run() {
             });
 
             // -- Handle tray icon click events (single/double/middle) --
+            // -- Handle tray icon click events --
+            // Windows fires Click on EVERY mouse-up, including both ups in a double-click.
+            // This makes Click unreliable for toggle. Standard Windows UX:
+            //   Left double-click → show/toggle window
+            //   Middle click → mute toggle
+            //   Right-click → context menu (handled by Tauri menu system)
             let tray_app = app.handle().clone();
             if let Some(tray_icon) = app.tray_by_id("main") {
                 tray_icon.on_tray_icon_event(move |_tray, event| {
                     match event {
-                        TrayIconEvent::Click { button, .. } => match button {
+                        TrayIconEvent::DoubleClick { button, .. } => match button {
                             MouseButton::Left => {
                                 tray::click::handle_single_click(&tray_app);
                             }
+                            _ => {}
+                        },
+                        TrayIconEvent::Click { button, .. } => match button {
                             MouseButton::Middle => {
                                 tray::click::handle_middle_click(&tray_app);
                             }
-                            _ => {}
+                            _ => {} // Ignore left-click — use double-click instead
                         },
-                        TrayIconEvent::DoubleClick { button, .. }
-                            if button == MouseButton::Left =>
-                        {
-                            tray::click::handle_double_click(&tray_app);
-                        }
                         _ => {}
                     }
                 });

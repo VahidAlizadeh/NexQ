@@ -313,22 +313,23 @@ pub fn run() {
                 }
             });
 
-            // -- Initialize TrayManager --
-            {
-                let base_icon = include_bytes!("../icons/icon.png");
-                let icon_set = tray::IconSet::new(base_icon)
-                    .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
-                let manager = tray::TrayManager::new(icon_set);
+            // -- Initialize TrayManager (non-fatal — app works without enhanced tray) --
+            match tray::IconSet::new(include_bytes!("../icons/icon.png")) {
+                Ok(icon_set) => {
+                    let manager = tray::TrayManager::new(icon_set);
+                    let state = app.state::<AppState>();
+                    *state.tray_manager.lock().unwrap() = Some(manager);
 
-                let state = app.state::<AppState>();
-                *state.tray_manager.lock().unwrap() = Some(manager);
-
-                // Build initial idle menu
-                let menu = tray::menu::build_idle_menu(app.handle(), &[])
-                    .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
-                if let Some(tray_icon) = app.tray_by_id("main") {
-                    tray_icon.set_menu(Some(menu))
-                        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+                    // Build initial idle menu (best-effort)
+                    if let Ok(menu) = tray::menu::build_idle_menu(app.handle(), &[]) {
+                        if let Some(tray_icon) = app.tray_by_id("main") {
+                            let _ = tray_icon.set_menu(Some(menu));
+                        }
+                    }
+                    log::info!("TrayManager initialized successfully");
+                }
+                Err(e) => {
+                    log::error!("Failed to initialize TrayManager: {}. Tray will use defaults.", e);
                 }
             }
 

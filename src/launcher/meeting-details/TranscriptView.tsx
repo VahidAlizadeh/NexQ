@@ -13,6 +13,8 @@ import { FileText, Search, ChevronUp, ChevronDown, X, Bookmark as BookmarkIcon }
 import { TranscriptContextMenu } from "../../overlay/TranscriptContextMenu";
 import { addMeetingBookmark, deleteMeetingBookmark, updateMeetingBookmark } from "../../lib/ipc";
 import { showToast } from "../../stores/toastStore";
+import { useConfigStore } from "../../stores/configStore";
+import { ColorPickerButton } from "../../components/ColorPickerButton";
 
 interface TranscriptViewProps {
   segments: TranscriptSegment[];
@@ -61,6 +63,16 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
   const activeSegmentId = useAudioPlayerStore((s) => s.activeSegmentId);
   const isPlaying = useAudioPlayerStore((s) => s.isPlaying);
   const seekToTimestamp = useAudioPlayerStore((s) => s.seekToTimestamp);
+
+  // Typeset settings — shared with meeting overlay
+  const transcriptFontSize = useConfigStore((s) => s.transcriptFontSize);
+  const transcriptTextColor = useConfigStore((s) => s.transcriptTextColor);
+  const translationFontSize = useConfigStore((s) => s.translationFontSize);
+  const translationTextColor = useConfigStore((s) => s.translationTextColor);
+  const setTranscriptFontSize = useConfigStore((s) => s.setTranscriptFontSize);
+  const setTranscriptTextColor = useConfigStore((s) => s.setTranscriptTextColor);
+  const setTranslationFontSize = useConfigStore((s) => s.setTranslationFontSize);
+  const setTranslationTextColor = useConfigStore((s) => s.setTranslationTextColor);
 
   // Bidirectional sync: audio position → active transcript segment + auto-scroll
   useAudioTranscriptSync(
@@ -401,19 +413,28 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
 
                 {/* Text content + bookmark note */}
                 <div className="flex-1 min-w-0">
-                  <span className={`text-sm leading-relaxed ${
-                    isSelected ? "text-foreground" : "text-foreground/80"
-                  }`}>
+                  <span
+                    className="leading-relaxed"
+                    style={{
+                      fontSize: `${transcriptFontSize}px`,
+                      color: isSelected ? undefined : transcriptTextColor,
+                    }}
+                  >
                     {offsets
                       ? highlightText(segment.text, search.query, offsets, isSearchMatch)
                       : segment.text}
                   </span>
 
-                  {/* Bookmark note — rendered below transcript text */}
+                  {/* Bookmark note — quote-style, proportional to transcript text */}
                   {isBookmarked && segBookmark?.note && (
-                    <p className="mt-0.5 text-[10px] italic text-muted-foreground/40 truncate">
-                      {segBookmark.note}
-                    </p>
+                    <div className="mt-1.5 flex items-start gap-2 rounded-md border-l-2 border-primary/30 bg-primary/5 px-2.5 py-1.5">
+                      <p
+                        className="leading-[1.5] text-primary/70 italic"
+                        style={{ fontSize: `${Math.max(11, transcriptFontSize - 2)}px` }}
+                      >
+                        {segBookmark.note}
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -445,6 +466,37 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
               onClose={() => setContextMenu(null)}
             />
           )}
+        </div>
+      </div>
+
+      {/* Typeset controls footer — matches meeting overlay */}
+      <div className="flex items-center gap-3 mx-2 px-3 py-1.5 border-t border-border/10 text-[10px]">
+        <div className="flex items-center gap-1">
+          <span className="font-semibold text-muted-foreground/60">Text</span>
+          <button
+            onClick={() => setTranscriptFontSize(Math.max(10, transcriptFontSize - 1))}
+            className="flex h-5 w-5 items-center justify-center rounded text-[9px] font-bold text-muted-foreground/60 hover:bg-secondary/30 cursor-pointer"
+          >A</button>
+          <span className="min-w-[18px] text-center tabular-nums font-semibold text-muted-foreground/50">{transcriptFontSize}</span>
+          <button
+            onClick={() => setTranscriptFontSize(Math.min(20, transcriptFontSize + 1))}
+            className="flex h-5 w-5 items-center justify-center rounded text-[13px] font-bold text-muted-foreground/60 hover:bg-secondary/30 cursor-pointer"
+          >A</button>
+          <ColorPickerButton value={transcriptTextColor} onChange={setTranscriptTextColor} label="Text color" />
+        </div>
+        <div className="h-4 w-px bg-border/10" />
+        <div className="flex items-center gap-1">
+          <span className="font-semibold text-muted-foreground/60">Translation</span>
+          <button
+            onClick={() => setTranslationFontSize(Math.max(9, translationFontSize - 1))}
+            className="flex h-5 w-5 items-center justify-center rounded text-[9px] font-bold text-muted-foreground/60 hover:bg-secondary/30 cursor-pointer"
+          >A</button>
+          <span className="min-w-[18px] text-center tabular-nums font-semibold text-muted-foreground/50">{translationFontSize}</span>
+          <button
+            onClick={() => setTranslationFontSize(Math.min(18, translationFontSize + 1))}
+            className="flex h-5 w-5 items-center justify-center rounded text-[13px] font-bold text-muted-foreground/60 hover:bg-secondary/30 cursor-pointer"
+          >A</button>
+          <ColorPickerButton value={translationTextColor} onChange={setTranslationTextColor} label="Translation color" />
         </div>
       </div>
 

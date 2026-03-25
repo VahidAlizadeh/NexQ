@@ -232,3 +232,41 @@ export function onTranslationError(handler: (error: { segment_id?: string; error
 export function onBatchTranslationProgress(handler: (progress: BatchTranslationProgress) => void): Promise<UnlistenFn> {
   return listen<BatchTranslationProgress>("batch_translation_progress", (e) => handler(e.payload));
 }
+
+// == TRAY EVENTS ==
+
+export function onTrayStartMeeting(handler: () => void): Promise<UnlistenFn> {
+  return listen("tray_start_meeting", () => handler());
+}
+
+export function onTrayOpenSettings(handler: () => void): Promise<UnlistenFn> {
+  return listen("tray_open_settings", () => handler());
+}
+
+export function onTrayStopMeeting(handler: () => void): Promise<UnlistenFn> {
+  return listen("tray_stop_meeting", () => handler());
+}
+
+export function onTrayToggleMic(handler: () => void): Promise<UnlistenFn> {
+  return listen("tray_toggle_mic", () => handler());
+}
+
+export function onTrayToggleSystem(handler: () => void): Promise<UnlistenFn> {
+  return listen("tray_toggle_system", () => handler());
+}
+
+export function onTrayToggleStealth(handler: () => void): Promise<UnlistenFn> {
+  return listen("tray_toggle_stealth", () => handler());
+}
+
+export function onTrayShowOverlay(handler: () => void): Promise<UnlistenFn> {
+  return listen("tray_show_overlay", () => handler());
+}
+
+export function onTrayCopy(handler: (kind: string) => void): Promise<UnlistenFn> {
+  return listen<string>("tray_copy", (e) => handler(e.payload));
+}
+
+export function onTrayOpenMeeting(handler: (id: string) => void): Promise<UnlistenFn> {
+  return listen<string>("tray_open_meeting", (e) => handler(e.payload));
+}

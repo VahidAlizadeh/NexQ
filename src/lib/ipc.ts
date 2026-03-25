@@ -28,6 +28,8 @@ import type {
   TranslationLanguage,
   TranslationConnectionStatus,
   OpusMtModelStatus,
+  TrayState,
+  RecentMeeting,
 } from "./types";
 
 // == IPC: Audio (Sub-PRD 3) ==
@@ -638,4 +640,37 @@ export async function deleteOpusMtModel(modelId: string): Promise<void> {
 
 export async function activateOpusMtModel(modelId: string): Promise<void> {
   return invoke("activate_opus_mt_model", { modelId });
+}
+
+// == IPC: Tray ==
+
+export async function setTrayState(state: TrayState): Promise<void> {
+  return invoke("set_tray_state", { state });
+}
+
+export async function setTrayTooltip(text: string): Promise<void> {
+  return invoke("set_tray_tooltip", { text });
+}
+
+export async function setMeetingStartTime(started: boolean): Promise<void> {
+  return invoke("set_meeting_start_time", { started });
+}
+
+export async function rebuildTrayMenu(
+  meetingActive: boolean,
+  recentMeetings: RecentMeeting[]
+): Promise<void> {
+  return invoke("rebuild_tray_menu", {
+    meetingActive,
+    recentMeetings: recentMeetings.map((m) => ({
+      id: m.id,
+      title: m.title,
+      start_time: m.startTime,
+      duration: m.duration,
+    })),
+  });
+}
+
+export async function setStealthMode(enabled: boolean): Promise<void> {
+  return invoke("set_stealth_mode", { enabled });
 }

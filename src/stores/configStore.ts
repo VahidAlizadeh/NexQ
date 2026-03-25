@@ -157,6 +157,14 @@ interface ConfigState {
   openrouterFavorites: string[];
   openrouterRecentlyUsed: string[];
 
+  // Tray settings
+  trayNotifications: boolean;
+  trayAutoStart: boolean;
+  trayStartMinimized: boolean;
+  trayAutoDetectMeeting: boolean;
+  trayStealthEnabled: boolean;
+  stealthShortcut: string;
+
   // Loading state
   _loaded: boolean;
 
@@ -209,6 +217,12 @@ interface ConfigState {
   addOpenRouterRecentlyUsed: (id: string) => void;
   removeOpenRouterRecentlyUsed: (id: string) => void;
   clearOpenRouterRecentlyUsed: () => void;
+  setTrayNotifications: (enabled: boolean) => void;
+  setTrayAutoStart: (enabled: boolean) => void;
+  setTrayStartMinimized: (enabled: boolean) => void;
+  setTrayAutoDetectMeeting: (enabled: boolean) => void;
+  setTrayStealthEnabled: (enabled: boolean) => void;
+  setStealthShortcut: (shortcut: string) => void;
   loadConfig: () => Promise<void>;
 }
 
@@ -251,6 +265,12 @@ export const useConfigStore = create<ConfigState>((set) => ({
   showPostMeetingTranslation: true,
   openrouterFavorites: [],
   openrouterRecentlyUsed: [],
+  trayNotifications: true,
+  trayAutoStart: false,
+  trayStartMinimized: true,
+  trayAutoDetectMeeting: false,
+  trayStealthEnabled: true,
+  stealthShortcut: "Ctrl+Shift+H",
   _loaded: false,
   mutedYou: false,
   mutedThem: false,
@@ -544,6 +564,30 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ openrouterRecentlyUsed: [] });
     persistValue("openrouterRecentlyUsed", []);
   },
+  setTrayNotifications: (enabled) => {
+    set({ trayNotifications: enabled });
+    persistValue("trayNotifications", enabled);
+  },
+  setTrayAutoStart: (enabled) => {
+    set({ trayAutoStart: enabled });
+    persistValue("trayAutoStart", enabled);
+  },
+  setTrayStartMinimized: (enabled) => {
+    set({ trayStartMinimized: enabled });
+    persistValue("trayStartMinimized", enabled);
+  },
+  setTrayAutoDetectMeeting: (enabled) => {
+    set({ trayAutoDetectMeeting: enabled });
+    persistValue("trayAutoDetectMeeting", enabled);
+  },
+  setTrayStealthEnabled: (enabled) => {
+    set({ trayStealthEnabled: enabled });
+    persistValue("trayStealthEnabled", enabled);
+  },
+  setStealthShortcut: (shortcut) => {
+    set({ stealthShortcut: shortcut });
+    persistValue("stealthShortcut", shortcut);
+  },
 
   /**
    * Load all persisted config values from the Tauri plugin-store on app start.
@@ -595,6 +639,12 @@ export const useConfigStore = create<ConfigState>((set) => ({
       const aiResponseTextColor = await store.get<string>("aiResponseTextColor");
       const aiResponseFontSize = await store.get<number>("aiResponseFontSize");
       const showPostMeetingTranslation = await store.get<boolean>("showPostMeetingTranslation");
+      const trayNotifications = await store.get<boolean>("trayNotifications");
+      const trayAutoStart = await store.get<boolean>("trayAutoStart");
+      const trayStartMinimized = await store.get<boolean>("trayStartMinimized");
+      const trayAutoDetectMeeting = await store.get<boolean>("trayAutoDetectMeeting");
+      const trayStealthEnabled = await store.get<boolean>("trayStealthEnabled");
+      const stealthShortcut = await store.get<string>("stealthShortcut");
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
@@ -733,6 +783,12 @@ export const useConfigStore = create<ConfigState>((set) => ({
         aiResponseTextColor: aiResponseTextColor ?? "#d4d4d8",
         aiResponseFontSize: aiResponseFontSize ?? 12,
         showPostMeetingTranslation: showPostMeetingTranslation ?? true,
+        ...(trayNotifications != null && { trayNotifications }),
+        ...(trayAutoStart != null && { trayAutoStart }),
+        ...(trayStartMinimized != null && { trayStartMinimized }),
+        ...(trayAutoDetectMeeting != null && { trayAutoDetectMeeting }),
+        ...(trayStealthEnabled != null && { trayStealthEnabled }),
+        ...(stealthShortcut != null && { stealthShortcut }),
       }));
 
       // Post-load: ensure local providers have a local_model_id so footer/backend use the right model

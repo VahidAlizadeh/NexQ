@@ -11,6 +11,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useTheme } from "./hooks/useTheme";
 import { useGlobalShortcut } from "./hooks/useGlobalShortcut";
 import { useTranslation } from "./hooks/useTranslation";
+import { useTraySync } from "./hooks/useTraySync";
 import { useTranslationStore } from "./stores/translationStore";
 import { CallLogPanel } from "./calllog";
 import { SelectionToolbar } from "./components/SelectionToolbar";
@@ -35,6 +36,9 @@ function App() {
 
   // Translation event subscriptions (needed for SelectionToolbar in all views)
   useTranslation();
+
+  // Sync frontend state to system tray icon & menu
+  useTraySync();
 
   // Load persisted config from Tauri store on app start
   useEffect(() => {
@@ -98,6 +102,42 @@ function App() {
       } else {
         setCurrentView("settings");
       }
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    listen("tray_stop_meeting", () => {
+      useMeetingStore.getState().endMeetingFlow().catch((err) => {
+        console.error("[App] Tray stop meeting failed:", err);
+      });
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    listen("tray_toggle_mic", () => {
+      useConfigStore.getState().toggleMuteYou();
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    listen("tray_toggle_system", () => {
+      useConfigStore.getState().toggleMuteThem();
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    listen("tray_toggle_stealth", () => {
+      useMeetingStore.getState().toggleOverlayHidden();
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    listen("tray_show_overlay", () => {
+      import("@tauri-apps/api/webviewWindow").then(async ({ WebviewWindow }) => {
+        const overlay = await WebviewWindow.getByLabel("overlay");
+        if (overlay) {
+          await overlay.show().catch(() => {});
+          await overlay.setFocus().catch(() => {});
+        }
+      }).catch(() => {});
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    listen<string>("tray_copy", (e) => {
+      console.log("[App] Tray copy requested:", e.payload);
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    listen<string>("tray_open_meeting", (e) => {
+      console.log("[App] Tray open meeting requested:", e.payload);
     }).then((unlisten) => unlisteners.push(unlisten));
 
     return () => {

@@ -40,6 +40,9 @@ interface MeetingState {
   audioMode: AudioMode;
   aiScenario: AIScenario;
 
+  // Stealth mode (overlay hidden while recording)
+  overlayHidden: boolean;
+
   // Actions
   setCurrentView: (view: AppView) => void;
   setSettingsOpen: (open: boolean) => void;
@@ -52,6 +55,8 @@ interface MeetingState {
   setUnfinishedMeeting: (meeting: MeetingSummary | null) => void;
   setAudioMode: (mode: AudioMode) => void;
   setAiScenario: (scenario: AIScenario) => void;
+  setOverlayHidden: (hidden: boolean) => void;
+  toggleOverlayHidden: () => void;
 
   // Async flows
   startMeetingFlow: (title?: string, audioMode?: AudioMode, scenario?: AIScenario) => Promise<void>;
@@ -77,6 +82,7 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   _timerInterval: null,
   audioMode: "online",
   aiScenario: "team_meeting",
+  overlayHidden: false,
 
   setCurrentView: (view) => {
     const current = get().currentView;
@@ -97,6 +103,11 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   setUnfinishedMeeting: (meeting) => set({ unfinishedMeeting: meeting }),
   setAudioMode: (mode) => set({ audioMode: mode }),
   setAiScenario: (scenario) => set({ aiScenario: scenario }),
+  setOverlayHidden: (hidden) => set({ overlayHidden: hidden }),
+  toggleOverlayHidden: () => {
+    const next = !useMeetingStore.getState().overlayHidden;
+    set({ overlayHidden: next });
+  },
 
   startMeetingFlow: async (title?: string, audioMode?: AudioMode, scenario?: AIScenario) => {
     try {

@@ -12,9 +12,27 @@ pub struct ScoredChunk {
     pub chunk_id: String,
     pub text: String,
     pub score: f64,
+    pub normalized_score: f64,
     pub source_file: String,
     pub chunk_index: usize,
     pub source_type: String,
+}
+
+/// Normalize scores to 0-1 range and filter by similarity threshold.
+/// Formula: normalized = raw / max. Guard: if max == 0, return empty.
+fn normalize_and_filter(mut chunks: Vec<ScoredChunk>, threshold: f64) -> Vec<ScoredChunk> {
+    if chunks.is_empty() {
+        return chunks;
+    }
+    let max_score = chunks.iter().map(|c| c.score).fold(f64::NEG_INFINITY, f64::max);
+    if max_score <= 0.0 {
+        return Vec::new();
+    }
+    for chunk in &mut chunks {
+        chunk.normalized_score = chunk.score / max_score;
+    }
+    chunks.retain(|c| c.normalized_score >= threshold);
+    chunks
 }
 
 /// Perform hybrid search combining semantic and keyword results via RRF.
@@ -48,10 +66,7 @@ pub fn hybrid_search(
         keyword_weight as f64,
     );
 
-    // Take top-K results.
-    // NOTE: Do NOT filter by similarity_threshold here — RRF scores are in
-    // the range 0–0.016, not 0–1 like cosine similarity. The threshold would
-    // reject every result. RRF already ranks by relevance; just take the top.
+    // Take top-K results, then normalize and filter by threshold.
     let mut results: Vec<ScoredChunk> = Vec::new();
     for (chunk_id, score) in merged.iter().take(config.top_k) {
         match get_chunk_detail(conn, chunk_id) {
@@ -60,6 +75,7 @@ pub fn hybrid_search(
                     chunk_id: chunk_id.clone(),
                     text,
                     score: *score,
+                    normalized_score: 0.0,
                     source_file,
                     chunk_index,
                     source_type,
@@ -71,7 +87,7 @@ pub fn hybrid_search(
         }
     }
 
-    Ok(results)
+    Ok(normalize_and_filter(results, config.similarity_threshold as f64))
 }
 
 /// Perform semantic-only search using vector similarity.
@@ -85,15 +101,13 @@ pub fn semantic_only_search(
 
     let mut scored_chunks: Vec<ScoredChunk> = Vec::new();
     for (chunk_id, score) in results {
-        if (score as f64) < config.similarity_threshold as f64 {
-            continue;
-        }
         match get_chunk_detail(conn, &chunk_id) {
             Ok((text, source_file, chunk_index, source_type)) => {
                 scored_chunks.push(ScoredChunk {
                     chunk_id,
                     text,
                     score: score as f64,
+                    normalized_score: 0.0,
                     source_file,
                     chunk_index,
                     source_type,
@@ -105,7 +119,7 @@ pub fn semantic_only_search(
         }
     }
 
-    Ok(scored_chunks)
+    Ok(normalize_and_filter(scored_chunks, config.similarity_threshold as f64))
 }
 
 /// Perform keyword-only search using FTS5.
@@ -114,7 +128,6 @@ pub fn keyword_only_search(
     query_text: &str,
     config: &RagConfig,
 ) -> Result<Vec<ScoredChunk>, String> {
-    // BM25 scores are not in 0-1 range, so don't filter by similarity_threshold
     let results = fts_store::search_keywords(conn, query_text, config.top_k)?;
 
     let mut scored_chunks: Vec<ScoredChunk> = Vec::new();
@@ -125,6 +138,7 @@ pub fn keyword_only_search(
                     chunk_id,
                     text,
                     score,
+                    normalized_score: 0.0,
                     source_file,
                     chunk_index,
                     source_type,
@@ -136,7 +150,7 @@ pub fn keyword_only_search(
         }
     }
 
-    Ok(scored_chunks)
+    Ok(normalize_and_filter(scored_chunks, config.similarity_threshold as f64))
 }
 
 /// Reciprocal Rank Fusion (RRF) merge of two ranked result lists.

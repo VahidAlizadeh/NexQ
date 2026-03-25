@@ -61,6 +61,7 @@ mod tests {
             chunk_id: format!("chunk_{}", chunk_index),
             text: text.to_string(),
             score: 0.9,
+            normalized_score: 0.9,
             source_file: source_file.to_string(),
             chunk_index,
             source_type: source_type.to_string(),

@@ -14,8 +14,7 @@ pub mod tray;
 use state::AppState;
 use std::sync::{Arc, Mutex};
 use tauri::{
-    menu::{Menu, MenuItem, PredefinedMenuItem},
-    tray::TrayIconEvent,
+    tray::{TrayIconEvent, MouseButton},
     Emitter, Manager,
 };
 
@@ -47,6 +46,8 @@ use commands::recording_commands;
 use commands::translation_commands;
 // == MODULE COMMANDS: translation models ==
 use commands::translation_model_commands;
+// == MODULE COMMANDS: tray ==
+use commands::tray_commands;
 
 /// Show the launcher window and hide the overlay window.
 fn show_launcher(app: &tauri::AppHandle) {
@@ -312,63 +313,99 @@ pub fn run() {
                 }
             });
 
-            // -- Build tray menu --
-            let start_meeting =
-                MenuItem::with_id(app, "start_meeting", "Start Meeting", true, None::<&str>)?;
-            let sep1 = PredefinedMenuItem::separator(app)?;
-            let settings =
-                MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
-            let show_hide =
-                MenuItem::with_id(app, "show_hide", "Show/Hide", true, None::<&str>)?;
-            let sep2 = PredefinedMenuItem::separator(app)?;
-            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            // -- Initialize TrayManager --
+            {
+                let base_icon = include_bytes!("../icons/icon.png");
+                let icon_set = tray::IconSet::new(base_icon)
+                    .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+                let manager = tray::TrayManager::new(icon_set);
 
-            let menu = Menu::with_items(
-                app,
-                &[
-                    &start_meeting,
-                    &sep1,
-                    &settings,
-                    &show_hide,
-                    &sep2,
-                    &quit,
-                ],
-            )?;
+                let state = app.state::<AppState>();
+                *state.tray_manager.lock().unwrap() = Some(manager);
 
-            // -- Attach menu to tray icon --
-            if let Some(tray) = app.tray_by_id("main") {
-                tray.set_menu(Some(menu))?;
+                // Build initial idle menu
+                let menu = tray::menu::build_idle_menu(app.handle(), &[])
+                    .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+                if let Some(tray_icon) = app.tray_by_id("main") {
+                    tray_icon.set_menu(Some(menu))
+                        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+                }
             }
 
             // -- Handle tray menu item clicks --
             let app_handle = app.handle().clone();
             app.on_menu_event(move |_app, event| {
-                match event.id().as_ref() {
+                let id = event.id().as_ref();
+                match id {
                     "start_meeting" => {
-                        // Emit event to frontend so it can trigger meeting start
                         let _ = _app.emit("tray_start_meeting", ());
                         show_overlay(&app_handle);
+                    }
+                    "stop_meeting" => {
+                        let _ = _app.emit("tray_stop_meeting", ());
+                    }
+                    "toggle_mic" => {
+                        let _ = _app.emit("tray_toggle_mic", ());
+                    }
+                    "toggle_system" => {
+                        let _ = _app.emit("tray_toggle_system", ());
+                    }
+                    "toggle_stealth" => {
+                        let _ = _app.emit("tray_toggle_stealth", ());
+                    }
+                    "show_overlay" => {
+                        let _ = _app.emit("tray_show_overlay", ());
+                        show_overlay(&app_handle);
+                    }
+                    "copy_ai_answer" => {
+                        let _ = _app.emit("tray_copy", "ai_answer");
+                    }
+                    "copy_action_items" => {
+                        let _ = _app.emit("tray_copy", "action_items");
+                    }
+                    "copy_summary" => {
+                        let _ = _app.emit("tray_copy", "summary");
+                    }
+                    "copy_transcript" => {
+                        let _ = _app.emit("tray_copy", "transcript");
                     }
                     "settings" => {
                         let _ = _app.emit("tray_open_settings", ());
                         show_launcher(&app_handle);
                     }
-                    "show_hide" => {
-                        toggle_launcher(&app_handle);
-                    }
                     "quit" => {
                         _app.exit(0);
                     }
-                    _ => {}
+                    _ => {
+                        // Check for recent meeting clicks (id format: "recent_{id}")
+                        if let Some(meeting_id) = id.strip_prefix("recent_") {
+                            let _ = _app.emit("tray_open_meeting", meeting_id.to_string());
+                            show_launcher(&app_handle);
+                        }
+                    }
                 }
             });
 
-            // -- Handle tray icon click: toggle launcher window --
+            // -- Handle tray icon click events (single/double/middle) --
             let tray_app = app.handle().clone();
-            if let Some(tray) = app.tray_by_id("main") {
-                tray.on_tray_icon_event(move |_tray, event| {
-                    if let TrayIconEvent::Click { .. } = event {
-                        toggle_launcher(&tray_app);
+            if let Some(tray_icon) = app.tray_by_id("main") {
+                tray_icon.on_tray_icon_event(move |_tray, event| {
+                    match event {
+                        TrayIconEvent::Click { button, .. } => match button {
+                            MouseButton::Left => {
+                                tray::click::handle_single_click(&tray_app);
+                            }
+                            MouseButton::Middle => {
+                                tray::click::handle_middle_click(&tray_app);
+                            }
+                            _ => {}
+                        },
+                        TrayIconEvent::DoubleClick { button, .. }
+                            if button == MouseButton::Left =>
+                        {
+                            tray::click::handle_double_click(&tray_app);
+                        }
+                        _ => {}
                     }
                 });
             }
@@ -476,6 +513,12 @@ pub fn run() {
             model_commands::delete_local_stt_model,
             // == COMMANDS: stealth ==
             stealth_commands::set_stealth_mode,
+            // == COMMANDS: tray ==
+            tray_commands::set_tray_state,
+            tray_commands::set_tray_tooltip,
+            tray_commands::set_meeting_start_time,
+            tray_commands::rebuild_tray_menu,
+            tray_commands::set_tray_menu_item_enabled,
             // == COMMANDS: rag ==
             rag_commands::rebuild_rag_index,
             rag_commands::rebuild_file_index,

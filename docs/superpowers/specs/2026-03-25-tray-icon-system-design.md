@@ -74,7 +74,7 @@ No runtime image compositing. No GPU. Simple icon swaps.
 ### Idle State Menu
 
 ```
-▶  Start Meeting                    Ctrl+Shift+M
+▶  Start Meeting                    Ctrl+M
 ─────────────────────────────────────────────────
 RECENT MEETINGS
    Sprint Planning                  Today, 2:30 PM
@@ -91,13 +91,13 @@ RECENT MEETINGS
 
 ```
 ┌ 🔴 Recording — 12:34 ──────────────────────┐
-■  Stop Meeting                     Ctrl+Shift+M
+■  Stop Meeting                     Ctrl+M
 ─────────────────────────────────────────────────
 AUDIO CONTROLS
 🎤 Mute Microphone                 Middle-Click
 🔊 Mute System Audio
 ─────────────────────────────────────────────────
-👁  Stealth Mode                    Ctrl+Shift+S
+👁  Stealth Mode                    Ctrl+Shift+H
 📈 Show Overlay
 ─────────────────────────────────────────────────
 📋 Copy                                        ▶
@@ -117,13 +117,14 @@ Full Transcript
 
 ### Menu Design Decisions
 
+- **Shortcut hints in menus are display-only labels** (Win32 menu accelerator annotations), not new global shortcuts. They show the user's existing configured shortcuts from the hotkey settings. `Ctrl+,` and `Ctrl+Q` are conventions shown for discoverability — `Ctrl+Q` must be registered via `tauri-plugin-global-shortcut` as a new shortcut.
 - **Menu mockup emoji are illustrative only.** Tauri 2's native `Menu`/`MenuItem` API on Windows renders through Win32 menus which do not reliably render inline emoji. Implementation should use text-only labels. If icons are desired, use Tauri 2's `IconMenuItem` with custom 16x16 icon assets.
 - **Meeting status banner** at top of active menu showing elapsed time with pulsing indicator
 - **Primary action highlighted** with left border accent (Start = brand purple, Stop = red)
 - **Section headers** (Recent Meetings, Audio Controls) group related items with uppercase labels
 - **Shortcut hints** right-aligned in monospace font — teaches users keyboard shortcuts
 - **Copy is a sub-menu** to keep the main menu clean
-- **Ctrl+Shift+M** serves double duty — Start when idle, Stop when in meeting
+- **Ctrl+M** (existing `start_end_meeting` hotkey from `configStore.ts`) serves double duty — Start when idle, Stop when in meeting. The menu displays the user's configured shortcut dynamically.
 - **Recent Meetings** shows last 3, click to open meeting review
 - **Audio controls clarification:** "Mute Microphone" mutes the "You" source (mic input), "Mute System Audio" mutes the "Them/Room" source (system loopback). This stops NexQ from capturing/transcribing that stream — it does NOT affect actual system volume or mic hardware. Works for both online meetings (Zoom/Teams) and in-person meetings.
 
@@ -214,7 +215,7 @@ Hides the overlay window while continuing all recording, transcription, and AI p
 **Relationship to existing Capture Stealth:** NexQ already has `set_stealth_mode` in `stealth_commands.rs` which uses `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)` to make the overlay invisible to screen capture software while keeping it visible to the user. This new "Overlay Hide" stealth is a different feature — it hides the overlay window entirely. When Overlay Hide is activated, it also enables Capture Stealth automatically (both layers active). When Overlay Hide is deactivated, Capture Stealth returns to its previous user-configured state.
 
 **Behavior:**
-- Toggle shortcut: `Ctrl+Shift+S` (configurable)
+- Toggle shortcut: `Ctrl+Shift+H` (configurable)
 - Hides overlay window instantly (calls `overlay.hide()`)
 - Enables Capture Stealth (`WDA_EXCLUDEFROMCAPTURE`) as a safety net
 - Tray icon switches to stealth state (dimmed base + muted red dot)
@@ -226,7 +227,7 @@ Hides the overlay window while continuing all recording, transcription, and AI p
 
 **Settings:**
 - `tray.stealthEnabled` — toggle, default: `true`
-- `shortcuts.stealthToggle` — keybind, default: `"Ctrl+Shift+S"`
+- `shortcuts.stealthToggle` — keybind, default: `"Ctrl+Shift+H"` (H for "Hide". `Ctrl+Shift+H` was considered but conflicts with universal "Save As" in other apps when registered as a global shortcut.)
 
 ## Architecture
 
@@ -255,7 +256,7 @@ src-tauri/src/tray/
 | Command | Args | Effect |
 |---------|------|--------|
 | `set_tray_state` | `state: TrayState` | Updates icon variant + base tooltip |
-| `set_tray_tooltip` | `text: String` | Sets tooltip text (for elapsed time updates) |
+| `set_tray_tooltip` | `text: String` | Sets tooltip text — used for idle stats ("Today: 3 meetings, 1h 47m") where Rust doesn't have meeting counts without a frontend push. Not used during meetings (Rust timer handles elapsed time). |
 | `set_meeting_start_time` | `started: bool` | Sets/clears `meeting_start_time` for tooltip elapsed time |
 | `rebuild_tray_menu` | `meeting_active: bool, recent_meetings: Vec<RecentMeeting>` | Rebuilds menu for current state |
 | `set_tray_menu_item_enabled` | `id: String, enabled: bool` | Enable/disable specific menu items |
@@ -280,7 +281,7 @@ meetingStore.isRecording (change)     →   rebuild_tray_menu(true/false)
 
 **Note on store fields:** `meetingStore.overlayHidden` is a new boolean field that must be added to `meetingStore` for stealth/overlay-hide state. All other fields already exist in the codebase. The tooltip elapsed time is now computed in Rust (see Live Tooltip section), so no periodic tooltip IPC calls are needed — only `set_meeting_start_time` at meeting start/stop.
 
-Priority logic lives in the hook — it evaluates all store values and picks the highest-priority state before calling `set_tray_state`.
+Priority logic lives **only** in the frontend hook — it evaluates all store values and picks the highest-priority state before calling `set_tray_state`. The Rust `tray/state.rs` module contains the `TrayState` enum definition only, not duplicate priority evaluation. Rust applies whatever state the frontend sends.
 
 ### Event Flow (Tray → Frontend)
 
@@ -348,7 +349,7 @@ New keys in the existing settings system:
 | `tray.startMinimized` | bool | `true` | Start minimized to tray (when autoStart on) |
 | `tray.autoDetectMeeting` | bool | `false` | Audio-based meeting auto-detection |
 | `tray.stealthEnabled` | bool | `true` | Enable stealth mode feature |
-| `shortcuts.stealthToggle` | string | `"Ctrl+Shift+S"` | Stealth mode keyboard shortcut |
+| `shortcuts.stealthToggle` | string | `"Ctrl+Shift+H"` | Stealth mode keyboard shortcut |
 
 ## Type Definitions
 

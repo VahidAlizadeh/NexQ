@@ -9,6 +9,7 @@ pub mod llm;
 pub mod state;
 pub mod stt;
 pub mod translation;
+pub mod tray;
 
 use state::AppState;
 use std::sync::{Arc, Mutex};

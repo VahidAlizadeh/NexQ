@@ -739,3 +739,14 @@ export interface OpusMtModelStatus {
   is_downloaded: boolean;
   is_active: boolean;
 }
+
+// == TRAY TYPES ==
+
+export type TrayState = "idle" | "recording" | "muted" | "stealth" | "ai_processing" | "indexing";
+
+export interface RecentMeeting {
+  id: string;
+  title: string;
+  startTime: string;
+  duration: number;
+}

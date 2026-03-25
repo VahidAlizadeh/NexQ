@@ -1018,42 +1018,101 @@ pub async fn start_capture_per_party(
         .as_millis() % 0xFFFF);
 
     // Emit transcript events from "You" STT (speaker = "User")
-    // If the provider supplies segment_id (dual-pass whisper.cpp), use it directly.
-    // Otherwise, use the legacy counter-based scheme.
+    // Uses SegmentAccumulator for cloud providers (Deepgram, Groq, etc.)
+    // Skips accumulator for web_speech (browser handles segmentation)
+    // and whisper_cpp (dual-pass engine manages its own line breaking).
     if you_stt_provider.is_some() {
         let stt_app = app.clone();
         let prefix = session_prefix.clone();
+        let use_accumulator = you.stt_provider != "web_speech"
+            && you.stt_provider != "whisper_cpp";
+        let pause_threshold = if use_accumulator {
+            Some(app.state::<AppState>().pause_threshold_ms.clone())
+        } else {
+            None
+        };
         tokio::spawn(async move {
-            let mut counter = 0u64;
-            while let Some(result) = you_stt_rx.recv().await {
-                let seg_id = if let Some(ref custom_id) = result.segment_id {
-                    format!("you_{}_{}", prefix, custom_id)
-                } else {
-                    if result.is_final {
-                        counter += 1;
+            if let Some(pause_threshold) = pause_threshold {
+                // Accumulator path: merge same-speaker segments
+                use std::sync::atomic::Ordering;
+                let threshold = pause_threshold.load(Ordering::Relaxed);
+                let mut accumulator =
+                    crate::stt::segment_accumulator::SegmentAccumulator::new(threshold);
+
+                while let Some(result) = you_stt_rx.recv().await {
+                    let current_threshold = pause_threshold.load(Ordering::Relaxed);
+                    accumulator.set_pause_threshold(current_threshold);
+
+                    let outputs = accumulator.feed_result(result);
+                    for output in outputs {
+                        let event_name = if output.is_final {
+                            "transcript_final"
+                        } else {
+                            "transcript_update"
+                        };
+                        let seg_id = format!("you_{}_{}", prefix, output.id);
+                        let payload = serde_json::json!({
+                            "segment": {
+                                "id": seg_id,
+                                "text": output.text,
+                                "speaker": "User",
+                                "timestamp_ms": output.timestamp_ms,
+                                "is_final": output.is_final,
+                                "confidence": output.confidence
+                            }
+                        });
+                        let _ = stt_app.emit(event_name, &payload);
                     }
-                    if result.is_final {
-                        format!("you_{}_{}", prefix, counter)
+                }
+
+                // Flush remaining accumulated segment on meeting end
+                if let Some(output) = accumulator.flush() {
+                    let seg_id = format!("you_{}_{}", prefix, output.id);
+                    let payload = serde_json::json!({
+                        "segment": {
+                            "id": seg_id,
+                            "text": output.text,
+                            "speaker": "User",
+                            "timestamp_ms": output.timestamp_ms,
+                            "is_final": true,
+                            "confidence": output.confidence
+                        }
+                    });
+                    let _ = stt_app.emit("transcript_final", &payload);
+                }
+            } else {
+                // Direct path: web_speech / whisper_cpp handle their own segmentation
+                let mut counter = 0u64;
+                while let Some(result) = you_stt_rx.recv().await {
+                    let seg_id = if let Some(ref custom_id) = result.segment_id {
+                        format!("you_{}_{}", prefix, custom_id)
                     } else {
-                        format!("you_{}_{}", prefix, counter + 1)
-                    }
-                };
-                let event_name = if result.is_final {
-                    "transcript_final"
-                } else {
-                    "transcript_update"
-                };
-                let payload = serde_json::json!({
-                    "segment": {
-                        "id": seg_id,
-                        "text": result.text,
-                        "speaker": "User",
-                        "timestamp_ms": result.timestamp_ms,
-                        "is_final": result.is_final,
-                        "confidence": result.confidence
-                    }
-                });
-                let _ = stt_app.emit(event_name, &payload);
+                        if result.is_final {
+                            counter += 1;
+                        }
+                        if result.is_final {
+                            format!("you_{}_{}", prefix, counter)
+                        } else {
+                            format!("you_{}_{}", prefix, counter + 1)
+                        }
+                    };
+                    let event_name = if result.is_final {
+                        "transcript_final"
+                    } else {
+                        "transcript_update"
+                    };
+                    let payload = serde_json::json!({
+                        "segment": {
+                            "id": seg_id,
+                            "text": result.text,
+                            "speaker": "User",
+                            "timestamp_ms": result.timestamp_ms,
+                            "is_final": result.is_final,
+                            "confidence": result.confidence
+                        }
+                    });
+                    let _ = stt_app.emit(event_name, &payload);
+                }
             }
         });
     }

@@ -327,7 +327,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         isBookmarksSuggesting={bookmarkSuggestions.isSuggesting}
       />
 
-      <div className={`flex-1 ${activeTab === "transcript" ? "overflow-hidden" : "overflow-y-auto"}`} role="tabpanel">
+      <div className={`flex-1 min-h-0 ${activeTab === "transcript" ? "overflow-hidden flex flex-col" : "overflow-y-auto"}`} role="tabpanel">
         {activeTab === "transcript" && (
           <TranscriptView
             segments={meeting.transcript}

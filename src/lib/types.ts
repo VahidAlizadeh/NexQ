@@ -499,6 +499,15 @@ export interface StreamStartEvent {
   include_rag: boolean;
   include_instructions: boolean;
   include_question: boolean;
+  // Enriched metadata
+  temperature: number;
+  rag_query: string | null;
+  rag_chunks: RagChunkInfo[];
+  rag_chunks_filtered: number;
+  rag_total_candidates: number;
+  transcript_window_seconds: number;
+  transcript_segments_count: number;
+  transcript_segments_total: number;
 }
 
 export interface StreamEndEvent {
@@ -550,6 +559,15 @@ export interface LogEntry {
   includeRag: boolean;
   includeInstructions: boolean;
   includeQuestion: boolean;
+  // Enriched metadata (from StreamStartEvent)
+  temperature: number | null;
+  ragQuery: string | null;
+  ragChunks: RagChunkInfo[];
+  ragChunksFiltered: number;
+  ragTotalCandidates: number;
+  transcriptWindowSeconds: number | null;
+  transcriptSegmentsCount: number | null;
+  transcriptSegmentsTotal: number | null;
   // Legacy fields (kept for backward compat, empty for new entries)
   snapshotTranscript: string;
   snapshotContext: string;
@@ -590,9 +608,18 @@ export interface RagSearchResult {
   chunk_id: string;
   text: string;
   score: number;
+  normalized_score: number;
   source_file: string;
   chunk_index: number;
   source_type: string;
+}
+
+export interface RagChunkInfo {
+  source: string;
+  chunk_index: number;
+  text: string;
+  normalized_score: number;
+  raw_score: number;
 }
 
 export interface OllamaEmbeddingStatus {
@@ -644,7 +671,6 @@ export interface ActionConfig {
 
 export interface GlobalDefaults {
   transcriptWindowSeconds: number;
-  ragTopK: number;
   temperature: number;
   autoTrigger: boolean;
 }

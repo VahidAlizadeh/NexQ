@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from "react";
-import type { TranscriptSegment, SpeakerIdentity, MeetingBookmark } from "../../lib/types";
+import type { TranscriptSegment, SpeakerIdentity, MeetingBookmark, TranslationResult, TranslationDisplayMode } from "../../lib/types";
 import type { TranscriptSearchState } from "../../hooks/useTranscriptSearch";
 import { useAudioPlayerStore } from "../../stores/audioPlayerStore";
 import { useAudioTranscriptSync } from "../../hooks/useAudioTranscriptSync";
@@ -9,7 +9,8 @@ import {
   getSpeakerColor,
 } from "../../lib/utils";
 import { mergeConsecutiveSegments } from "../../lib/mergeSegments";
-import { FileText, Search, ChevronUp, ChevronDown, X, Bookmark as BookmarkIcon } from "lucide-react";
+import { FileText, Search, ChevronUp, ChevronDown, X, Bookmark as BookmarkIcon, Globe, RefreshCw } from "lucide-react";
+import { createPortal } from "react-dom";
 import { TranscriptContextMenu } from "../../overlay/TranscriptContextMenu";
 import { addMeetingBookmark, deleteMeetingBookmark, updateMeetingBookmark } from "../../lib/ipc";
 import { showToast } from "../../stores/toastStore";
@@ -35,6 +36,20 @@ interface TranscriptViewProps {
   initialScrollToIndex?: number | null;
   /** Called after the initial scroll is handled */
   onScrollHandled?: () => void;
+  /** Translations map: segmentId → TranslationResult */
+  translations?: Map<string, TranslationResult>;
+  /** Set of segment IDs currently being translated */
+  translatingSegments?: Set<string>;
+  /** Current translation display mode */
+  translationDisplayMode?: TranslationDisplayMode;
+  /** Current target language from translation settings */
+  currentTargetLang?: string;
+  /** Whether translations are visible (eye toggle) */
+  showTranslations?: boolean;
+  /** Callback for on-demand per-segment translation */
+  onTranslateSegment?: (segmentId: string, text: string) => void;
+  /** Callback for retranslating a mismatched segment */
+  onRetranslateSegment?: (segmentId: string, text: string) => void;
 }
 
 // Speaker colors for timeline blocks
@@ -45,7 +60,7 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "hsl(var(--muted-foreground))",
 };
 
-export function TranscriptView({ segments, search, meetingStartTime, recordingOffsetMs = 0, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged, initialScrollToIndex, onScrollHandled }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime, recordingOffsetMs = 0, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged, initialScrollToIndex, onScrollHandled, translations, translatingSegments, translationDisplayMode, currentTargetLang, showTranslations = true, onTranslateSegment, onRetranslateSegment }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
   // Map-based refs keyed by segment ID — used by useAudioTranscriptSync
   const segmentRefsMap = useRef<Map<string, HTMLElement>>(new Map());
@@ -58,6 +73,13 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; segmentIndex: number } | null>(null);
   const [noteEdit, setNoteEdit] = useState<{ bookmarkId: string; note: string } | null>(null);
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Hover translation tooltip state
+  const [hoverTranslation, setHoverTranslation] = useState<{
+    translation: TranslationResult;
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Audio player store — for active segment highlighting and click-to-seek
   const activeSegmentId = useAudioPlayerStore((s) => s.activeSegmentId);
@@ -377,6 +399,14 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
                 }}
                 onClick={() => handleSegmentClick(i, segment)}
                 onContextMenu={meetingId ? (e) => handleContextMenu(e, i) : undefined}
+                onMouseMove={showTranslations && translationDisplayMode === "hover" && segment.id && translations?.get(segment.id) ? (e) => {
+                  setHoverTranslation({
+                    translation: translations.get(segment.id!)!,
+                    x: e.clientX,
+                    y: e.clientY,
+                  });
+                } : undefined}
+                onMouseLeave={hoverTranslation ? () => setHoverTranslation(null) : undefined}
                 className={`group relative flex items-start gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all duration-100 border-l-2 ${
                   isActiveSegment
                     ? "border-l-indigo-400 bg-indigo-500/[0.08]"
@@ -424,6 +454,62 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
                       ? highlightText(segment.text, search.query, offsets, isSearchMatch)
                       : segment.text}
                   </span>
+
+                  {/* Translation — inline or hover */}
+                  {showTranslations && translations && (() => {
+                    const segTranslation = segment.id ? translations.get(segment.id) : undefined;
+                    const isSegTranslating = segment.id ? translatingSegments?.has(segment.id) : false;
+                    const isMismatched = segTranslation && currentTargetLang && segTranslation.target_lang !== currentTargetLang;
+
+                    if (isSegTranslating) {
+                      return (
+                        <div className="mt-1 leading-[1.5]" style={{ fontSize: `${translationFontSize}px` }}>
+                          <span className="text-muted-foreground/40 animate-pulse">Translating...</span>
+                        </div>
+                      );
+                    }
+
+                    if (segTranslation && translationDisplayMode === "inline") {
+                      return (
+                        <div className="mt-1 flex items-baseline gap-1.5 leading-[1.5]">
+                          <span style={{ fontSize: `${translationFontSize}px`, color: translationTextColor }}>
+                            {segTranslation.translated_text}
+                          </span>
+                          <span className={`shrink-0 rounded px-1 py-px text-[9px] font-bold tracking-wide ${
+                            isMismatched
+                              ? "text-orange-400 bg-orange-500/[0.08] border border-orange-500/15"
+                              : "text-muted-foreground/50 bg-white/[0.03]"
+                          }`}>
+                            {segTranslation.source_lang.toUpperCase()} → {segTranslation.target_lang.toUpperCase()}
+                          </span>
+                          {isMismatched && onRetranslateSegment && segment.id && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onRetranslateSegment(segment.id!, segment.text); }}
+                              className="shrink-0 flex items-center gap-0.5 rounded px-1 py-px text-[9px] font-semibold text-orange-400 hover:bg-orange-500/[0.08] transition-colors cursor-pointer"
+                              title={`Retranslate to ${currentTargetLang?.toUpperCase()}`}
+                            >
+                              <RefreshCw className="h-2.5 w-2.5" />
+                              {currentTargetLang?.toUpperCase()}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    if (!segTranslation && onTranslateSegment && segment.id && currentTargetLang) {
+                      return (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onTranslateSegment(segment.id!, segment.text); }}
+                          className="mt-1 flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold text-muted-foreground/50 border border-dashed border-border/20 hover:text-primary/70 hover:border-primary/20 hover:bg-primary/[0.03] opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                        >
+                          <Globe className="h-2.5 w-2.5" />
+                          Translate to {currentTargetLang.toUpperCase()}
+                        </button>
+                      );
+                    }
+
+                    return null;
+                  })()}
 
                   {/* Bookmark note — quote-style, proportional to transcript text */}
                   {isBookmarked && segBookmark?.note && (
@@ -543,6 +629,30 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
             </div>
           </div>
         </div>
+      )}
+
+      {/* Hover translation tooltip */}
+      {hoverTranslation && createPortal(
+        <div
+          className="fixed z-[9999] max-w-[420px] rounded-lg border border-white/15 px-3.5 py-2.5 shadow-2xl pointer-events-none"
+          style={{
+            backgroundColor: '#1a1a2e',
+            left: `${Math.min(hoverTranslation.x + 16, window.innerWidth - 440)}px`,
+            top: `${Math.max(8, hoverTranslation.y - 90)}px`,
+          }}
+        >
+          <p style={{ fontSize: `${translationFontSize + 1}px`, color: translationTextColor }} className="leading-[1.6]">
+            {hoverTranslation.translation.translated_text}
+          </p>
+          <div className="mt-1.5 flex items-center gap-1.5 text-[0.6rem] text-muted-foreground/50">
+            <span className="rounded bg-white/8 px-1.5 py-0.5 font-medium tracking-wider">
+              {hoverTranslation.translation.source_lang.toUpperCase()} → {hoverTranslation.translation.target_lang.toUpperCase()}
+            </span>
+            <span>·</span>
+            <span>{hoverTranslation.translation.provider}</span>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

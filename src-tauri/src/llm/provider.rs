@@ -88,6 +88,25 @@ pub struct StreamStartPayload {
     pub include_rag: bool,
     pub include_instructions: bool,
     pub include_question: bool,
+    // New fields for AI log enrichment
+    pub temperature: f64,
+    pub rag_query: Option<String>,
+    pub rag_chunks: Vec<RagChunkInfo>,
+    pub rag_chunks_filtered: usize,
+    pub rag_total_candidates: usize,
+    pub transcript_window_seconds: u64,
+    pub transcript_segments_count: usize,
+    pub transcript_segments_total: usize,
+}
+
+/// Metadata about a single RAG chunk, sent to the frontend for AI log display.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RagChunkInfo {
+    pub source: String,
+    pub chunk_index: usize,
+    pub text: String,
+    pub normalized_score: f64,
+    pub raw_score: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

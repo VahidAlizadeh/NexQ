@@ -27,6 +27,7 @@ pub struct ActionConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(default)]
 pub struct GlobalDefaults {
     pub transcript_window_seconds: u64,
     pub rag_top_k: usize,
@@ -37,7 +38,7 @@ pub struct GlobalDefaults {
 impl Default for GlobalDefaults {
     fn default() -> Self {
         Self {
-            transcript_window_seconds: 120,
+            transcript_window_seconds: 300,
             rag_top_k: 5,
             temperature: 0.3,
             auto_trigger: true,
@@ -65,6 +66,7 @@ impl Default for InstructionPresets {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(default)]
 pub struct AllActionConfigs {
     pub global_defaults: GlobalDefaults,
     pub custom_instructions: String,

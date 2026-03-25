@@ -1,6 +1,8 @@
 pub mod state;
 pub mod icons;
 pub mod tooltip;
+pub mod menu;
+pub mod click;
 
 pub use state::TrayState;
 pub use icons::IconSet;

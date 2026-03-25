@@ -483,7 +483,7 @@ export function TranslationSettings() {
           <p className="text-sm font-medium text-foreground">
             Active: {ALL_PROVIDERS.find((p) => p.value === provider)?.label || provider}
             {" · "}
-            {languageOptions.find((l) => l.code === targetLang)?.name || targetLang}
+            {DEFAULT_TARGET_LANGUAGES.find((l) => l.code === targetLang)?.name || targetLang}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             This provider will be used for transcript translation

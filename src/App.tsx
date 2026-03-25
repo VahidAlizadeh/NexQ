@@ -127,18 +127,18 @@ function App() {
       const willHide = !store.overlayHidden;
       store.toggleOverlayHidden();
       // Hide/show overlay window and toggle capture stealth
-      import("@tauri-apps/api/webviewWindow").then(({ WebviewWindow }) => {
-        const overlay = WebviewWindow.getByLabel("overlay");
+      import("@tauri-apps/api/webviewWindow").then(async ({ WebviewWindow }) => {
+        const overlay = await WebviewWindow.getByLabel("overlay");
         if (overlay) {
           if (willHide) {
-            overlay.hide().catch(() => {});
+            await overlay.hide().catch(() => {});
           } else {
-            overlay.show().catch(() => {});
+            await overlay.show().catch(() => {});
           }
         }
       }).catch(() => {});
-      import("../lib/ipc").then(({ setStealthMode }) => {
-        setStealthMode(willHide).catch((e) =>
+      import("./lib/ipc").then(({ setStealthMode }) => {
+        setStealthMode(willHide).catch((e: unknown) =>
           console.warn("[App] Failed to set stealth mode:", e)
         );
       }).catch(() => {});

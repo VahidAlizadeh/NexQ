@@ -438,18 +438,13 @@ export function TranslationSettings() {
   // If the provider returned additional languages not in the defaults, merge them in.
 
   const languageOptions = (() => {
-    // When OPUS-MT is the active provider, filter to downloaded model languages
+    // When OPUS-MT is active, only show the active model's target language
     if (provider === "opus-mt" && opusMtModels.length > 0) {
-      const downloadedTargets = new Set<string>();
-      for (const m of opusMtModels) {
-        if (m.is_downloaded) {
-          downloadedTargets.add(m.definition.target_lang);
-        }
-      }
-      if (downloadedTargets.size > 0) {
-        return DEFAULT_TARGET_LANGUAGES
-          .filter((l) => downloadedTargets.has(l.code))
-          .sort((a, b) => a.name.localeCompare(b.name));
+      const activeModel = opusMtModels.find((m) => m.is_active);
+      if (activeModel) {
+        const code = activeModel.definition.target_lang;
+        const match = DEFAULT_TARGET_LANGUAGES.find((l) => l.code === code);
+        return match ? [match] : [{ code, name: activeModel.definition.target_name }];
       }
     }
 

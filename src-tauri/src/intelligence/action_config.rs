@@ -30,7 +30,7 @@ pub struct ActionConfig {
 #[serde(default)]
 pub struct GlobalDefaults {
     pub transcript_window_seconds: u64,
-    pub rag_top_k: usize,
+    pub rag_top_k: usize, // Legacy: retained for deserialization of old configs. Superseded by RagConfig.top_k.
     pub temperature: f64,
     pub auto_trigger: bool,
 }

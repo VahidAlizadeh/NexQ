@@ -12,3 +12,4 @@ pub mod rag_commands;
 pub mod recording_commands;
 pub mod translation_commands;
 pub mod translation_model_commands;
+pub mod tray_commands;

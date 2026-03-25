@@ -605,6 +605,10 @@ export async function getMeetingTranslations(meetingId: string, targetLang: stri
   return invoke<TranslationResult[]>("get_meeting_translations", { meetingId, targetLang });
 }
 
+export async function getAllMeetingTranslations(meetingId: string): Promise<TranslationResult[]> {
+  return invoke<TranslationResult[]>("get_all_meeting_translations", { meetingId });
+}
+
 export async function exportTranslatedTranscript(meetingId: string, targetLang: string, format: string): Promise<string> {
   return invoke<string>("export_translated_transcript", { meetingId, targetLang, format });
 }

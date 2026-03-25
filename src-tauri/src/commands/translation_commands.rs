@@ -383,6 +383,29 @@ pub async fn get_meeting_translations(
     }).collect())
 }
 
+#[command]
+pub async fn get_all_meeting_translations(
+    app: AppHandle,
+    meeting_id: String,
+) -> Result<Vec<TranslationResult>, String> {
+    let state = app.state::<AppState>();
+    let db_arc = state.database.as_ref().ok_or("DB not initialized")?;
+    let db = db_arc.lock().map_err(|_| "DB lock poisoned")?;
+
+    let rows = crate::db::translation::get_all_meeting_translations(
+        db.connection(), &meeting_id
+    ).map_err(|e| e.to_string())?;
+
+    Ok(rows.into_iter().map(|r| TranslationResult {
+        segment_id: Some(r.segment_id),
+        original_text: r.original_text,
+        translated_text: r.translated_text,
+        source_lang: r.source_lang,
+        target_lang: r.target_lang,
+        provider: r.provider,
+    }).collect())
+}
+
 /// Helper: translate text using the configured LLM provider
 /// instead of a dedicated translation API.
 ///

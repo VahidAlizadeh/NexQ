@@ -70,6 +70,35 @@ pub fn get_meeting_translations(
     Ok(rows)
 }
 
+/// Load ALL translations for a meeting (all languages).
+pub fn get_all_meeting_translations(
+    conn: &Connection,
+    meeting_id: &str,
+) -> Result<Vec<TranslationRow>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT id, segment_id, meeting_id, source_lang, target_lang, original_text, translated_text, provider, created_at
+         FROM transcript_translations
+         WHERE meeting_id = ?1
+         ORDER BY created_at DESC",
+    )?;
+    let rows = stmt
+        .query_map(params![meeting_id], |row| {
+            Ok(TranslationRow {
+                id: row.get(0)?,
+                segment_id: row.get(1)?,
+                meeting_id: row.get(2)?,
+                source_lang: row.get(3)?,
+                target_lang: row.get(4)?,
+                original_text: row.get(5)?,
+                translated_text: row.get(6)?,
+                provider: row.get(7)?,
+                created_at: row.get(8)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
 /// Get a single segment's translation.
 pub fn get_segment_translation(
     conn: &Connection,

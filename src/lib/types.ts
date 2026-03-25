@@ -731,6 +731,7 @@ export interface OpusMtModelDefinition {
   tokenizer_url: string;
   config_url: string;
   quality_rating: number;
+  target_prefix: string;
 }
 
 export interface OpusMtModelStatus {

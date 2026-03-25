@@ -217,13 +217,16 @@ export function TranslationSettings() {
 
   const currentProviderOption = ALL_PROVIDERS.find((p) => p.value === selectedProvider);
 
-  // ── Load OPUS-MT model status for badge display ──
+  // ── Load OPUS-MT model status for badge display + language filtering ──
+  // Refreshes when the active provider changes (e.g., after activating a new model)
+
+  const refreshOpusMtModels = useCallback(() => {
+    listOpusMtModels().then(setOpusMtModels).catch(() => {});
+  }, []);
 
   useEffect(() => {
-    listOpusMtModels()
-      .then(setOpusMtModels)
-      .catch(() => {});
-  }, []);
+    refreshOpusMtModels();
+  }, [provider, refreshOpusMtModels]);
 
   const opusMtDownloadedCount = opusMtModels.filter((m) => m.is_downloaded).length;
   const opusMtHasActive = opusMtModels.some((m) => m.is_active);

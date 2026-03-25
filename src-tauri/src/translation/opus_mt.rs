@@ -19,6 +19,8 @@ struct LoadedModel {
     tokenizer: tokenizers::Tokenizer,
     eos_token_id: i64,
     decoder_start_token_id: i64,
+    /// Language token prefix for multilingual models (e.g. ">>pes<<").
+    target_prefix: String,
     /// Decoder input names that require past_key_values (empty tensors for no-cache mode).
     /// Discovered at load time by inspecting session.inputs().
     past_kv_names: Vec<String>,
@@ -125,13 +127,19 @@ fn ensure_loaded_blocking(
     let tokenizer = load_tokenizer(&tokenizer_path)?;
 
     let (eos_token_id, decoder_start_token_id) = extract_special_tokens(&tokenizer);
-    log::info!("OPUS-MT model ready: {} (eos={}, dec_start={}, heads={}, head_dim={})",
-        model_id, eos_token_id, decoder_start_token_id, num_heads, head_dim);
+
+    // Get target_prefix from registry (for multilingual models like en-iir)
+    let target_prefix = opus_mt_registry::get_model(model_id)
+        .map(|d| d.target_prefix.to_string())
+        .unwrap_or_default();
+
+    log::info!("OPUS-MT model ready: {} (eos={}, dec_start={}, prefix={:?}, heads={}, head_dim={})",
+        model_id, eos_token_id, decoder_start_token_id, target_prefix, num_heads, head_dim);
 
     let mut guard = loaded.lock().map_err(|_| "Model lock error".to_string())?;
     *guard = Some((model_id.to_string(), LoadedModel {
         encoder, decoder, tokenizer, eos_token_id, decoder_start_token_id,
-        past_kv_names, num_heads, head_dim, has_use_cache_branch,
+        target_prefix, past_kv_names, num_heads, head_dim, has_use_cache_branch,
     }));
 
     Ok(())
@@ -333,10 +341,16 @@ fn extract_special_tokens(tokenizer: &tokenizers::Tokenizer) -> (i64, i64) {
 fn translate_blocking(text: &str, model: &mut LoadedModel) -> Result<String, String> {
     use ndarray::{Array2, ArrayD, IxDyn};
 
-    // 1. Tokenize input
+    // 1. Tokenize input (prepend language token for multilingual models)
+    let input_text = if model.target_prefix.is_empty() {
+        text.to_string()
+    } else {
+        format!("{} {}", model.target_prefix, text)
+    };
+
     let encoding = model
         .tokenizer
-        .encode(text, true)
+        .encode(input_text.as_str(), true)
         .map_err(|e| format!("Tokenization failed: {}", e))?;
 
     let input_ids: Vec<i64> = encoding.get_ids().iter().map(|&id| id as i64).collect();

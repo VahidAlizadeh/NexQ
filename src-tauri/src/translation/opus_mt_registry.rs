@@ -17,6 +17,9 @@ pub struct OpusMtModelDefinition {
     pub tokenizer_url: &'static str,
     pub config_url: &'static str,
     pub quality_rating: u8,
+    /// Language token prefix for multilingual models (e.g. ">>pes<<" for Persian in en-iir).
+    /// Empty for single-pair models that don't need a prefix.
+    pub target_prefix: &'static str,
 }
 
 /// Base URL pattern: https://huggingface.co/Helsinki-NLP/opus-mt-{src}-{tgt}/resolve/main/
@@ -38,6 +41,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-es/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-es/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-fr",
@@ -52,6 +56,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-fr/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-fr/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-de",
@@ -66,6 +71,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-de/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-de/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-it",
@@ -80,6 +86,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-it/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-it/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-pt",
@@ -94,6 +101,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-pt/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-pt/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-nl",
@@ -108,6 +116,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-nl/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-nl/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-ru",
@@ -122,6 +131,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-ru/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-ru/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-zh",
@@ -136,6 +146,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-ar",
@@ -150,6 +161,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-ar/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-ar/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-ja",
@@ -164,6 +176,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-ja/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-ja/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-ko",
@@ -178,6 +191,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-en-ko/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-en-ko/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-en-fa",
@@ -192,6 +206,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-en-fa/tokenizer.json",
         config_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-en-fa/config.json",
         quality_rating: 3,
+        target_prefix: ">>pes<<",
     },
     // ── X → English ──
     OpusMtModelDefinition {
@@ -207,6 +222,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-fa-en/tokenizer.json",
         config_url: "https://github.com/VahidAlizadeh/nexq-opus-mt-models/releases/download/opus-mt-fa-en/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-es-en",
@@ -221,6 +237,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-es-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-es-en/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-fr-en",
@@ -235,6 +252,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-fr-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-fr-en/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-de-en",
@@ -249,6 +267,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-de-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-de-en/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-it-en",
@@ -263,6 +282,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-it-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-it-en/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-pt-en",
@@ -277,6 +297,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-pt-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-pt-en/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-nl-en",
@@ -291,6 +312,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-nl-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-nl-en/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-ru-en",
@@ -305,6 +327,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-ru-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-ru-en/resolve/main/config.json",
         quality_rating: 4,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-zh-en",
@@ -319,6 +342,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-ar-en",
@@ -333,6 +357,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-ar-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-ar-en/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-ja-en",
@@ -347,6 +372,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-ja-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-ja-en/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
     OpusMtModelDefinition {
         model_id: "opus-mt-ko-en",
@@ -361,6 +387,7 @@ static OPUS_MT_MODELS: &[OpusMtModelDefinition] = &[
         tokenizer_url: "https://huggingface.co/Xenova/opus-mt-ko-en/resolve/main/tokenizer.json",
         config_url: "https://huggingface.co/Xenova/opus-mt-ko-en/resolve/main/config.json",
         quality_rating: 3,
+        target_prefix: "",
     },
 ];
 

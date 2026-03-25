@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslationStore } from "../stores/translationStore";
+import { useConfigStore } from "../stores/configStore";
 import {
   setTranslationProvider,
   testTranslationConnection,
@@ -200,6 +201,8 @@ export function TranslationSettings() {
   const setSelectionToolbarEnabled = useTranslationStore((s) => s.setSelectionToolbarEnabled);
   const cacheEnabled = useTranslationStore((s) => s.cacheEnabled);
   const setCacheEnabled = useTranslationStore((s) => s.setCacheEnabled);
+  const showPostMeetingTranslation = useConfigStore((s) => s.showPostMeetingTranslation);
+  const setShowPostMeetingTranslation = useConfigStore((s) => s.setShowPostMeetingTranslation);
 
   const [selectedProvider, setSelectedProvider] = useState<TranslationProviderType>(provider);
   const [apiKey, setApiKey] = useState("");
@@ -838,6 +841,14 @@ export function TranslationSettings() {
                 description="Show a translate button when selecting text in the transcript"
                 checked={selectionToolbarEnabled}
                 onChange={setSelectionToolbarEnabled}
+              />
+
+              {/* Show translations in post-meeting */}
+              <ToggleRow
+                label="Show translations in post-meeting review"
+                description="Display translation toolbar and cached translations when reviewing past meetings"
+                checked={showPostMeetingTranslation}
+                onChange={setShowPostMeetingTranslation}
               />
 
               {/* Cache translations */}

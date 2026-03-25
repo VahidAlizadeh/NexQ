@@ -2,7 +2,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::state::AppState;
 
-/// Single click: toggle launcher window visibility.
+/// Toggle launcher window visibility (used by tray double-click on Windows).
 pub fn handle_single_click(app: &AppHandle) {
     if let Some(launcher) = app.get_webview_window("launcher") {
         if launcher.is_visible().unwrap_or(false) {
@@ -11,16 +11,6 @@ pub fn handle_single_click(app: &AppHandle) {
             let _ = launcher.show();
             let _ = launcher.set_focus();
         }
-    }
-}
-
-/// Double-click: show and focus launcher (same as single-click but always shows).
-/// On Windows, Click fires before DoubleClick, so single-click already toggled.
-/// We just ensure the launcher is visible and focused.
-pub fn handle_double_click(app: &AppHandle) {
-    if let Some(launcher) = app.get_webview_window("launcher") {
-        let _ = launcher.show();
-        let _ = launcher.set_focus();
     }
 }
 

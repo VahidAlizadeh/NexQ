@@ -1,7 +1,6 @@
 use tauri::{command, AppHandle, Manager};
 use crate::state::AppState;
 use crate::tray::{TrayState, tooltip};
-use crate::tray::menu::RecentMeetingInfo;
 use std::time::Instant;
 
 /// Update the tray icon to reflect a new state.
@@ -165,12 +164,11 @@ pub async fn set_meeting_start_time(
 pub async fn rebuild_tray_menu(
     app: AppHandle,
     meeting_active: bool,
-    recent_meetings: Vec<RecentMeetingInfo>,
 ) -> Result<(), String> {
     let menu = if meeting_active {
         crate::tray::menu::build_meeting_menu(&app).map_err(|e| e.to_string())?
     } else {
-        crate::tray::menu::build_idle_menu(&app, &recent_meetings).map_err(|e| e.to_string())?
+        crate::tray::menu::build_idle_menu(&app).map_err(|e| e.to_string())?
     };
 
     if let Some(tray) = app.tray_by_id("main") {
@@ -179,19 +177,5 @@ pub async fn rebuild_tray_menu(
         }
     }
 
-    Ok(())
-}
-
-/// Enable or disable a specific menu item by ID.
-#[command]
-pub async fn set_tray_menu_item_enabled(
-    _app: AppHandle,
-    id: String,
-    enabled: bool,
-) -> Result<(), String> {
-    // Tauri 2 doesn't expose menu item lookup by ID on tray directly.
-    // Menu items are rebuilt via rebuild_tray_menu instead.
-    // This command is a no-op placeholder for future use.
-    log::debug!("set_tray_menu_item_enabled: {} = {}", id, enabled);
     Ok(())
 }

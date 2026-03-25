@@ -81,18 +81,6 @@ fn hide_all(app: &tauri::AppHandle) {
     }
 }
 
-/// Toggle the launcher window visibility.
-fn toggle_launcher(app: &tauri::AppHandle) {
-    if let Some(launcher) = app.get_webview_window("launcher") {
-        if launcher.is_visible().unwrap_or(false) {
-            let _ = launcher.hide();
-        } else {
-            let _ = launcher.show();
-            let _ = launcher.set_focus();
-        }
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Initialize env_logger so all log::info/warn/error macros produce output.
@@ -321,7 +309,7 @@ pub fn run() {
                     *state.tray_manager.lock().unwrap() = Some(manager);
 
                     // Build initial idle menu (best-effort)
-                    if let Ok(menu) = tray::menu::build_idle_menu(app.handle(), &[]) {
+                    if let Ok(menu) = tray::menu::build_idle_menu(app.handle()) {
                         if let Some(tray_icon) = app.tray_by_id("main") {
                             let _ = tray_icon.set_menu(Some(menu));
                         }
@@ -523,7 +511,6 @@ pub fn run() {
             tray_commands::set_tray_tooltip,
             tray_commands::set_meeting_start_time,
             tray_commands::rebuild_tray_menu,
-            tray_commands::set_tray_menu_item_enabled,
             // == COMMANDS: rag ==
             rag_commands::rebuild_rag_index,
             rag_commands::rebuild_file_index,

@@ -8,7 +8,7 @@ import {
   setMeetingStartTime,
   rebuildTrayMenu,
 } from "../lib/ipc";
-import type { TrayState, MeetingSummary } from "../lib/types";
+import type { TrayState } from "../lib/types";
 
 /**
  * Priority order: Stealth > Muted > Recording > AiProcessing > Indexing > Idle
@@ -35,7 +35,6 @@ export function useTraySync() {
 
   const isRecording = useMeetingStore((s) => s.isRecording);
   const overlayHidden = useMeetingStore((s) => s.overlayHidden);
-  const recentMeetings = useMeetingStore((s) => s.recentMeetings);
   const mutedYou = useConfigStore((s) => s.mutedYou);
   const isStreaming = useStreamStore((s) => s.isStreaming);
   const isIndexing = useRagStore((s) => s.isIndexing);
@@ -72,24 +71,16 @@ export function useTraySync() {
     prevRecording.current = isRecording;
   }, [isRecording]);
 
-  // Rebuild tray menu when meeting state or recent meetings change
+  // Rebuild tray menu when meeting state changes (idle vs meeting menu)
   // Delay initial rebuild to let WebView2 settle (Rust setup already built the idle menu)
   useEffect(() => {
-    const recent = recentMeetings.slice(0, 3).map((m: MeetingSummary) => ({
-      id: m.id,
-      title: m.title || "Untitled Meeting",
-      startTime: m.start_time || "",
-      duration: m.duration_seconds ?? 0,
-    }));
-
-    // Delay first rebuild by 1s to avoid race with WebView2 init
     const delay = initialized.current ? 0 : 1000;
     const timer = setTimeout(() => {
-      rebuildTrayMenu(isRecording, recent).catch((e) =>
+      rebuildTrayMenu(isRecording).catch((e) =>
         console.warn("[useTraySync] Failed to rebuild tray menu:", e)
       );
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [isRecording, recentMeetings]);
+  }, [isRecording]);
 }

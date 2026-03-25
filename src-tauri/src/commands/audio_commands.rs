@@ -1059,48 +1059,101 @@ pub async fn start_capture_per_party(
     }
 
     // Emit transcript events from "Them" STT (speaker = "Them")
+    // Uses SegmentAccumulator to merge consecutive same-speaker segments
+    // within the configurable pause threshold, producing longer lines.
     if them_stt_provider.is_some() {
         let stt_app = app.clone();
         let prefix = session_prefix.clone();
+        let intel_arc = app.state::<AppState>().intelligence.clone();
+        let pause_threshold = app.state::<AppState>().pause_threshold_ms.clone();
         tokio::spawn(async move {
-            let mut counter = 0u64;
+            use std::sync::atomic::Ordering;
+            let threshold = pause_threshold.load(Ordering::Relaxed);
+            let mut accumulator =
+                crate::stt::segment_accumulator::SegmentAccumulator::new(threshold);
+
             while let Some(result) = them_stt_rx.recv().await {
-                let seg_id = if let Some(ref custom_id) = result.segment_id {
-                    format!("them_{}_{}", prefix, custom_id)
-                } else {
-                    if result.is_final {
-                        counter += 1;
-                    }
-                    if result.is_final {
-                        format!("them_{}_{}", prefix, counter)
+                // Live-update threshold from settings changes
+                let current_threshold = pause_threshold.load(Ordering::Relaxed);
+                accumulator.set_pause_threshold(current_threshold);
+
+                let outputs = accumulator.feed_result(result);
+                for output in outputs {
+                    let event_name = if output.is_final {
+                        "transcript_final"
                     } else {
-                        format!("them_{}_{}", prefix, counter + 1)
+                        "transcript_update"
+                    };
+                    // Namespace IDs to avoid collision with "You" accumulator
+                    let seg_id = format!("them_{}_{}", prefix, output.id);
+                    // Extract diarized speaker_id from accumulator output
+                    let speaker_id_val = if output.speaker.starts_with("speaker_") {
+                        Some(output.speaker.clone())
+                    } else {
+                        None
+                    };
+                    let mut seg = serde_json::json!({
+                        "id": seg_id,
+                        "text": output.text,
+                        "speaker": "Them",
+                        "timestamp_ms": output.timestamp_ms,
+                        "is_final": output.is_final,
+                        "confidence": output.confidence
+                    });
+                    if let Some(ref sid) = speaker_id_val {
+                        seg["speaker_id"] = serde_json::json!(sid);
                     }
-                };
-                let event_name = if result.is_final {
-                    "transcript_final"
+                    let payload = serde_json::json!({ "segment": seg });
+                    let _ = stt_app.emit(event_name, &payload);
+
+                    // Push final segments to the intelligence engine
+                    if output.is_final {
+                        if let Some(ref intel) = intel_arc {
+                            if let Ok(mut engine) = intel.lock() {
+                                engine.push_transcript(
+                                    output.text.clone(),
+                                    "Them".to_string(),
+                                    output.timestamp_ms,
+                                    true,
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Flush remaining accumulated segment on meeting end
+            if let Some(output) = accumulator.flush() {
+                let seg_id = format!("them_{}_{}", prefix, output.id);
+                let speaker_id_val = if output.speaker.starts_with("speaker_") {
+                    Some(output.speaker.clone())
                 } else {
-                    "transcript_update"
-                };
-                // Extract diarized speaker_id from result.speaker
-                // Deepgram sets speaker to "speaker_N" when diarize=true
-                let speaker_id_val = match result.speaker.as_deref() {
-                    Some(s) if s.starts_with("speaker_") => Some(s.to_string()),
-                    _ => None,
+                    None
                 };
                 let mut seg = serde_json::json!({
                     "id": seg_id,
-                    "text": result.text,
+                    "text": output.text,
                     "speaker": "Them",
-                    "timestamp_ms": result.timestamp_ms,
-                    "is_final": result.is_final,
-                    "confidence": result.confidence
+                    "timestamp_ms": output.timestamp_ms,
+                    "is_final": output.is_final,
+                    "confidence": output.confidence
                 });
                 if let Some(ref sid) = speaker_id_val {
                     seg["speaker_id"] = serde_json::json!(sid);
                 }
                 let payload = serde_json::json!({ "segment": seg });
-                let _ = stt_app.emit(event_name, &payload);
+                let _ = stt_app.emit("transcript_final", &payload);
+
+                if let Some(ref intel) = intel_arc {
+                    if let Ok(mut engine) = intel.lock() {
+                        engine.push_transcript(
+                            output.text.clone(),
+                            "Them".to_string(),
+                            output.timestamp_ms,
+                            true,
+                        );
+                    }
+                }
             }
         });
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type { Meeting, RecordingInfo, TranslationResult } from "../../lib/types";
 import { getMeeting, getRecordingInfo, getAllMeetingTranslations, translateSegments } from "../../lib/ipc";
 import { onTranscriptFinal, onRecordingReady, onTranslationResult, onTranslationError } from "../../lib/events";
@@ -12,6 +12,7 @@ import { useActionItemsExtraction } from "../../hooks/useActionItemsExtraction";
 import { useBookmarkSuggestions } from "../../hooks/useBookmarkSuggestions";
 import { useAudioKeyboardShortcuts } from "../../hooks/useAudioKeyboardShortcuts";
 import { exportMeetingAsMarkdown } from "../../lib/export";
+import { mergeConsecutiveSegments } from "../../lib/mergeSegments";
 import { MeetingHeader } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
 import { TranscriptView } from "./TranscriptView";
@@ -251,12 +252,16 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     }
   }, [meeting, translations, currentTargetLang]);
 
-  // Translation toolbar stats
-  const totalSegments = meeting?.transcript.length ?? 0;
-  const translatedCount = meeting?.transcript.filter((s) => s.id && translations.has(s.id)).length ?? 0;
-  const mismatchedCount = meeting?.transcript.filter(
+  // Translation toolbar stats — use merged segments to match what the user sees
+  const mergedSegments = useMemo(
+    () => meeting ? mergeConsecutiveSegments(meeting.transcript) : [],
+    [meeting?.transcript]
+  );
+  const totalSegments = mergedSegments.length;
+  const translatedCount = mergedSegments.filter((s) => s.id && translations.has(s.id)).length;
+  const mismatchedCount = mergedSegments.filter(
     (s) => s.id && translations.has(s.id) && translations.get(s.id)!.target_lang !== currentTargetLang
-  ).length ?? 0;
+  ).length;
   const showToolbar = showPostMeetingTranslation && (translations.size > 0 || autoTranslateEnabled);
 
   // Export

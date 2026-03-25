@@ -101,10 +101,12 @@ function App() {
     }).then((unlisten) => unlisteners.push(unlisten));
 
     listen("tray_open_settings", () => {
-      if (currentView === "overlay") {
-        setSettingsOpen(true);
+      // Use getState() to avoid stale closure captures
+      const view = useMeetingStore.getState().currentView;
+      if (view === "overlay") {
+        useMeetingStore.getState().setSettingsOpen(true);
       } else {
-        setCurrentView("settings");
+        useMeetingStore.getState().setCurrentView("settings");
       }
     }).then((unlisten) => unlisteners.push(unlisten));
 
@@ -165,7 +167,8 @@ function App() {
     return () => {
       unlisteners.forEach((fn) => fn());
     };
-  }, [startMeetingFlow, setSettingsOpen, setCurrentView, currentView]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startMeetingFlow]);
 
   // Don't render until config is loaded from disk — prevents false wizard trigger
   if (!configLoaded) {

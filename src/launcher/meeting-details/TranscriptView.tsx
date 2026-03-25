@@ -9,7 +9,7 @@ import {
   getSpeakerColor,
 } from "../../lib/utils";
 import { mergeConsecutiveSegments } from "../../lib/mergeSegments";
-import { FileText, Search, ChevronUp, ChevronDown, X, Bookmark as BookmarkIcon, Globe, RefreshCw } from "lucide-react";
+import { FileText, Search, ChevronUp, ChevronDown, X, Bookmark as BookmarkIcon, Globe, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { createPortal } from "react-dom";
 import { TranscriptContextMenu } from "../../overlay/TranscriptContextMenu";
 import { addMeetingBookmark, deleteMeetingBookmark, updateMeetingBookmark } from "../../lib/ipc";
@@ -50,6 +50,15 @@ interface TranscriptViewProps {
   onTranslateSegment?: (segmentId: string, text: string) => void;
   /** Callback for retranslating a mismatched segment */
   onRetranslateSegment?: (segmentId: string, text: string) => void;
+  /** Translation toolbar props (merged into bottom bar) */
+  showToolbar?: boolean;
+  translatedCount?: number;
+  totalSegments?: number;
+  mismatchedCount?: number;
+  onDisplayModeChange?: (mode: TranslationDisplayMode) => void;
+  onRetranslateAll?: () => void;
+  onToggleTranslationVisibility?: () => void;
+  retranslating?: boolean;
 }
 
 // Speaker colors for timeline blocks
@@ -60,7 +69,7 @@ const TIMELINE_COLORS: Record<string, string> = {
   Unknown: "hsl(var(--muted-foreground))",
 };
 
-export function TranscriptView({ segments, search, meetingStartTime, recordingOffsetMs = 0, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged, initialScrollToIndex, onScrollHandled, translations, translatingSegments, translationDisplayMode, currentTargetLang, showTranslations = true, onTranslateSegment, onRetranslateSegment }: TranscriptViewProps) {
+export function TranscriptView({ segments, search, meetingStartTime, recordingOffsetMs = 0, speakers, searchInputRef, bookmarks, meetingId, onBookmarksChanged, initialScrollToIndex, onScrollHandled, translations, translatingSegments, translationDisplayMode, currentTargetLang, showTranslations = true, onTranslateSegment, onRetranslateSegment, showToolbar, translatedCount = 0, totalSegments = 0, mismatchedCount = 0, onDisplayModeChange, onRetranslateAll, onToggleTranslationVisibility, retranslating }: TranscriptViewProps) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
   // Map-based refs keyed by segment ID — used by useAudioTranscriptSync
   const segmentRefsMap = useRef<Map<string, HTMLElement>>(new Map());
@@ -555,8 +564,9 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
         </div>
       </div>
 
-      {/* Typeset controls footer — matches meeting overlay */}
+      {/* Bottom bar — typeset controls (left) + translation toolbar (right) */}
       <div className="flex items-center gap-3 mx-2 px-3 py-1.5 border-t border-border/10 text-[10px]">
+        {/* Left: Typeset controls */}
         <div className="flex items-center gap-1">
           <span className="font-semibold text-muted-foreground/60">Text</span>
           <button
@@ -584,6 +594,70 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
           >A</button>
           <ColorPickerButton value={translationTextColor} onChange={setTranslationTextColor} label="Translation color" />
         </div>
+
+        {/* Right: Translation toolbar (coverage, display mode, retranslate, visibility) */}
+        {showToolbar && (
+          <div className="ml-auto flex items-center gap-2">
+            {/* Coverage badge */}
+            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5">
+              <Globe className="h-3 w-3 text-primary/60" />
+              <span className="font-semibold tabular-nums text-primary/70">{translatedCount}/{totalSegments}</span>
+              <div className="h-[3px] w-8 rounded-full bg-primary/15 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary/70 transition-all duration-300"
+                  style={{ width: `${totalSegments > 0 ? (translatedCount / totalSegments) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-border/10" />
+
+            {/* Inline / Hover toggle */}
+            {onDisplayModeChange && (
+              <div className="flex rounded-md border border-border/30 overflow-hidden">
+                <button
+                  onClick={() => onDisplayModeChange("inline")}
+                  className={`px-2 py-0.5 font-semibold transition-colors cursor-pointer ${
+                    translationDisplayMode === "inline"
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:bg-secondary/30"
+                  }`}
+                >Inline</button>
+                <button
+                  onClick={() => onDisplayModeChange("hover")}
+                  className={`px-2 py-0.5 font-semibold transition-colors cursor-pointer ${
+                    translationDisplayMode === "hover"
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:bg-secondary/30"
+                  }`}
+                >Hover</button>
+              </div>
+            )}
+
+            {/* Retranslate mismatched */}
+            {mismatchedCount > 0 && onRetranslateAll && (
+              <button
+                onClick={onRetranslateAll}
+                disabled={retranslating}
+                className="flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold bg-amber-500/[0.08] border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <RefreshCw className={`h-2.5 w-2.5 ${retranslating ? "animate-spin" : ""}`} />
+                {mismatchedCount}
+              </button>
+            )}
+
+            {/* Visibility toggle */}
+            {onToggleTranslationVisibility && (
+              <button
+                onClick={onToggleTranslationVisibility}
+                className="rounded-md p-1 text-primary/50 hover:bg-primary/10 transition-colors cursor-pointer"
+                title={showTranslations ? "Hide translations" : "Show translations"}
+              >
+                {showTranslations ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Note editor modal */}

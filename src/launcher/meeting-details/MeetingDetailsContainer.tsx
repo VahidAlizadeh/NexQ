@@ -21,7 +21,6 @@ import { AIInteractionLog } from "./AIInteractionLog";
 import { SpeakersTab } from "./SpeakersTab";
 import { ActionItemsTab } from "./ActionItemsTab";
 import { BookmarksTab } from "./BookmarksTab";
-import { PostMeetingTranslationToolbar } from "./PostMeetingTranslationToolbar";
 import { AudioPlayer, AudioPlayerSkeleton } from "../../components/AudioPlayer";
 import { Loader2 } from "lucide-react";
 
@@ -330,41 +329,34 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
       <div className={`flex-1 ${activeTab === "transcript" ? "overflow-hidden" : "overflow-y-auto"}`} role="tabpanel">
         {activeTab === "transcript" && (
-          <div className="flex h-full flex-col">
-            {showToolbar && (
-              <PostMeetingTranslationToolbar
-                translatedCount={translatedCount}
-                totalSegments={totalSegments}
-                mismatchedCount={mismatchedCount}
-                displayMode={displayMode}
-                onDisplayModeChange={setDisplayMode}
-                onRetranslateAll={handleRetranslateAll}
-                visible={translationsVisible}
-                onToggleVisibility={() => setTranslationsVisible((v) => !v)}
-                retranslating={retranslating}
-              />
-            )}
-            <TranscriptView
-              segments={meeting.transcript}
-              search={search}
-              meetingStartTime={new Date(meeting.start_time).getTime()}
-              recordingOffsetMs={recordingInfo?.offset_ms ?? 0}
-              speakers={meeting.speakers}
-              searchInputRef={searchInputRef}
-              bookmarks={meeting.bookmarks}
-              meetingId={meeting.id}
-              onBookmarksChanged={(bookmarks) => setMeeting((prev) => prev ? { ...prev, bookmarks } : prev)}
-              initialScrollToIndex={scrollToSegmentIndex}
-              onScrollHandled={() => setScrollToSegmentIndex(null)}
-              translations={translations}
-              translatingSegments={translatingSegments}
-              translationDisplayMode={displayMode}
-              currentTargetLang={currentTargetLang}
-              showTranslations={translationsVisible}
-              onTranslateSegment={handleTranslateSegment}
-              onRetranslateSegment={handleRetranslateSegment}
-            />
-          </div>
+          <TranscriptView
+            segments={meeting.transcript}
+            search={search}
+            meetingStartTime={new Date(meeting.start_time).getTime()}
+            recordingOffsetMs={recordingInfo?.offset_ms ?? 0}
+            speakers={meeting.speakers}
+            searchInputRef={searchInputRef}
+            bookmarks={meeting.bookmarks}
+            meetingId={meeting.id}
+            onBookmarksChanged={(bookmarks) => setMeeting((prev) => prev ? { ...prev, bookmarks } : prev)}
+            initialScrollToIndex={scrollToSegmentIndex}
+            onScrollHandled={() => setScrollToSegmentIndex(null)}
+            translations={translations}
+            translatingSegments={translatingSegments}
+            translationDisplayMode={displayMode}
+            currentTargetLang={currentTargetLang}
+            showTranslations={translationsVisible}
+            onTranslateSegment={handleTranslateSegment}
+            onRetranslateSegment={handleRetranslateSegment}
+            showToolbar={showToolbar}
+            translatedCount={translatedCount}
+            totalSegments={totalSegments}
+            mismatchedCount={mismatchedCount}
+            onDisplayModeChange={setDisplayMode}
+            onRetranslateAll={handleRetranslateAll}
+            onToggleTranslationVisibility={() => setTranslationsVisible((v) => !v)}
+            retranslating={retranslating}
+          />
         )}
         {activeTab === "summary" && (
           <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />

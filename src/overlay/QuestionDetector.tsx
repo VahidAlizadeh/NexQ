@@ -54,11 +54,12 @@ export function QuestionDetector() {
   }, [segments, addQuestion]);
 
   const handleAssist = useCallback((index: number) => {
+    const questionText = questions[index]?.text;
     setQuestions((prev) =>
       prev.map((q, i) => i === index ? { ...q, assisted: true } : q)
     );
-    generateAssist("Assist").catch(() => {});
-  }, []);
+    generateAssist("Assist", questionText).catch(() => {});
+  }, [questions]);
 
   const latest = questions.length > 0 ? questions[0] : null;
   // Show current + last 3 previous (4 total max visible)

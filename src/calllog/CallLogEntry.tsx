@@ -116,6 +116,16 @@ export function CallLogEntry({ entry, isSelected }: Props) {
       <span className="shrink-0 text-meta text-muted-foreground/60">
         {timeStr}
       </span>
+
+      {/* Temperature */}
+      {entry.temperature != null && (
+        <span
+          className="shrink-0 text-meta tabular-nums text-muted-foreground/50"
+          title={`Temperature: ${entry.temperature}`}
+        >
+          {entry.temperature.toFixed(1)}&deg;
+        </span>
+      )}
     </button>
   );
 }

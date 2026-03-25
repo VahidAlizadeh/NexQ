@@ -224,12 +224,23 @@ export function TranslationSettings() {
   // Refreshes when the active provider changes (e.g., after activating a new model)
 
   const refreshOpusMtModels = useCallback((fresh?: OpusMtModelStatus[]) => {
+    const apply = (models: OpusMtModelStatus[]) => {
+      setOpusMtModels(models);
+      // When OPUS-MT is active, sync targetLang to the active model's target
+      if (provider === "opus-mt") {
+        const active = models.find((m) => m.is_active);
+        if (active && targetLang !== active.definition.target_lang) {
+          setTargetLang(active.definition.target_lang);
+          setSourceLang(active.definition.source_lang);
+        }
+      }
+    };
     if (fresh) {
-      setOpusMtModels(fresh);
+      apply(fresh);
     } else {
-      listOpusMtModels().then(setOpusMtModels).catch(() => {});
+      listOpusMtModels().then(apply).catch(() => {});
     }
-  }, []);
+  }, [provider, targetLang, setTargetLang, setSourceLang]);
 
   useEffect(() => {
     refreshOpusMtModels();

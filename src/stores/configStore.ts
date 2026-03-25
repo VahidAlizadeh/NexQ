@@ -150,6 +150,9 @@ interface ConfigState {
   aiResponseTextColor: string;
   aiResponseFontSize: number;
 
+  // Post-meeting translation
+  showPostMeetingTranslation: boolean;
+
   // OpenRouter catalog
   openrouterFavorites: string[];
   openrouterRecentlyUsed: string[];
@@ -201,6 +204,7 @@ interface ConfigState {
   setTranslationTextColor: (color: string) => void;
   setAiResponseTextColor: (color: string) => void;
   setAiResponseFontSize: (size: number) => void;
+  setShowPostMeetingTranslation: (enabled: boolean) => void;
   toggleOpenRouterFavorite: (id: string) => void;
   addOpenRouterRecentlyUsed: (id: string) => void;
   removeOpenRouterRecentlyUsed: (id: string) => void;
@@ -244,6 +248,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
   translationTextColor: "#fbbf24",
   aiResponseTextColor: "#d4d4d8",
   aiResponseFontSize: 12,
+  showPostMeetingTranslation: true,
   openrouterFavorites: [],
   openrouterRecentlyUsed: [],
   _loaded: false,
@@ -511,6 +516,10 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ aiResponseFontSize: size });
     persistValue("aiResponseFontSize", size);
   },
+  setShowPostMeetingTranslation: (enabled) => {
+    set({ showPostMeetingTranslation: enabled });
+    persistValue("showPostMeetingTranslation", enabled);
+  },
   toggleOpenRouterFavorite: (id) => {
     const { openrouterFavorites } = useConfigStore.getState();
     const next = openrouterFavorites.includes(id)
@@ -585,6 +594,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
       const translationTextColor = await store.get<string>("translationTextColor");
       const aiResponseTextColor = await store.get<string>("aiResponseTextColor");
       const aiResponseFontSize = await store.get<number>("aiResponseFontSize");
+      const showPostMeetingTranslation = await store.get<boolean>("showPostMeetingTranslation");
 
       // Auto-migrate: if no meetingAudioConfig exists but old fields do,
       // build a MeetingAudioConfig from legacy fields.
@@ -722,6 +732,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
         translationTextColor: translationTextColor ?? "#fbbf24",
         aiResponseTextColor: aiResponseTextColor ?? "#d4d4d8",
         aiResponseFontSize: aiResponseFontSize ?? 12,
+        showPostMeetingTranslation: showPostMeetingTranslation ?? true,
       }));
 
       // Post-load: ensure local providers have a local_model_id so footer/backend use the right model

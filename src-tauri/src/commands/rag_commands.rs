@@ -386,6 +386,15 @@ pub async fn test_rag_answer(
         model_name,
         provider_name,
         crate::llm::provider::GenerationParams::default(),
+        // Metadata for StreamStartEvent (test-rag defaults)
+        0.7,                        // temperature (default)
+        Some(query.clone()),        // rag_query
+        Vec::new(),                 // rag_chunks (not tracked for test)
+        0,                          // rag_chunks_filtered
+        chunks.len(),               // rag_total_candidates
+        0,                          // transcript_window_seconds (no transcript)
+        0,                          // transcript_segments_count
+        0,                          // transcript_segments_total
         app_handle,
         cancel_flag,
     ).await

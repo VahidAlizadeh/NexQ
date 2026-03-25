@@ -101,6 +101,15 @@ impl IntelligenceEngine {
         model: String,
         provider_name: String,
         params: GenerationParams,
+        // New metadata fields for StreamStartEvent
+        temperature: f64,
+        rag_query: Option<String>,
+        rag_chunks: Vec<crate::llm::provider::RagChunkInfo>,
+        rag_chunks_filtered: usize,
+        rag_total_candidates: usize,
+        transcript_window_seconds: u64,
+        transcript_segments_count: usize,
+        transcript_segments_total: usize,
         app_handle: tauri::AppHandle,
         cancel_flag: Arc<AtomicBool>,
     ) -> Result<(), String> {
@@ -150,6 +159,14 @@ impl IntelligenceEngine {
                 include_rag,
                 include_instructions,
                 include_question,
+                temperature,
+                rag_query,
+                rag_chunks,
+                rag_chunks_filtered,
+                rag_total_candidates,
+                transcript_window_seconds,
+                transcript_segments_count,
+                transcript_segments_total,
             },
         );
 

@@ -308,7 +308,7 @@ export function TranscriptView({ segments, search, meetingStartTime, recordingOf
   }
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex flex-1 min-h-0 flex-col">
       {/* Always-visible search bar */}
       <div className="flex items-center gap-2 rounded-lg bg-muted/20 mx-1 mt-1 mb-1.5 px-2.5 py-1.5">
         <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />

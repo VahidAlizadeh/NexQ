@@ -323,9 +323,9 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
         isBookmarksSuggesting={bookmarkSuggestions.isSuggesting}
       />
 
-      <div className="flex-1 overflow-y-auto" role="tabpanel">
+      <div className={`flex-1 ${activeTab === "transcript" ? "overflow-hidden" : "overflow-y-auto"}`} role="tabpanel">
         {activeTab === "transcript" && (
-          <>
+          <div className="flex h-full flex-col">
             {showToolbar && (
               <PostMeetingTranslationToolbar
                 translatedCount={translatedCount}
@@ -359,7 +359,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
               onTranslateSegment={handleTranslateSegment}
               onRetranslateSegment={handleRetranslateSegment}
             />
-          </>
+          </div>
         )}
         {activeTab === "summary" && (
           <SummaryView meeting={meeting} generation={summaryGeneration} onExport={handleExport} />

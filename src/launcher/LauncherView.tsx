@@ -271,19 +271,19 @@ export function LauncherView() {
         <div className="dash-sidebar flex w-[280px] min-w-[220px] shrink flex-col border-r border-border/10 bg-card/20">
           {/* Search */}
           <div className="px-3 pt-3 pb-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60" aria-hidden="true" />
+            <div className="group relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary/70" aria-hidden="true" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search meetings..."
                 aria-label="Search meetings"
-                className="w-full rounded-lg border border-border/20 bg-background/50 py-1.5 pl-7.5 pr-7 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:outline-none"
+                className="w-full rounded-lg border border-border/20 bg-background/40 py-2 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground/40 transition-all focus:border-primary/40 focus:bg-background/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
               />
               {searchQuery && (
-                <button onClick={() => handleSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground cursor-pointer" aria-label="Clear search">
-                  <X className="h-2.5 w-2.5" aria-hidden="true" />
+                <button onClick={() => handleSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground/40 transition-colors hover:text-foreground cursor-pointer" aria-label="Clear search">
+                  <X className="h-3 w-3" aria-hidden="true" />
                 </button>
               )}
             </div>

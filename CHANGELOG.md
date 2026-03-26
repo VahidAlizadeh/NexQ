@@ -1,3 +1,9 @@
+## [2.19.1](https://github.com/VahidAlizadeh/NexQ/compare/v2.19.0...v2.19.1) (2026-03-26)
+
+
+### Bug Fixes
+
+* convert icon PNGs to RGBA format (required by Tauri build) ([43b1022](https://github.com/VahidAlizadeh/NexQ/commit/43b1022982761ca42c0a0abd275ca140ee5881f2))
 # 2.19.0 (2026-03-26)
 
 

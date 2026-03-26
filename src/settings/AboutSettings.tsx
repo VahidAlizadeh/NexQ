@@ -1,5 +1,4 @@
 import {
-  Mic,
   Github,
   FileText,
   AlertCircle,
@@ -54,9 +53,7 @@ export function AboutSettings() {
       {/* App Identity Card */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-6">
         <div className="flex items-start gap-5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-            <Mic className="h-8 w-8 text-primary" />
-          </div>
+          <img src="/nexq-icon.png" alt="NexQ" className="h-14 w-14 shrink-0 rounded-2xl" />
           <div>
             <h3 className="text-lg font-bold text-foreground">NexQ</h3>
             <p className="text-xs text-muted-foreground">

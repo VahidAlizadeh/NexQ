@@ -32,3 +32,6 @@ WixTools/
 
 # Recordings
 recordings/
+
+# Superpowers
+.superpowers/

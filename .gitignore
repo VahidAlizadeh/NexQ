@@ -46,6 +46,7 @@ recordings/
 .superpowers/
 
 # Claude Code
+CLAUDE.md
 .claude/
 docs/development
 docs/superpowers

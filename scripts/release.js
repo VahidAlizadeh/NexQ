@@ -13,15 +13,25 @@ if (dryRun) {
   console.log("=== DRY RUN MODE ===\n");
 }
 
+const isWin = process.platform === "win32";
+
 function run(cmd, args, opts = {}) {
   console.log(`  $ ${cmd} ${args.join(" ")}`);
   if (dryRun && !opts.allowInDryRun) {
     console.log("  [dry-run] skipped");
     return "";
   }
-  // On Windows, .cmd extensions are needed for shell scripts like npx/git
-  // shell: true resolves this safely (all args are hardcoded, no user input)
-  return execFileSync(cmd, args, { cwd: root, encoding: "utf8", shell: true, ...opts });
+  // On Windows, npx/git are .cmd files that need shell resolution
+  const resolvedCmd = isWin && !cmd.includes("/") && !cmd.includes("\\")
+    ? cmd  // shell: true handles .cmd resolution
+    : cmd;
+  return execFileSync(resolvedCmd, args, {
+    cwd: root,
+    encoding: "utf8",
+    shell: isWin,
+    windowsVerbatimArguments: false,
+    ...opts,
+  });
 }
 
 // 1. Read last git tag
@@ -96,7 +106,7 @@ run("node", ["scripts/sync-version.js"]);
 // 6. Git add + commit
 console.log("\nCommitting release...");
 run("git", ["add", "-A"]);
-run("git", ["commit", "-m", `chore: release v${newVersion}`]);
+run("git", ["commit", "-m", `"chore: release v${newVersion}"`]);
 
 // 7. Tag
 console.log("\nTagging...");

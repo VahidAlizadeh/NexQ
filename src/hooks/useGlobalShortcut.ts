@@ -13,43 +13,54 @@ export function useGlobalShortcut() {
     const shortcuts: string[] = [];
 
     async function registerShortcuts() {
-      try {
-        // Ctrl+M -> start/end meeting
-        await register("CmdOrCtrl+M", (event) => {
-          if (event.state === "Pressed") {
-            const store = useMeetingStore.getState();
-            if (store.activeMeeting) {
-              store.endMeetingFlow().catch(() => {});
-            } else {
-              store.startMeetingFlow().catch(() => {});
+      // Register each shortcut independently — one failure shouldn't block the rest.
+      // Unregister first to handle hot-reload / React strict mode re-mounts.
+      const defs: Array<{ key: string; handler: (event: { state: string }) => void }> = [
+        {
+          key: "CmdOrCtrl+M",
+          handler: (event) => {
+            if (event.state === "Pressed") {
+              const store = useMeetingStore.getState();
+              if (store.activeMeeting) {
+                store.endMeetingFlow().catch(() => {});
+              } else {
+                store.startMeetingFlow().catch(() => {});
+              }
             }
-          }
-        });
-        shortcuts.push("CmdOrCtrl+M");
-
-        // Ctrl+B -> show/hide overlay
-        await register("CmdOrCtrl+B", (event) => {
-          if (event.state === "Pressed") {
-            const store = useMeetingStore.getState();
-            if (store.currentView === "overlay") {
-              store.setCurrentView("launcher");
-            } else if (store.activeMeeting) {
-              store.setCurrentView("overlay");
+          },
+        },
+        {
+          key: "CmdOrCtrl+B",
+          handler: (event) => {
+            if (event.state === "Pressed") {
+              const store = useMeetingStore.getState();
+              if (store.currentView === "overlay") {
+                store.setCurrentView("launcher");
+              } else if (store.activeMeeting) {
+                store.setCurrentView("overlay");
+              }
             }
-          }
-        });
-        shortcuts.push("CmdOrCtrl+B");
+          },
+        },
+        {
+          key: "CmdOrCtrl+,",
+          handler: (event) => {
+            if (event.state === "Pressed") {
+              const store = useMeetingStore.getState();
+              store.setSettingsOpen(!store.settingsOpen);
+            }
+          },
+        },
+      ];
 
-        // Ctrl+, -> toggle settings
-        await register("CmdOrCtrl+,", (event) => {
-          if (event.state === "Pressed") {
-            const store = useMeetingStore.getState();
-            store.setSettingsOpen(!store.settingsOpen);
-          }
-        });
-        shortcuts.push("CmdOrCtrl+,");
-      } catch (err) {
-        console.warn("Failed to register some global shortcuts:", err);
+      for (const { key, handler } of defs) {
+        try {
+          await unregister(key).catch(() => {}); // Clean up stale registration
+          await register(key, handler);
+          shortcuts.push(key);
+        } catch (err) {
+          console.warn(`Failed to register shortcut ${key}:`, err);
+        }
       }
     }
 

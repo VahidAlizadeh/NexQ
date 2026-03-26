@@ -581,9 +581,12 @@ function SectionCopyButton({ text }: { text: string }) {
   if (!text) return null;
 
   return (
-    <button
+    <span
+      role="button"
+      tabIndex={0}
       onClick={handleCopy}
-      className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleCopy(e as unknown as React.MouseEvent); }}
+      className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground cursor-pointer"
       aria-label="Copy section"
     >
       {copied ? (
@@ -591,6 +594,6 @@ function SectionCopyButton({ text }: { text: string }) {
       ) : (
         <Copy className="h-3 w-3" />
       )}
-    </button>
+    </span>
   );
 }

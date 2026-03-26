@@ -1,0 +1,75 @@
+name: Bug Report
+description: Report a bug in NexQ
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: version
+    attributes:
+      label: NexQ Version
+      options:
+        - "2.17.5"
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "e.g., Windows 11 23H2"
+    validations:
+      required: true
+  - type: dropdown
+    id: stt_provider
+    attributes:
+      label: STT Provider
+      options:
+        - Web Speech API
+        - Deepgram
+        - Groq
+        - Whisper (local)
+        - Other
+        - "N/A"
+    validations:
+      required: true
+  - type: dropdown
+    id: llm_provider
+    attributes:
+      label: LLM Provider
+      options:
+        - Ollama
+        - OpenAI
+        - Anthropic
+        - Groq
+        - Gemini
+        - LM Studio
+        - OpenRouter
+        - Other
+        - "N/A"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: "1. Go to...\n2. Click on...\n3. See error"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Optional — paste any relevant logs or screenshots
+    validations:
+      required: false

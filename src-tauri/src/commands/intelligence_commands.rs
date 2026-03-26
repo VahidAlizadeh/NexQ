@@ -150,23 +150,26 @@ pub async fn generate_assist(
     // Compute include_question early for effective_question logic
     let include_question = action_cfg.as_ref().map(|c| c.include_detected_question).unwrap_or(true);
 
-    // Construct effective question: prefer user-clicked question over backend's last detected
+    // Construct effective question for the Detected Question prompt section.
+    // custom_question (user-typed or user-clicked) is ALWAYS used if provided — it's explicit input.
+    // Auto-detected questions are only used when include_detected_question is true.
     let effective_question = if let Some(ref cq) = custom_question {
-        if include_question {
-            Some(crate::intelligence::question_detector::DetectedQuestion {
-                text: cq.clone(),
-                confidence: 1.0,
-                timestamp_ms: std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_millis() as u64,
-                source: "user-selected".to_string(),
-            })
-        } else {
-            last_question
-        }
-    } else {
+        // User explicitly provided a question (Ask mode typed text, or clicked a specific question)
+        Some(crate::intelligence::question_detector::DetectedQuestion {
+            text: cq.clone(),
+            confidence: 1.0,
+            timestamp_ms: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
+            source: "user-selected".to_string(),
+        })
+    } else if include_question {
+        // No custom question — use auto-detected question if the action's toggle allows it
         last_question
+    } else {
+        // Action has include_detected_question=false and no custom question
+        None
     };
 
     // Determine transcript window: per-action override or global default

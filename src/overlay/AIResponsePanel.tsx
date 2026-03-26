@@ -107,7 +107,7 @@ export function AIResponsePanel() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       {/* Tabs row */}
       {hasTabs && (
         <div className="mb-2 flex items-center gap-1.5 overflow-x-auto pb-1.5" role="tablist" aria-label="AI response tabs">
@@ -138,7 +138,7 @@ export function AIResponsePanel() {
       )}
 
       {/* Content area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto" role="tabpanel" aria-label="AI response content">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto" role="tabpanel" aria-label="AI response content">
         {/* Active streaming state */}
         {activeTab === "current" && isStreaming && (
           <div className="space-y-2.5" aria-live="polite" aria-atomic="false">

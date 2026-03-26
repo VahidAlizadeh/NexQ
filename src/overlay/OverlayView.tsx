@@ -209,7 +209,7 @@ export function OverlayView() {
         </div>
 
         {/* ── RIGHT ── */}
-        <div className="flex min-w-[180px] flex-1 basis-[220px] flex-col gap-2.5">
+        <div className="flex min-w-[180px] min-h-0 flex-1 basis-[220px] flex-col gap-2.5 overflow-hidden">
           {/* Question detector — only shown when auto-trigger is on */}
           {autoTrigger && (
             <div className="shrink-0 rounded-xl border border-info/10 bg-info/5 px-4 py-3">

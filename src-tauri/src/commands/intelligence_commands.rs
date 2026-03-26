@@ -269,53 +269,92 @@ pub async fn generate_assist(
                 .unwrap_or(false);
 
             if rag_enabled {
-                // Dual-source RAG query: combine detected question + transcript excerpt
-                let question_text = effective_question.as_ref().map(|q| q.text.clone());
-                let transcript_excerpt: String = transcript_text.chars().rev().take(500).collect::<String>().chars().rev().collect();
+                // RAG query sources (priority: custom_question > effective_question > transcript)
+                // custom_question is what the user typed (Ask mode) or the clicked question (Assist mode)
+                // effective_question is the auto-detected question from the meeting
+                let question_text = custom_question.as_deref()
+                    .filter(|q| !q.is_empty())
+                    .map(|q| q.to_string())
+                    .or_else(|| effective_question.as_ref().map(|q| q.text.clone()));
 
-                let query = match (&question_text, transcript_excerpt.is_empty()) {
-                    (Some(q), false) => format!("{}\n\n{}", q, transcript_excerpt),
-                    (Some(q), true) => q.clone(),
-                    (None, false) => transcript_excerpt,
-                    (None, true) => String::new(),
-                };
+                let transcript_excerpt: String = transcript_text
+                    .chars().rev().take(500).collect::<String>()
+                    .chars().rev().collect();
 
-                rag_query_text = if query.is_empty() { None } else { Some(query.clone()) };
+                // Dual search: search with question alone, then with question+transcript, merge results.
+                // This prevents transcript noise from drowning out a clear question match,
+                // while still benefiting from transcript context when relevant.
+                let has_question = question_text.is_some();
+                let has_transcript = !transcript_excerpt.is_empty();
 
-                if !query.is_empty() {
-                    let rag_result = if let (Some(rag_arc), Some(db_arc)) =
+                if has_question || has_transcript {
+                    if let (Some(rag_arc), Some(db_arc)) =
                         (state.rag.as_ref(), state.database.as_ref()) {
+
                         let (mut config, embedder_url, embedding_model) = {
                             let rag_guard = rag_arc.lock().map_err(|e| e.to_string())?;
                             (rag_guard.config().clone(), rag_guard.embedder_url(), rag_guard.embedding_model())
                         };
                         config.top_k = rag_top_k;
-                        rag::RagManager::search_async(db_arc, &query, &config, &embedder_url, &embedding_model).await
-                    } else {
-                        Err("RAG not initialized".to_string())
-                    };
 
-                    match rag_result {
-                        Ok(chunks) => {
-                            for c in &chunks {
-                                rag_chunk_infos.push(RagChunkInfo {
-                                    source: c.source_file.clone(),
-                                    chunk_index: c.chunk_index,
-                                    text: c.text.clone(),
-                                    normalized_score: c.normalized_score,
-                                    raw_score: c.score,
-                                });
-                            }
-                            rag_total_candidates = rag_top_k;
-                            if chunks.len() < rag_top_k {
-                                rag_chunks_filtered = rag_top_k - chunks.len();
-                            }
-                            if !chunks.is_empty() {
-                                parts.push(rag::prompt_builder::build_rag_context(&chunks, ""));
+                        let mut all_chunks: Vec<rag::search::ScoredChunk> = Vec::new();
+
+                        // Search 1: question only (clean semantic match)
+                        if let Some(ref q) = question_text {
+                            rag_query_text = Some(q.clone());
+                            match rag::RagManager::search_async(db_arc, q, &config, &embedder_url, &embedding_model).await {
+                                Ok(chunks) => all_chunks.extend(chunks),
+                                Err(e) => log::warn!("RAG search (question-only) failed: {}", e),
                             }
                         }
-                        Err(e) => {
-                            log::warn!("RAG search failed for mode={}: {}", mode, e);
+
+                        // Search 2: question + transcript (contextual match)
+                        if has_question && has_transcript {
+                            let combined = format!("{}\n\n{}", question_text.as_ref().unwrap(), transcript_excerpt);
+                            if rag_query_text.is_none() {
+                                rag_query_text = Some(combined.clone());
+                            }
+                            match rag::RagManager::search_async(db_arc, &combined, &config, &embedder_url, &embedding_model).await {
+                                Ok(chunks) => all_chunks.extend(chunks),
+                                Err(e) => log::warn!("RAG search (combined) failed: {}", e),
+                            }
+                        } else if !has_question && has_transcript {
+                            // No question at all — search with transcript only as last resort
+                            rag_query_text = Some(transcript_excerpt.clone());
+                            match rag::RagManager::search_async(db_arc, &transcript_excerpt, &config, &embedder_url, &embedding_model).await {
+                                Ok(chunks) => all_chunks.extend(chunks),
+                                Err(e) => log::warn!("RAG search (transcript-only) failed: {}", e),
+                            }
+                        }
+
+                        // Deduplicate: keep highest normalized_score per chunk_id
+                        let mut best: std::collections::HashMap<String, rag::search::ScoredChunk> = std::collections::HashMap::new();
+                        for chunk in all_chunks {
+                            let entry = best.entry(chunk.chunk_id.clone()).or_insert(chunk.clone());
+                            if chunk.normalized_score > entry.normalized_score {
+                                *entry = chunk;
+                            }
+                        }
+                        let mut merged: Vec<rag::search::ScoredChunk> = best.into_values().collect();
+                        merged.sort_by(|a, b| b.normalized_score.partial_cmp(&a.normalized_score).unwrap_or(std::cmp::Ordering::Equal));
+                        merged.truncate(rag_top_k);
+
+                        // Build metadata for AI log
+                        for c in &merged {
+                            rag_chunk_infos.push(RagChunkInfo {
+                                source: c.source_file.clone(),
+                                chunk_index: c.chunk_index,
+                                text: c.text.clone(),
+                                normalized_score: c.normalized_score,
+                                raw_score: c.score,
+                            });
+                        }
+                        rag_total_candidates = rag_top_k;
+                        if merged.len() < rag_top_k {
+                            rag_chunks_filtered = rag_top_k - merged.len();
+                        }
+                        if !merged.is_empty() {
+                            parts.push(rag::prompt_builder::build_rag_context(&merged, ""));
                         }
                     }
                 }

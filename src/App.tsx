@@ -47,13 +47,21 @@ function App() {
   useEffect(() => {
     loadConfig();
     useAIActionsStore.getState().loadConfigs();
-    useTranslationStore.getState().loadConfig().then(() => {
+    useTranslationStore.getState().loadConfig().then(async () => {
       // Sync backend translation provider with persisted frontend setting
       const { provider } = useTranslationStore.getState();
       if (provider) {
-        import("./lib/ipc").then(({ setTranslationProvider }) => {
-          setTranslationProvider(provider).catch(() => { /* non-critical on startup */ });
-        });
+        try {
+          const { setTranslationProvider, getApiKey } = await import("./lib/ipc");
+          // Microsoft needs region to authenticate — load from credential store
+          let region: string | undefined;
+          if (provider === "microsoft") {
+            try {
+              region = (await getApiKey("translation_microsoft_region")) || undefined;
+            } catch { /* region not stored yet */ }
+          }
+          await setTranslationProvider(provider, region).catch(() => {});
+        } catch { /* non-critical on startup */ }
       }
     });
     // Load scenario config (custom scenarios, overrides, active scenario)

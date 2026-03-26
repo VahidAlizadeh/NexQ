@@ -222,7 +222,7 @@ export function OverlayView() {
             <div className="flex items-center gap-1 border-b border-border/20 px-2.5 py-1.5">
               <ModeButtons />
             </div>
-            <div className="flex-1 overflow-y-auto p-3">
+            <div className="flex min-h-0 flex-1 flex-col p-3">
               <AIResponsePanel />
             </div>
           </div>

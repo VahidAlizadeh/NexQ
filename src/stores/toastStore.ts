@@ -19,6 +19,10 @@ export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
 
   addToast: (message, type) => {
+    // Deduplicate: skip if an identical message is already visible
+    const existing = useToastStore.getState().toasts;
+    if (existing.some((t) => t.message === message && t.type === type)) return;
+
     const id = crypto.randomUUID();
     const toast: Toast = { id, message, type, createdAt: Date.now() };
 

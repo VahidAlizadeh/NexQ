@@ -19,7 +19,9 @@ function run(cmd, args, opts = {}) {
     console.log("  [dry-run] skipped");
     return "";
   }
-  return execFileSync(cmd, args, { cwd: root, encoding: "utf8", ...opts });
+  // On Windows, .cmd extensions are needed for shell scripts like npx/git
+  // shell: true resolves this safely (all args are hardcoded, no user input)
+  return execFileSync(cmd, args, { cwd: root, encoding: "utf8", shell: true, ...opts });
 }
 
 // 1. Read last git tag

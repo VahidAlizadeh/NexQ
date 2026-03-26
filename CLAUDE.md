@@ -53,6 +53,55 @@ src-tauri/src/          # Rust backend
 - `src-tauri/src/state.rs` — AppState struct with all manager slots (Arc<Mutex<>>).
 - `src/lib/version.ts` — NEXQ_VERSION and NEXQ_BUILD_DATE.
 
+## Version Management
+
+Single canonical version synced across 4 files by `npm run release`:
+
+| File | Field | Notes |
+|------|-------|-------|
+| `package.json` | `version` | Primary — release script reads this |
+| `src/lib/version.ts` | `NEXQ_VERSION`, `NEXQ_BUILD_DATE` | UI display |
+| `src-tauri/tauri.conf.json` | `version` | Installer + updater |
+| `src-tauri/Cargo.toml` | `version` | Rust crate metadata |
+
+**Never edit versions manually.** Use `npm run release`.
+
+## Commit Conventions
+
+Conventional Commits required for changelog generation:
+
+- `feat(scope): description` — minor bump (2.17.5 → 2.18.0)
+- `fix(scope): description` — patch bump (2.17.5 → 2.17.6)
+- `feat!:` or `BREAKING CHANGE:` — major bump (2.17.5 → 3.0.0)
+- `docs:`, `chore:`, `refactor:`, `test:`, `style:` — no bump, included in changelog
+
+Examples:
+- `feat(stt): add Deepgram Nova-3 provider`
+- `fix(overlay): window position not persisting between sessions`
+- `docs: update README with new screenshots`
+
+## Releasing
+
+```bash
+npm run release           # auto-detect bump from commits
+npm run release:dry-run   # preview without committing
+```
+
+This auto-generates CHANGELOG.md, bumps all 4 version files, commits, tags, and pushes. GitHub Actions then builds, signs, and publishes to GitHub Releases.
+
+**Do NOT** edit version files manually, create tags manually, or upload release artifacts manually.
+
+## Updater
+
+- Signing: Ed25519 keypair (`tauri signer generate`)
+- Private key: GitHub secret `TAURI_SIGNING_PRIVATE_KEY`
+- Public key: `tauri.conf.json` → `plugins.updater.pubkey`
+- Endpoint: GitHub Releases `latest.json`
+- Commands: `check_for_update`, `download_and_install_update`, `restart_for_update` in `ipc.ts`
+- Events: `update_download_progress`, `update_ready` in `events.ts`
+- Store: `src/stores/updaterStore.ts`
+- Hook: `src/hooks/useUpdater.ts`
+
 ## Code Conventions
 
 - **State**: Zustand stores in `src/stores/` — one per feature domain

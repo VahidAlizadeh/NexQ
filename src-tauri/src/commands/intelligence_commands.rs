@@ -266,12 +266,11 @@ pub async fn generate_assist(
         let mut parts: Vec<String> = Vec::new();
 
         if include_rag {
-            let rag_enabled = state.rag.as_ref()
-                .and_then(|r| r.lock().ok())
-                .map(|r| r.config().enabled)
-                .unwrap_or(false);
-
-            if rag_enabled {
+            // Note: we don't check config.enabled here — the action-level include_rag
+            // toggle is the user's intent. If they enabled RAG for this action and have
+            // indexed files, we should search. (config.enabled defaults to false and is
+            // inconsistently set, while Test Knowledge Base ignores it entirely.)
+            {
                 // RAG query sources (priority: custom_question > effective_question > transcript)
                 // custom_question is what the user typed (Ask mode) or the clicked question (Assist mode)
                 // effective_question is the auto-detected question from the meeting

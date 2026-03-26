@@ -244,25 +244,63 @@ pub async fn translate_batch(
     let state = app.state::<AppState>();
     let target = target_lang.ok_or("target_lang is required")?;
 
-    // Load all segments for the meeting from DB
-    let segments: Vec<(String, String)> = {
+    // Count total segments and load only untranslated ones (skip already-translated to save API calls)
+    let (total, already_done, untranslated): (usize, usize, Vec<(String, String)>) = {
         let db_arc = state.database.as_ref().ok_or("DB not initialized")?;
         let db = db_arc.lock().map_err(|_| "DB lock poisoned")?;
-        let mut stmt = db.connection().prepare(
-            "SELECT id, text FROM transcript_segments WHERE meeting_id = ?1 AND is_final = 1 ORDER BY timestamp_ms"
+
+        let total: usize = db.connection().query_row(
+            "SELECT COUNT(*) FROM transcript_segments WHERE meeting_id = ?1 AND is_final = 1",
+            [&meeting_id],
+            |row| row.get(0),
         ).map_err(|e| e.to_string())?;
-        let rows = stmt.query_map([&meeting_id], |row| {
+
+        let already_done = crate::db::translation::count_meeting_translations(
+            db.connection(), &meeting_id, &target,
+        ).map_err(|e| e.to_string())?;
+
+        let mut stmt = db.connection().prepare(
+            "SELECT ts.id, ts.text FROM transcript_segments ts
+             WHERE ts.meeting_id = ?1 AND ts.is_final = 1
+               AND ts.id NOT IN (
+                 SELECT segment_id FROM transcript_translations
+                 WHERE meeting_id = ?1 AND target_lang = ?2
+               )
+             ORDER BY ts.timestamp_ms"
+        ).map_err(|e| e.to_string())?;
+        let rows = stmt.query_map([&meeting_id, &target], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         }).map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
-        rows
+
+        (total, already_done, rows)
     };
 
-    let total = segments.len();
+    // Nothing to translate — emit completed and return
+    if untranslated.is_empty() {
+        let _ = app.emit("batch_translation_progress", serde_json::json!({
+            "meetingId": meeting_id,
+            "completed": total,
+            "total": total,
+            "targetLang": target,
+        }));
+        return Ok(());
+    }
 
-    // Translate in chunks of 10
-    for (chunk_idx, chunk) in segments.chunks(10).enumerate() {
+    // Emit initial progress so UI shows the starting point (e.g. 10/24)
+    if already_done > 0 {
+        let _ = app.emit("batch_translation_progress", serde_json::json!({
+            "meetingId": meeting_id,
+            "completed": already_done,
+            "total": total,
+            "targetLang": target,
+        }));
+    }
+
+    // Translate only untranslated segments in chunks of 10
+    let mut completed = already_done;
+    for chunk in untranslated.chunks(10) {
         let texts: Vec<String> = chunk.iter().map(|(_, t)| t.clone()).collect();
 
         // Clone Arc out of lock before .await
@@ -300,7 +338,7 @@ pub async fn translate_batch(
         }
 
         // Emit progress
-        let completed = (chunk_idx * 10 + chunk.len()).min(total);
+        completed += chunk.len();
         let _ = app.emit("batch_translation_progress", serde_json::json!({
             "meetingId": meeting_id,
             "completed": completed.min(total),

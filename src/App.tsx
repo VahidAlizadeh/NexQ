@@ -12,7 +12,6 @@ import { useTheme } from "./hooks/useTheme";
 import { useGlobalShortcut } from "./hooks/useGlobalShortcut";
 import { useTranslation } from "./hooks/useTranslation";
 import { useTraySync } from "./hooks/useTraySync";
-import { useTrayNotifications } from "./hooks/useTrayNotifications";
 import { useTranslationStore } from "./stores/translationStore";
 import { CallLogPanel } from "./calllog";
 import { SelectionToolbar } from "./components/SelectionToolbar";
@@ -42,7 +41,7 @@ function App() {
   useTraySync();
 
   // Tray notification toasts for meeting start/stop
-  useTrayNotifications();
+  // Tray notifications removed — LauncherView/OverlayView/StatusBar already show meeting toasts
 
   // Load persisted config from Tauri store on app start
   useEffect(() => {

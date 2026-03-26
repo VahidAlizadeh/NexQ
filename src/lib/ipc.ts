@@ -29,6 +29,7 @@ import type {
   TranslationConnectionStatus,
   OpusMtModelStatus,
   TrayState,
+  UpdateInfo,
 } from "./types";
 
 // == IPC: Audio (Sub-PRD 3) ==
@@ -657,4 +658,18 @@ export async function rebuildTrayMenu(meetingActive: boolean): Promise<void> {
 
 export async function setStealthMode(enabled: boolean): Promise<void> {
   return invoke("set_stealth_mode", { enabled });
+}
+
+// == IPC: Updater ==
+
+export async function checkForUpdate(): Promise<UpdateInfo | null> {
+  return invoke<UpdateInfo | null>("check_for_update");
+}
+
+export async function downloadAndInstallUpdate(): Promise<void> {
+  return invoke("download_and_install_update");
+}
+
+export async function restartForUpdate(): Promise<void> {
+  return invoke("restart_for_update");
 }

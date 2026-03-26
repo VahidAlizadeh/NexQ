@@ -16,6 +16,8 @@ import type {
   TranscriptIndexedEvent,
   TranscriptUpdateEvent,
   TranslationResult,
+  UpdateDownloadProgress,
+  UpdateReadyEvent,
 } from "./types";
 
 // == TRANSCRIPT EVENTS ==
@@ -231,6 +233,22 @@ export function onTranslationError(handler: (error: { segment_id?: string; error
 
 export function onBatchTranslationProgress(handler: (progress: BatchTranslationProgress) => void): Promise<UnlistenFn> {
   return listen<BatchTranslationProgress>("batch_translation_progress", (e) => handler(e.payload));
+}
+
+// == UPDATER EVENTS ==
+
+export function onUpdateDownloadProgress(
+  handler: (event: UpdateDownloadProgress) => void
+): Promise<UnlistenFn> {
+  return listen<UpdateDownloadProgress>("update_download_progress", (e) =>
+    handler(e.payload)
+  );
+}
+
+export function onUpdateReady(
+  handler: (event: UpdateReadyEvent) => void
+): Promise<UnlistenFn> {
+  return listen<UpdateReadyEvent>("update_ready", (e) => handler(e.payload));
 }
 
 // Tray events are handled via raw listen() calls in App.tsx

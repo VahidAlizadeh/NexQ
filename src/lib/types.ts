@@ -776,3 +776,20 @@ export interface RecentMeeting {
   startTime: string;
   duration: number;
 }
+
+// == UPDATER TYPES ==
+
+export interface UpdateInfo {
+  version: string;
+  body: string | null;
+  date: string | null;
+}
+
+export interface UpdateDownloadProgress {
+  chunk_length: number;
+  content_length: number | null;
+}
+
+export interface UpdateReadyEvent {
+  version: string;
+}

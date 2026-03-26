@@ -63,7 +63,8 @@
     ],
     "windows": {
       "nsis": {
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "installMode": "currentUser"
       }
     }
   },

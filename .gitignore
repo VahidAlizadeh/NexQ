@@ -35,3 +35,6 @@ recordings/
 
 # Superpowers
 .superpowers/
+
+# Tauri updater signing key
+src-tauri/.tauri-private-key

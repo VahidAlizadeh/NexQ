@@ -196,11 +196,12 @@ export function OverlayView() {
       </div>
 
       {/* ═══ MAIN ═══ */}
-      <div className="flex flex-1 flex-wrap gap-2.5 overflow-hidden px-3 py-2.5">
+      <div className="relative flex-1 min-h-0">
+      <div className="absolute inset-0 flex flex-wrap gap-2.5 overflow-hidden px-3 py-2.5">
 
         {/* ── LEFT: TRANSCRIPT ── */}
-        <div className="flex min-w-[180px] flex-1 basis-[220px] flex-col overflow-hidden rounded-xl bg-card/20">
-          <div className="flex items-center border-b border-border/20 px-3 py-1.5">
+        <div className="flex min-w-[180px] min-h-0 flex-1 basis-[220px] flex-col overflow-hidden rounded-xl bg-card/20">
+          <div className="flex shrink-0 items-center border-b border-border/20 px-3 py-1.5">
             <span className="text-meta font-semibold uppercase tracking-wider text-muted-foreground/60">Transcript</span>
           </div>
           <div className="flex flex-1 flex-col min-h-0 overflow-hidden p-2.5">
@@ -219,7 +220,7 @@ export function OverlayView() {
 
           {/* AI Response */}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card/20">
-            <div className="flex items-center gap-1 border-b border-border/20 px-2.5 py-1.5">
+            <div className="flex shrink-0 items-center gap-1 border-b border-border/20 px-2.5 py-1.5">
               <ModeButtons />
             </div>
             <div className="flex min-h-0 flex-1 flex-col p-3">
@@ -227,6 +228,7 @@ export function OverlayView() {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Ask input */}

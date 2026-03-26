@@ -110,7 +110,7 @@ export function AIResponsePanel() {
     <div className="flex flex-1 min-h-0 flex-col">
       {/* Tabs row */}
       {hasTabs && (
-        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto pb-1.5" role="tablist" aria-label="AI response tabs">
+        <div className="mb-2 flex shrink-0 items-center gap-1.5 overflow-x-auto pb-1.5" role="tablist" aria-label="AI response tabs">
           <TabButton
             label="Current"
             active={activeTab === "current"}
@@ -138,7 +138,8 @@ export function AIResponsePanel() {
       )}
 
       {/* Content area */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto" role="tabpanel" aria-label="AI response content">
+      <div className="relative flex-1 min-h-0">
+      <div ref={scrollRef} className="absolute inset-0 overflow-y-auto" role="tabpanel" aria-label="AI response content">
         {/* Active streaming state */}
         {activeTab === "current" && isStreaming && (
           <div className="space-y-2.5" aria-live="polite" aria-atomic="false">
@@ -251,9 +252,10 @@ export function AIResponsePanel() {
           </div>
         )}
       </div>
+      </div>
 
       {/* Typeset controls */}
-      <div className="flex items-center gap-3 px-1 pt-1.5 border-t border-border/10">
+      <div className="flex shrink-0 items-center gap-3 px-1 pt-1.5 border-t border-border/10">
         <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground/40 font-medium">AI Text</span>
         <div className="flex items-center gap-1">
           <button onClick={() => setAiResponseFontSize(Math.max(10, aiResponseFontSize - 1))} className="h-5 w-5 flex items-center justify-center rounded text-[0.6rem] text-muted-foreground/50 hover:bg-accent/40 hover:text-foreground/70 transition-colors" title="Smaller">A</button>

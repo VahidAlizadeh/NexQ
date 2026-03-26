@@ -300,7 +300,7 @@ pub async fn translate_batch(
         }
 
         // Emit progress
-        let completed = (chunk_idx + 1) * chunk.len().min(10);
+        let completed = (chunk_idx * 10 + chunk.len()).min(total);
         let _ = app.emit("batch_translation_progress", serde_json::json!({
             "meetingId": meeting_id,
             "completed": completed.min(total),

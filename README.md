@@ -4,11 +4,16 @@
 
 NexQ is a desktop AI copilot that captures both sides of any conversation in real time and provides intelligent assistance during meetings and interviews. Built with Tauri 2, it runs natively on Windows with a Rust backend and React frontend.
 
-![Version](https://img.shields.io/github/v/release/VahidAlizadeh/NexQ?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
-![Build](https://img.shields.io/github/actions/workflow/status/VahidAlizadeh/NexQ/ci.yml?style=flat-square)
-![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows)
-![Downloads](https://img.shields.io/github/downloads/VahidAlizadeh/NexQ/total?style=flat-square)
+[![Release](https://img.shields.io/github/v/release/VahidAlizadeh/NexQ?style=flat-square&color=blue)](https://github.com/VahidAlizadeh/NexQ/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![Build](https://img.shields.io/github/actions/workflow/status/VahidAlizadeh/NexQ/release.yml?style=flat-square&label=build)](https://github.com/VahidAlizadeh/NexQ/actions/workflows/release.yml)
+[![Downloads](https://img.shields.io/github/downloads/VahidAlizadeh/NexQ/total?style=flat-square&color=orange)](https://github.com/VahidAlizadeh/NexQ/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?style=flat-square&logo=windows)](https://github.com/VahidAlizadeh/NexQ/releases/latest)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131?style=flat-square&logo=tauri&logoColor=white)](https://v2.tauri.app/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
+[![Rust](https://img.shields.io/badge/Rust-stable-DEA584?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
 ## Features
 

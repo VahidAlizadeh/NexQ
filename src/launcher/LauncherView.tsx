@@ -18,7 +18,6 @@ import type { MeetingSummary, AudioMode, AIScenario } from "../lib/types";
 import {
   Settings,
   Search,
-  Mic,
   AlertTriangle,
   X,
   Loader2,
@@ -233,9 +232,7 @@ export function LauncherView() {
       {/* ═══ HEADER ═══ */}
       <header className="dash-header flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border/20">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-            <Mic className="h-3.5 w-3.5 text-white" aria-hidden="true" />
-          </div>
+          <img src="/nexq-icon.png" alt="NexQ" className="h-7 w-7 rounded-lg" />
           <span className="text-sm font-bold tracking-tight text-foreground">NexQ</span>
         </div>
 

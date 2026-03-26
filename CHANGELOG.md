@@ -1,3 +1,9 @@
+## [2.19.4](https://github.com/VahidAlizadeh/NexQ/compare/v2.19.3...v2.19.4) (2026-03-26)
+
+
+### Bug Fixes
+
+* remove white background from icon — transparent for dark surfaces ([10e77f9](https://github.com/VahidAlizadeh/NexQ/commit/10e77f990c04d90fcbcd2818279296a56db3bcbf))
 ## [2.19.3](https://github.com/VahidAlizadeh/NexQ/compare/v2.19.2...v2.19.3) (2026-03-26)
 
 

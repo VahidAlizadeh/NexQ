@@ -47,6 +47,8 @@ recordings/
 
 # Claude Code
 .claude/
+docs/development
+docs/superpowers
 
 # Logs
 *.log

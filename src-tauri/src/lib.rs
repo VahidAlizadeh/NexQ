@@ -48,6 +48,8 @@ use commands::translation_commands;
 use commands::translation_model_commands;
 // == MODULE COMMANDS: tray ==
 use commands::tray_commands;
+// == MODULE COMMANDS: updater ==
+use commands::updater_commands;
 
 /// Show the launcher window and hide the overlay window.
 fn show_launcher(app: &tauri::AppHandle) {
@@ -545,6 +547,10 @@ pub fn run() {
             translation_model_commands::cancel_opus_mt_download,
             translation_model_commands::delete_opus_mt_model,
             translation_model_commands::activate_opus_mt_model,
+            // == COMMANDS: updater ==
+            updater_commands::check_for_update,
+            updater_commands::download_and_install_update,
+            updater_commands::restart_for_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running NexQ");

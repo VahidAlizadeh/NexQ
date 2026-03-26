@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useCallLogStore } from "../stores/callLogStore";
 import { useMeetingStore } from "../stores/meetingStore";
 import { useTranslationStore } from "../stores/translationStore";
-import { translateBatch, exportTranslatedTranscript } from "../lib/ipc";
+import { exportTranslatedTranscript } from "../lib/ipc";
 import { showToast } from "../stores/toastStore";
 import { CallLogEntry } from "./CallLogEntry";
 import { PromptViewer } from "./PromptViewer";
@@ -12,7 +12,6 @@ import {
   Trash2,
   Activity,
   FileSearch,
-  Globe,
   Download,
   ChevronDown,
 } from "lucide-react";
@@ -45,7 +44,6 @@ export function CallLogPanel() {
   const meetingId = useMeetingStore((s) => s.activeMeeting?.id ?? null);
   const targetLang = useTranslationStore((s) => s.targetLang);
   const batchProgress = useTranslationStore((s) => s.batchProgress);
-  const isBatchTranslating = batchProgress !== null;
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
@@ -116,16 +114,6 @@ export function CallLogPanel() {
     return () => document.removeEventListener("mousedown", handler);
   }, [showExportMenu]);
 
-  // Translate all segments in the current meeting
-  const handleTranslateAll = useCallback(async () => {
-    if (!meetingId || !targetLang) return;
-    try {
-      await translateBatch(meetingId, targetLang);
-    } catch (err) {
-      showToast(`Batch translation failed: ${err}`, "error");
-    }
-  }, [meetingId, targetLang]);
-
   // Export translated transcript
   const handleExport = useCallback(async (format: string) => {
     if (!meetingId) return;
@@ -175,19 +163,6 @@ export function CallLogPanel() {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                {/* Translate All button */}
-                {meetingId && entries.length > 0 && (
-                  <button
-                    onClick={handleTranslateAll}
-                    disabled={isBatchTranslating}
-                    className="flex items-center gap-1 rounded-lg border border-primary/20 bg-primary/5 px-2 py-1 text-meta font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-                    title="Translate all transcript segments"
-                  >
-                    <Globe className="h-3 w-3" />
-                    {isBatchTranslating ? "Translating..." : "Translate All"}
-                  </button>
-                )}
-
                 {/* Export dropdown */}
                 {meetingId && entries.length > 0 && (
                   <div className="relative" ref={exportMenuRef}>

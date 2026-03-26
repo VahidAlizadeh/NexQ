@@ -5,6 +5,7 @@ import { useCallLogStore } from "../stores/callLogStore";
 import { useAIActionsStore } from "../stores/aiActionsStore";
 import { useTranslationStore } from "../stores/translationStore";
 import { showToast } from "../stores/toastStore";
+import { translateBatch } from "../lib/ipc";
 import { TranscriptPanel } from "./TranscriptPanel";
 import { QuestionDetector } from "./QuestionDetector";
 import { AIResponsePanel } from "./AIResponsePanel";
@@ -58,6 +59,8 @@ export function OverlayView() {
   const setDisplayMode = useTranslationStore((s) => s.setDisplayMode);
   const targetLang = useTranslationStore((s) => s.targetLang);
   const provider = useTranslationStore((s) => s.provider);
+  const batchProgress = useTranslationStore((s) => s.batchProgress);
+  const isBatchTranslating = batchProgress !== null;
 
   // Bookmark hotkey (Ctrl+B) — also returns addBookmarkAtNow for shortcut hook
   const addBookmarkAtNow = useBookmarkHotkey();
@@ -93,6 +96,16 @@ export function OverlayView() {
     try { await endMeetingFlow(); showToast("Meeting ended", "info"); }
     catch (err) { showToast(err instanceof Error ? err.message : "Couldn't end meeting", "error"); }
   }, [endMeetingFlow]);
+
+  const handleTranslateAll = useCallback(async () => {
+    const meetingId = activeMeeting?.id;
+    if (!meetingId || !targetLang) return;
+    try {
+      await translateBatch(meetingId, targetLang);
+    } catch (err) {
+      showToast(`Batch translation failed: ${err}`, "error");
+    }
+  }, [activeMeeting?.id, targetLang]);
 
   const meetingTitle = activeMeeting?.title || "NexQ";
 
@@ -177,6 +190,14 @@ export function OverlayView() {
                   Hover
                 </button>
               </div>
+              <button
+                onClick={handleTranslateAll}
+                disabled={isBatchTranslating}
+                className="flex items-center gap-1 rounded-md border border-primary/20 bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 cursor-pointer"
+                title="Translate all past transcript segments"
+              >
+                {isBatchTranslating ? "Translating..." : "Translate All"}
+              </button>
               <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-success inline-block" />
                 {targetLang.toUpperCase()}

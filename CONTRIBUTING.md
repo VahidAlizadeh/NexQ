@@ -12,7 +12,7 @@ Thanks for your interest in contributing to NexQ! This guide will help you get s
 ## Dev Setup
 
 ```bash
-git clone https://github.com/AugmentedMind/NexQ.git
+git clone https://github.com/VahidAlizadeh/NexQ.git
 cd NexQ
 npm install
 npx tauri dev
@@ -82,8 +82,8 @@ Common scopes: `stt`, `llm`, `audio`, `overlay`, `launcher`, `rag`, `calllog`, `
 
 ## Reporting Issues
 
-- Use the [bug report template](https://github.com/AugmentedMind/NexQ/issues/new?template=bug_report.yml) for bugs
-- Use the [feature request template](https://github.com/AugmentedMind/NexQ/issues/new?template=feature_request.yml) for ideas
+- Use the [bug report template](https://github.com/VahidAlizadeh/NexQ/issues/new?template=bug_report.yml) for bugs
+- Use the [feature request template](https://github.com/VahidAlizadeh/NexQ/issues/new?template=feature_request.yml) for ideas
 - **Security issues**: See [SECURITY.md](./SECURITY.md) — do NOT open public issues
 
 ## License

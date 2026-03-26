@@ -71,7 +71,9 @@
   "plugins": {
     "updater": {
       "pubkey": "",
-      "endpoints": []
+      "endpoints": [
+        "https://github.com/VahidAlizadeh/NexQ/releases/latest/download/latest.json"
+      ]
     }
   }
 }

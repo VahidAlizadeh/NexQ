@@ -4,11 +4,11 @@
 
 NexQ is a desktop AI copilot that captures both sides of any conversation in real time and provides intelligent assistance during meetings and interviews. Built with Tauri 2, it runs natively on Windows with a Rust backend and React frontend.
 
-![Version](https://img.shields.io/github/v/release/AugmentedMind/NexQ?style=flat-square)
+![Version](https://img.shields.io/github/v/release/VahidAlizadeh/NexQ?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
-![Build](https://img.shields.io/github/actions/workflow/status/AugmentedMind/NexQ/ci.yml?style=flat-square)
+![Build](https://img.shields.io/github/actions/workflow/status/VahidAlizadeh/NexQ/ci.yml?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows)
-![Downloads](https://img.shields.io/github/downloads/AugmentedMind/NexQ/total?style=flat-square)
+![Downloads](https://img.shields.io/github/downloads/VahidAlizadeh/NexQ/total?style=flat-square)
 
 ## Features
 
@@ -21,7 +21,7 @@ NexQ is a desktop AI copilot that captures both sides of any conversation in rea
 
 ## Quick Start
 
-1. **Download** the latest release from the [Releases](https://github.com/AugmentedMind/NexQ/releases) page
+1. **Download** the latest release from the [Releases](https://github.com/VahidAlizadeh/NexQ/releases) page
 2. **Run the installer** (NSIS-based `.exe`)
 3. **Configure your providers** — choose an STT provider for transcription and an LLM provider for AI assistance
 4. **Start a meeting** — NexQ captures both sides of the conversation and provides real-time AI support
@@ -55,7 +55,7 @@ NexQ is a desktop AI copilot that captures both sides of any conversation in rea
 
 ```bash
 # Clone the repository
-git clone https://github.com/AugmentedMind/NexQ.git
+git clone https://github.com/VahidAlizadeh/NexQ.git
 cd NexQ
 
 # Install frontend dependencies

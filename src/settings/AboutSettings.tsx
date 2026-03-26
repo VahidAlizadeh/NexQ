@@ -9,20 +9,7 @@ import { NEXQ_VERSION, NEXQ_BUILD_DATE, NEXQ_DEVELOPER } from "../lib/version";
 import { useUpdater } from "../hooks/useUpdater";
 import { open } from "@tauri-apps/plugin-shell";
 
-const GITHUB_URL = "https://github.com/AugmentedMind/NexQ"; // placeholder — update after repo creation
-
-const shortcuts = [
-  { keys: "Space", action: "Generate AI Assist", context: "During meeting" },
-  { keys: "Ctrl+M", action: "Start / End meeting", context: "Global" },
-  { keys: "Ctrl+B", action: "Show / Hide overlay", context: "Global" },
-  { keys: "Ctrl+,", action: "Open Settings", context: "Global" },
-  { keys: "Escape", action: "Close settings / Cancel", context: "Global" },
-  { keys: "Ctrl+1", action: "What to Say mode", context: "During meeting" },
-  { keys: "Ctrl+2", action: "Shorten mode", context: "During meeting" },
-  { keys: "Ctrl+3", action: "Follow-Up mode", context: "During meeting" },
-  { keys: "Ctrl+4", action: "Recap mode", context: "During meeting" },
-  { keys: "Ctrl+5", action: "Ask Question mode", context: "During meeting" },
-];
+const GITHUB_URL = "https://github.com/VahidAlizadeh/NexQ";
 
 function timeSince(ms: number): string {
   const secs = Math.floor((Date.now() - ms) / 1000);
@@ -201,7 +188,7 @@ export function AboutSettings() {
           </span>
         </button>
         <button
-          onClick={() => open(`${GITHUB_URL}/issues/new`)}
+          onClick={() => open(`${GITHUB_URL}/issues/new/choose`)}
           className="flex flex-col items-center gap-2 rounded-xl border border-border/30 bg-card/50 p-4 transition-colors hover:bg-secondary/30"
         >
           <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -218,54 +205,6 @@ export function AboutSettings() {
             Documentation
           </span>
         </button>
-      </div>
-
-      {/* Keyboard Shortcuts */}
-      <div className="rounded-xl border border-border/30 bg-card/50 p-5">
-        <h4 className="mb-4 text-sm font-semibold text-primary/80">
-          Keyboard Shortcuts
-        </h4>
-        <div className="overflow-hidden rounded-xl border border-border/30">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-border/20 bg-secondary/20">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  Shortcut
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  Action
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  Context
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {shortcuts.map((shortcut, idx) => (
-                <tr
-                  key={shortcut.keys}
-                  className={
-                    idx < shortcuts.length - 1
-                      ? "border-b border-border/20"
-                      : ""
-                  }
-                >
-                  <td className="px-4 py-2.5">
-                    <kbd className="rounded-lg bg-secondary/60 px-2 py-1 font-mono text-xs text-foreground">
-                      {shortcut.keys}
-                    </kbd>
-                  </td>
-                  <td className="px-4 py-2.5 text-foreground/80">
-                    {shortcut.action}
-                  </td>
-                  <td className="px-4 py-2.5 text-muted-foreground/60">
-                    {shortcut.context}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
 
       {/* Footer */}

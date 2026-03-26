@@ -5,30 +5,39 @@ target/
 # Build output
 dist/
 
-# Environment
+# Environment & secrets
 .env
 .env.local
 .env.*.local
+*.pem
+*.key
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.code-workspace
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+ehthumbs.db
 
 # Database
 *.db
 *.db-journal
 *.db-wal
+*.db-shm
 
 # Tauri
 src-tauri/target/
 src-tauri/gen/
 WixTools/
+
+# Tauri updater signing key
+src-tauri/.tauri-private-key
 
 # Recordings
 recordings/
@@ -36,5 +45,14 @@ recordings/
 # Superpowers
 .superpowers/
 
-# Tauri updater signing key
-src-tauri/.tauri-private-key
+# Claude Code
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Package manager locks (keep package-lock.json, ignore others)
+yarn.lock
+pnpm-lock.yaml
+bun.lockb

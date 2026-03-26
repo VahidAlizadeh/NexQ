@@ -240,7 +240,7 @@ pub async fn translate_batch(
     app: AppHandle,
     meeting_id: String,
     target_lang: Option<String>,
-) -> Result<(), String> {
+) -> Result<serde_json::Value, String> {
     let state = app.state::<AppState>();
     let target = target_lang.ok_or("target_lang is required")?;
 
@@ -285,7 +285,11 @@ pub async fn translate_batch(
             "total": total,
             "targetLang": target,
         }));
-        return Ok(());
+        return Ok(serde_json::json!({
+            "total": total,
+            "alreadyDone": already_done,
+            "newlyTranslated": 0,
+        }));
     }
 
     // Emit initial progress so UI shows the starting point (e.g. 10/24)
@@ -347,7 +351,12 @@ pub async fn translate_batch(
         }));
     }
 
-    Ok(())
+    let newly_translated = completed - already_done;
+    Ok(serde_json::json!({
+        "total": total,
+        "alreadyDone": already_done,
+        "newlyTranslated": newly_translated,
+    }))
 }
 
 #[command]

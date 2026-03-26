@@ -101,7 +101,14 @@ export function OverlayView() {
     const meetingId = activeMeeting?.id;
     if (!meetingId || !targetLang) return;
     try {
-      await translateBatch(meetingId, targetLang);
+      const { total, alreadyDone, newlyTranslated } = await translateBatch(meetingId, targetLang);
+      if (newlyTranslated === 0) {
+        showToast(`All ${total} segments already translated`, "info");
+      } else if (alreadyDone > 0) {
+        showToast(`Translated ${newlyTranslated} new segments (${alreadyDone} already cached, ${total} total)`, "success");
+      } else {
+        showToast(`Translated all ${total} segments`, "success");
+      }
     } catch (err) {
       showToast(`Batch translation failed: ${err}`, "error");
     }

@@ -586,7 +586,7 @@ export async function translateSegments(segmentIds: string[], texts: string[], m
   return invoke("translate_segments", { segmentIds, texts, meetingId, targetLang, sourceLang });
 }
 
-export async function translateBatch(meetingId: string, targetLang: string): Promise<void> {
+export async function translateBatch(meetingId: string, targetLang: string): Promise<{ total: number; alreadyDone: number; newlyTranslated: number }> {
   return invoke("translate_batch", { meetingId, targetLang });
 }
 

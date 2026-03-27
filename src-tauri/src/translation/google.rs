@@ -35,6 +35,7 @@ struct TranslateData {
 struct TranslationItem {
     translated_text: String,
     #[serde(default)]
+    #[allow(dead_code)]
     detected_source_language: Option<String>,
 }
 

@@ -98,6 +98,7 @@ fn build_transcript_from_segments(segments_json: &str, window_seconds: u64, incl
 /// Count total segments in the JSON, regardless of window filtering.
 fn count_total_segments(segments_json: &str) -> usize {
     #[derive(serde::Deserialize)]
+    #[allow(dead_code)]
     struct Seg { text: String }
     serde_json::from_str::<Vec<Seg>>(segments_json)
         .map(|s| s.len())

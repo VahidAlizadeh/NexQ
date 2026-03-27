@@ -33,6 +33,7 @@ struct SherpaJsonLine {
     #[serde(default)]
     segment_id: u64,
     #[serde(default)]
+    #[allow(dead_code)]
     start_time: f64,
     #[serde(default)]
     end_time: f64,

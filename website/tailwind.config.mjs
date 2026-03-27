@@ -21,6 +21,10 @@ export default {
           secondary: '#8888a0',
           muted: '#555566',
         },
+        border: {
+          DEFAULT: '#1e1e2e',
+          subtle: '#16161f',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

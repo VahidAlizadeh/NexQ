@@ -1,0 +1,22 @@
+[
+  { "name": "Dual-Party Audio", "category": "Audio", "version": "v2.18", "isNew": true, "icon": "🎧", "description": "Separate mic + system audio streams with independent STT" },
+  { "name": "10 STT Providers", "category": "Audio", "version": "v2.16", "isNew": false, "icon": "🗣️", "description": "Local Whisper to cloud Deepgram, Groq, and more" },
+  { "name": "Audio Recording", "category": "Audio", "version": "v2.16", "isNew": false, "icon": "🎙️", "description": "Record meetings as WAV with playback support" },
+  { "name": "Speaker Labels", "category": "Audio", "version": "v2.20", "isNew": true, "icon": "🏷️", "description": "Identify and name each speaker in the transcript" },
+  { "name": "Web Speech API", "category": "Audio", "version": "v2.18", "isNew": false, "icon": "🌐", "description": "Zero-config browser STT, no API key needed" },
+  { "name": "AI Copilot (8 LLM)", "category": "AI", "version": "v2.12", "isNew": false, "icon": "🤖", "description": "Real-time AI assistance from 8 providers including local Ollama" },
+  { "name": "Local RAG Pipeline", "category": "AI", "version": "v2.20", "isNew": true, "icon": "📄", "description": "Load PDFs, docs, notes — AI answers grounded in your context" },
+  { "name": "Action Items", "category": "AI", "version": "v2.20", "isNew": true, "icon": "✅", "description": "Auto-extract tasks and follow-ups from conversations" },
+  { "name": "AI Call Log", "category": "AI", "version": "v2.10", "isNew": false, "icon": "📋", "description": "Complete history of AI interactions per meeting" },
+  { "name": "Question Detection", "category": "AI", "version": "v2.14", "isNew": false, "icon": "❓", "description": "Automatically detects questions in conversation flow" },
+  { "name": "Bookmarks", "category": "Productivity", "version": "v2.20", "isNew": true, "icon": "🔖", "description": "Pin key moments during meetings for quick review" },
+  { "name": "Topic Sections", "category": "Productivity", "version": "v2.17", "isNew": false, "icon": "📊", "description": "Auto-detect and segment conversation topics" },
+  { "name": "Translation (5 providers)", "category": "Productivity", "version": "v2.19", "isNew": false, "icon": "🌍", "description": "Real-time translation via Microsoft, Google, DeepL, OPUS-MT, LLM" },
+  { "name": "Meeting Scenarios", "category": "Productivity", "version": "v2.15", "isNew": false, "icon": "🎭", "description": "Pre-configured templates for interviews, lectures, team meetings" },
+  { "name": "Keyboard Shortcuts", "category": "Productivity", "version": "v2.8", "isNew": false, "icon": "⌨️", "description": "Full keyboard control for hands-free operation" },
+  { "name": "100% Local Processing", "category": "Privacy", "version": "v1.0", "isNew": false, "icon": "🔒", "description": "All audio and data stays on your machine" },
+  { "name": "Windows CredentialManager", "category": "Privacy", "version": "v2.5", "isNew": false, "icon": "🔑", "description": "API keys stored securely in OS credential vault" },
+  { "name": "Local SQLite Database", "category": "Privacy", "version": "v2.0", "isNew": false, "icon": "🗄️", "description": "All data in a local database — no cloud sync" },
+  { "name": "No Bot / No Cloud", "category": "Privacy", "version": "v1.0", "isNew": false, "icon": "🚫", "description": "No bots join your calls, no audio uploaded" },
+  { "name": "Auto-Updater", "category": "Privacy", "version": "v2.18", "isNew": false, "icon": "🔄", "description": "Ed25519-signed updates from GitHub Releases" }
+]

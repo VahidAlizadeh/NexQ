@@ -1,0 +1,41 @@
+{
+  "dimensions": [
+    "Price", "100% Local", "No Bot Joins Call", "Open Source",
+    "Multiple STT Providers", "Multiple LLM Providers", "Local LLM Support",
+    "Dual-Party Audio", "RAG / Doc Context", "Windows Native", "Real-Time Translation"
+  ],
+  "competitors": [
+    {
+      "name": "NexQ", "highlight": true,
+      "values": ["Free", "full", "full", "full", "full:10", "full:8", "full", "full", "full", "full", "full"]
+    },
+    {
+      "name": "Otter.ai", "highlight": false,
+      "values": ["$8+/mo", "none", "none", "none", "none:1", "none:1", "none", "full", "none", "none:web", "none"]
+    },
+    {
+      "name": "Fireflies", "highlight": false,
+      "values": ["$10+/mo", "none", "none", "none", "none:1", "none:1", "none", "full", "none", "none:web", "partial"]
+    },
+    {
+      "name": "Granola", "highlight": false,
+      "values": ["$18/mo", "partial", "full", "none", "none:1", "none:1", "none", "full", "none", "none:Mac", "none"]
+    },
+    {
+      "name": "Krisp", "highlight": false,
+      "values": ["$16/mo", "partial", "full", "none", "none:1", "none:1", "none", "full", "none", "full", "none"]
+    },
+    {
+      "name": "Tactiq", "highlight": false,
+      "values": ["$8+/mo", "partial", "full", "none", "partial:piggyback", "none:1", "none", "partial", "none", "none:Chrome", "none"]
+    },
+    {
+      "name": "MeetGeek", "highlight": false,
+      "values": ["$10+/mo", "none", "none", "none", "none:1", "none:1", "none", "full", "none", "none:web", "none"]
+    },
+    {
+      "name": "tl;dv", "highlight": false,
+      "values": ["$20+/mo", "none", "none", "none", "none:1", "none:1", "none", "full", "none", "none:web", "none"]
+    }
+  ]
+}

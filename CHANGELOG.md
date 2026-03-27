@@ -1,3 +1,9 @@
+## [2.20.1](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.0...v2.20.1) (2026-03-27)
+
+
+### Bug Fixes
+
+* **release:** manually generate latest.json for updater ([d66166a](https://github.com/VahidAlizadeh/NexQ/commit/d66166a11666ab69474f9f17cac15744cc846851))
 # [2.20.0](https://github.com/VahidAlizadeh/NexQ/compare/v2.19.4...v2.20.0) (2026-03-27)
 
 

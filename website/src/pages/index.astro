@@ -2,11 +2,17 @@
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import Hero from '../components/Hero.tsx';
+import PainPoint from '../components/PainPoint.astro';
+import FeatureScroller from '../components/FeatureScroller.tsx';
 ---
 
 <Layout>
   <Navbar />
   <main class="pt-16">
     <Hero client:load />
+    <PainPoint />
+    <section id="features">
+      <FeatureScroller client:visible />
+    </section>
   </main>
 </Layout>

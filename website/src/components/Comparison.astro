@@ -1,0 +1,113 @@
+---
+import comparison from '../data/comparison.json';
+
+// Parse a value string into display content
+function renderValue(value: string, isPrice: boolean): string {
+  if (isPrice) return value;
+
+  // Parse patterns: "full", "none:web", "partial:piggyback", "full:10"
+  const match = value.match(/^(full|partial|none)(?::(.+))?$/);
+  if (!match) return value;
+
+  const [, status, extra] = match;
+  const icon = status === 'full' ? '🟢' : status === 'partial' ? '🟡' : '🔴';
+
+  // For "partial:piggyback", just show the icon (no extra text)
+  if (extra === 'piggyback') return icon;
+
+  return extra ? `${icon} ${extra}` : icon;
+}
+---
+
+<section class="section-container">
+  <!-- Part 1: Pain point callout cards -->
+  <div class="mb-20 text-center">
+    <h2 class="section-title">Stop paying for what should be yours</h2>
+    <p class="section-subtitle mx-auto text-center">
+      Your conversations. Your data. Your device. No exceptions.
+    </p>
+  </div>
+
+  <div class="mb-20 grid grid-cols-1 gap-6 md:grid-cols-3">
+    <div
+      class="animate-on-scroll rounded-xl border border-accent-red/15 bg-accent-red/[0.06] p-6"
+      style="transition-delay: 0ms;"
+    >
+      <div class="mb-3 text-center text-3xl" aria-hidden="true">🤖</div>
+      <h3 class="text-center text-lg font-bold text-text-primary">
+        Bots join your calls
+      </h3>
+      <p class="mt-2 text-center text-sm text-text-secondary">
+        Otter, Fireflies, and MeetGeek send visible bots that announce themselves to every participant in the meeting.
+      </p>
+    </div>
+
+    <div
+      class="animate-on-scroll rounded-xl border border-accent-red/15 bg-accent-red/[0.06] p-6"
+      style="transition-delay: 150ms;"
+    >
+      <div class="mb-3 text-center text-3xl" aria-hidden="true">☁️</div>
+      <h3 class="text-center text-lg font-bold text-text-primary">
+        Audio sent to cloud
+      </h3>
+      <p class="mt-2 text-center text-sm text-text-secondary">
+        Even Granola &mdash; marketed as private &mdash; uploads your audio to cloud servers for transcription.
+      </p>
+    </div>
+
+    <div
+      class="animate-on-scroll rounded-xl border border-accent-red/15 bg-accent-red/[0.06] p-6"
+      style="transition-delay: 300ms;"
+    >
+      <div class="mb-3 text-center text-3xl" aria-hidden="true">💸</div>
+      <h3 class="text-center text-lg font-bold text-text-primary">
+        $8&ndash;20+/mo per user
+      </h3>
+      <p class="mt-2 text-center text-sm text-text-secondary">
+        Subscriptions add up fast. Basic features are free, but anything useful requires a monthly payment.
+      </p>
+    </div>
+  </div>
+
+  <!-- Part 2: Comparison table -->
+  <div class="animate-on-scroll overflow-hidden rounded-xl border border-white/[0.06] bg-surface-raised">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[700px]">
+        <thead>
+          <tr>
+            <th class="px-3 py-3 text-left text-xs font-bold uppercase text-text-muted"></th>
+            {comparison.competitors.map((comp) => (
+              <th
+                class:list={[
+                  'px-3 py-3 text-center text-xs font-bold uppercase',
+                  comp.highlight ? 'bg-accent-purple/5 text-accent-purple' : 'text-text-muted',
+                ]}
+              >
+                {comp.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {comparison.dimensions.map((dim, rowIdx) => (
+            <tr>
+              <td class="border-t border-white/[0.04] px-3 py-2.5 text-left text-sm text-text-secondary">
+                {dim}
+              </td>
+              {comparison.competitors.map((comp) => (
+                <td
+                  class:list={[
+                    'border-t border-white/[0.04] px-3 py-2.5 text-center text-sm',
+                    comp.highlight ? 'bg-accent-purple/5' : '',
+                  ]}
+                >
+                  {renderValue(comp.values[rowIdx], rowIdx === 0)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

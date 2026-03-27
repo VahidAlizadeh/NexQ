@@ -45,9 +45,12 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
 
-      - name: Upload updater artifacts and generate latest.json
+      - name: Verify updater JSON exists
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.ref_name }}
-          REPO_SLUG: ${{ github.repository }}
-        run: node scripts/upload-updater.cjs
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking release assets for latest.json..."
+          gh release view ${{ github.ref_name }} --json assets --jq '.assets[].name'
+          gh release download ${{ github.ref_name }} --pattern "latest.json" --dir _verify --clobber
+          echo "latest.json contents:"
+          cat _verify/latest.json

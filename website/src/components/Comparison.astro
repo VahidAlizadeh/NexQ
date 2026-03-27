@@ -75,7 +75,7 @@ function renderValue(value: string, isPrice: boolean): string {
       <table class="w-full min-w-[700px]">
         <thead>
           <tr>
-            <th class="px-3 py-3 text-left text-xs font-bold uppercase text-text-muted"></th>
+            <th class="sticky left-0 z-10 bg-surface-raised px-3 py-3 text-left text-xs font-bold uppercase text-text-muted"></th>
             {comparison.competitors.map((comp) => (
               <th
                 class:list={[
@@ -91,7 +91,7 @@ function renderValue(value: string, isPrice: boolean): string {
         <tbody>
           {comparison.dimensions.map((dim, rowIdx) => (
             <tr>
-              <td class="border-t border-white/[0.04] px-3 py-2.5 text-left text-sm text-text-secondary">
+              <td class="sticky left-0 z-10 border-t border-white/[0.04] bg-surface-raised px-3 py-2.5 text-left text-sm text-text-secondary">
                 {dim}
               </td>
               {comparison.competitors.map((comp) => (

@@ -43,20 +43,24 @@ const {
   <body class="min-h-screen bg-surface text-text-primary antialiased">
     <slot />
 
-    <!-- Lenis Smooth Scroll -->
+    <!-- Lenis Smooth Scroll (disabled when prefers-reduced-motion) -->
     <script>
       import Lenis from 'lenis';
 
-      const lenis = new Lenis({
-        duration: 1.2,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      });
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      function raf(time: number) {
-        lenis.raf(time);
+      if (!prefersReduced) {
+        const lenis = new Lenis({
+          duration: 1.2,
+          easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        });
+
+        function raf(time: number) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
         requestAnimationFrame(raf);
       }
-      requestAnimationFrame(raf);
     </script>
 
     <!-- Scroll-triggered Animations -->

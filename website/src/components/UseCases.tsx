@@ -79,7 +79,7 @@ export default function UseCases() {
             <button
               key={scenario.id}
               onClick={() => setActiveId(scenario.id)}
-              className={`flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 transition-colors ${
+              className={`flex cursor-pointer items-center gap-2 rounded-lg px-4 py-3 min-h-[44px] transition-colors ${
                 isActive
                   ? 'border border-white/10 bg-surface-raised font-semibold text-text-primary'
                   : 'border border-transparent text-text-muted hover:text-text-secondary'

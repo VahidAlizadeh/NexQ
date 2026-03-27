@@ -97,7 +97,7 @@ export default function FeatureGrid() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`cursor-pointer rounded-full px-4 py-2 text-sm transition-colors ${
+              className={`cursor-pointer rounded-full px-4 py-2.5 min-h-[44px] flex items-center text-sm transition-colors ${
                 isActive
                   ? 'bg-accent-purple font-semibold text-surface'
                   : 'border border-white/5 bg-surface-raised text-text-secondary hover:text-text-primary'

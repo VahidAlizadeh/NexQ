@@ -73,6 +73,8 @@ Inherited from `.impeccable.md`:
 
 ### 2.3 Pain Points Section
 
+> **Note:** This section is a brief emotional hook early in the scroll narrative. Section 2.7 (Comparison) repeats the same three pain points but expands them with a detailed matrix. This repetition is intentional — 2.3 plants the seed, 2.7 delivers the proof. The implementer may style them differently (e.g., 2.3 as compact animated cards, 2.7 as a wider layout with the matrix below).
+
 Three cards, scroll-triggered reveal:
 
 | Card | Icon | Headline | Subtext |
@@ -338,6 +340,8 @@ Using shields.io:
 
 ### New Guides
 
+All new guides live in `docs/user-guide/` alongside the existing ones.
+
 | Guide | Content |
 |-------|---------|
 | `interview-copilot.md` | Interview-specific setup: loading resume via RAG, configuring AI prompts for interview scenarios, overlay positioning tips, best practices for discrete use |
@@ -433,9 +437,9 @@ website/
     data/
       features.json          # Feature inventory
       comparison.json        # Competitor matrix
-  .github/
-    workflows/
-      deploy-website.yml     # Build Astro → GitHub Pages
+
+# At repo root (NOT inside website/):
+# .github/workflows/deploy-website.yml   # Build Astro → GitHub Pages
 ```
 
 ### Tech Stack

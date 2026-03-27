@@ -46,6 +46,7 @@ jobs:
           includeUpdaterJson: false
 
       - name: Upload updater artifacts and generate latest.json
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}

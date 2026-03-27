@@ -1,3 +1,10 @@
+## [2.20.7](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.6...v2.20.7) (2026-03-27)
+
+
+### Bug Fixes
+
+* **build:** statically link MSVC C runtime to eliminate MSVCP140.dll dependency ([dff1f1d](https://github.com/VahidAlizadeh/NexQ/commit/dff1f1d9758803212dbc1b2e04be96f8aa8b2c9d))
+* **release:** remove broken updater fallback script ([9a95a21](https://github.com/VahidAlizadeh/NexQ/commit/9a95a21dafd8fe569233a1cc66bfab2853550a7f))
 ## [2.20.6](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.5...v2.20.6) (2026-03-27)
 
 

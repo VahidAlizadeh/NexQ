@@ -1,10 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Hero from '../components/Hero.tsx';
 ---
 
 <Layout>
-  <main class="section-container">
-    <h1 class="section-title">NexQ Website</h1>
-    <p class="section-subtitle">Coming together section by section.</p>
+  <Navbar />
+  <main class="pt-16">
+    <Hero client:load />
   </main>
 </Layout>

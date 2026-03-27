@@ -43,7 +43,7 @@ jobs:
           releaseBody: "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
           releaseDraft: false
           prerelease: false
-          includeUpdaterJson: false
+          includeUpdaterJson: true
 
       - name: Upload updater artifacts and generate latest.json
         shell: bash
@@ -52,42 +52,44 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
           REPO_SLUG: ${{ github.repository }}
         run: |
-          node -e "
-            const fs = require('fs');
-            const path = require('path');
-            const { execFileSync } = require('child_process');
+          TAG="$RELEASE_TAG"
+          VERSION="${TAG#v}"
 
-            const tag = process.env.RELEASE_TAG;
-            const version = tag.replace(/^v/, '');
-            const repo = process.env.REPO_SLUG;
-            const bundleDir = path.join('src-tauri', 'target', 'release', 'bundle', 'nsis');
+          # Search for .nsis.zip recursively in the target directory
+          echo "Searching for .nsis.zip..."
+          NSIS_ZIP=$(find src-tauri/target/release -name "*.nsis.zip" -type f 2>/dev/null | head -1)
 
-            const files = fs.readdirSync(bundleDir);
-            const nsisZip = files.find(f => f.endsWith('.nsis.zip'));
-            if (!nsisZip) { console.error('No .nsis.zip found in ' + bundleDir); process.exit(1); }
+          if [ -z "$NSIS_ZIP" ]; then
+            echo "WARNING: No .nsis.zip found. Listing bundle directory contents:"
+            find src-tauri/target/release/bundle -type f 2>/dev/null || echo "No bundle directory found"
+            echo "Skipping updater JSON upload."
+            exit 0
+          fi
 
-            const nsisZipPath = path.join(bundleDir, nsisZip);
-            const sigPath = nsisZipPath + '.sig';
-            if (!fs.existsSync(sigPath)) { console.error('No .sig at ' + sigPath); process.exit(1); }
+          echo "Found: $NSIS_ZIP"
 
-            console.log('Uploading ' + nsisZip + '...');
-            execFileSync('gh', ['release', 'upload', tag, nsisZipPath, '--clobber'], { stdio: 'inherit' });
+          SIG_FILE="${NSIS_ZIP}.sig"
+          if [ ! -f "$SIG_FILE" ]; then
+            echo "WARNING: No .sig file found at $SIG_FILE"
+            exit 0
+          fi
 
-            const signature = fs.readFileSync(sigPath, 'utf8').trim();
-            const latest = {
-              version: version,
-              notes: 'See https://github.com/' + repo + '/blob/main/CHANGELOG.md for details.',
-              pub_date: new Date().toISOString(),
-              platforms: {
-                'windows-x86_64': {
-                  signature: signature,
-                  url: 'https://github.com/' + repo + '/releases/download/' + tag + '/' + nsisZip
-                }
-              }
-            };
+          # Upload .nsis.zip
+          echo "Uploading $(basename "$NSIS_ZIP")..."
+          gh release upload "$TAG" "$NSIS_ZIP" --clobber
 
-            fs.writeFileSync('latest.json', JSON.stringify(latest, null, 2));
-            console.log('Uploading latest.json...');
-            execFileSync('gh', ['release', 'upload', tag, 'latest.json', '--clobber'], { stdio: 'inherit' });
-            console.log('Done!');
-          "
+          # Read signature and generate latest.json
+          SIGNATURE=$(cat "$SIG_FILE")
+          NSIS_NAME=$(basename "$NSIS_ZIP")
+
+          printf '{\n  "version": "%s",\n  "notes": "See https://github.com/%s/blob/main/CHANGELOG.md for details.",\n  "pub_date": "%s",\n  "platforms": {\n    "windows-x86_64": {\n      "signature": "%s",\n      "url": "https://github.com/%s/releases/download/%s/%s"\n    }\n  }\n}\n' \
+            "$VERSION" "$REPO_SLUG" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$SIGNATURE" "$REPO_SLUG" "$TAG" "$NSIS_NAME" \
+            > latest.json
+
+          echo "Generated latest.json:"
+          cat latest.json
+
+          echo "Uploading latest.json..."
+          gh release upload "$TAG" latest.json --clobber
+
+          echo "Done! Updater artifacts uploaded."

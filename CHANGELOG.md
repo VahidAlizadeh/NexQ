@@ -1,3 +1,9 @@
+## [2.20.5](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.4...v2.20.5) (2026-03-27)
+
+
+### Bug Fixes
+
+* **release:** use committed node script for updater upload (no shell compat issues) ([ecc456d](https://github.com/VahidAlizadeh/NexQ/commit/ecc456d6f3a749c0c5ea003624e9d34f4898f758))
 ## [2.20.4](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.3...v2.20.4) (2026-03-27)
 
 

@@ -65,7 +65,9 @@
       "nsis": {
         "displayLanguageSelector": false,
         "installMode": "currentUser",
-        "installerIcon": "icons/icon.ico"
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "nsis-header.bmp",
+        "sidebarImage": "nsis-sidebar.bmp"
       }
     }
   },

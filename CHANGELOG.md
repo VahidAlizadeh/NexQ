@@ -1,3 +1,9 @@
+## [2.20.6](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.5...v2.20.6) (2026-03-27)
+
+
+### Bug Fixes
+
+* **updater:** add createUpdaterArtifacts + fix ESM script extension ([582f4f3](https://github.com/VahidAlizadeh/NexQ/commit/582f4f33bf0c0e1e6f315b6b552d4c221f294867))
 ## [2.20.5](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.4...v2.20.5) (2026-03-27)
 
 

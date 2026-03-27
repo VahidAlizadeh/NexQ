@@ -1,3 +1,9 @@
+## [2.20.3](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.2...v2.20.3) (2026-03-27)
+
+
+### Bug Fixes
+
+* **release:** add shell: bash to upload step (PowerShell mangles node quotes) ([409d683](https://github.com/VahidAlizadeh/NexQ/commit/409d6832842a613ead5a4ae90428ced1dbe050fa))
 ## [2.20.2](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.1...v2.20.2) (2026-03-27)
 
 

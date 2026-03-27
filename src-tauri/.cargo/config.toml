@@ -2,3 +2,7 @@
 [env]
 LIBCLANG_PATH = "C:\\Program Files\\LLVM\\bin"
 CMAKE_GENERATOR = "Ninja"
+
+# Statically link the MSVC C runtime so users don't need VC++ Redistributable
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

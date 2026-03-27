@@ -1,0 +1,33 @@
+---
+const techs = [
+  { icon: '🖥️', name: 'Tauri 2', role: 'Desktop Framework', delay: 0 },
+  { icon: '🦀', name: 'Rust', role: 'Backend & Audio', delay: 50 },
+  { icon: '⚛️', name: 'React 18', role: 'User Interface', delay: 100 },
+  { icon: '🔷', name: 'TypeScript', role: 'Type Safety', delay: 150 },
+  { icon: '🎨', name: 'Tailwind CSS', role: 'Styling', delay: 200 },
+  { icon: '🗃️', name: 'SQLite', role: 'Local Database', delay: 250 },
+  { icon: '🎙️', name: 'WASAPI', role: 'Audio Capture', delay: 300 },
+];
+---
+
+<section class="section-container">
+  <div class="text-center">
+    <h2 class="section-title">Built with Rust for speed and safety</h2>
+    <p class="section-subtitle mx-auto text-center">
+      Native performance meets modern web technology.
+    </p>
+  </div>
+
+  <div class="mt-12 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
+    {techs.map((tech) => (
+      <div
+        class="animate-on-scroll rounded-xl border border-white/[0.06] bg-surface-raised p-4 text-center transition-all duration-200 hover:scale-105 hover:border-white/10"
+        style={`transition-delay: ${tech.delay}ms;`}
+      >
+        <div class="text-2xl" aria-hidden="true">{tech.icon}</div>
+        <div class="mt-2 text-sm font-semibold text-text-primary">{tech.name}</div>
+        <div class="mt-1 text-xs text-text-muted">{tech.role}</div>
+      </div>
+    ))}
+  </div>
+</section>

@@ -1,0 +1,41 @@
+---
+const steps = [
+  {
+    number: '1',
+    title: 'Download',
+    description: 'One-click Windows installer. No admin rights needed.',
+    delay: 0,
+  },
+  {
+    number: '2',
+    title: 'Configure',
+    description: 'Add API keys for cloud providers, or use free local models like Whisper and Ollama.',
+    delay: 150,
+  },
+  {
+    number: '3',
+    title: 'Start',
+    description: 'Join any meeting platform. NexQ captures system audio automatically.',
+    delay: 300,
+  },
+];
+---
+
+<section class="section-container">
+  <h2 class="section-title text-center">Get started in 30 seconds</h2>
+
+  <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+    {steps.map((step) => (
+      <div
+        class="animate-on-scroll flex flex-col items-center text-center"
+        style={`transition-delay: ${step.delay}ms;`}
+      >
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-accent-green text-lg font-bold text-surface">
+          {step.number}
+        </div>
+        <h3 class="mt-4 text-lg font-bold text-text-primary">{step.title}</h3>
+        <p class="mt-2 text-sm text-text-secondary">{step.description}</p>
+      </div>
+    ))}
+  </div>
+</section>

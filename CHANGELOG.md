@@ -1,3 +1,9 @@
+## [2.20.2](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.1...v2.20.2) (2026-03-27)
+
+
+### Bug Fixes
+
+* **release:** use node script for latest.json generation (Windows compat) ([380260c](https://github.com/VahidAlizadeh/NexQ/commit/380260c703fa34c1006a487126d565e745acd469))
 ## [2.20.1](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.0...v2.20.1) (2026-03-27)
 
 

@@ -1,3 +1,15 @@
+# [2.20.0](https://github.com/VahidAlizadeh/NexQ/compare/v2.19.4...v2.20.0) (2026-03-27)
+
+
+### Bug Fixes
+
+* **release:** upgrade tauri-action to v0.5 for updater JSON generation ([9c1d8c9](https://github.com/VahidAlizadeh/NexQ/commit/9c1d8c9ea1095e8b9fb05dee5a641e96b5bba877))
+* **settings:** replace Mic icon with custom NexQ icon on About page ([c29821a](https://github.com/VahidAlizadeh/NexQ/commit/c29821aa072a5835ee95598659d8977fea47034a))
+
+
+### Features
+
+* **installer:** add branded NSIS header and sidebar images ([8005cf6](https://github.com/VahidAlizadeh/NexQ/commit/8005cf6a0e53d198aabc6c63c304d6bc5a01907e))
 ## [2.19.4](https://github.com/VahidAlizadeh/NexQ/compare/v2.19.3...v2.19.4) (2026-03-26)
 
 

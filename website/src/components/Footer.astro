@@ -1,0 +1,102 @@
+---
+const baseUrl = import.meta.env.BASE_URL;
+
+const productLinks = [
+  { label: 'Features', href: '#features' },
+  { label: 'Use Cases', href: '#use-cases' },
+  { label: 'Compare', href: '#compare' },
+];
+
+const docsLinks = [
+  { label: 'Getting Started', href: '#docs' },
+  { label: 'User Guide', href: 'https://github.com/VahidAlizadeh/NexQ/blob/main/docs/user-guide.md' },
+  { label: 'Troubleshooting', href: 'https://github.com/VahidAlizadeh/NexQ/blob/main/docs/troubleshooting.md' },
+];
+
+const communityLinks = [
+  { label: 'GitHub', href: 'https://github.com/VahidAlizadeh/NexQ' },
+  { label: 'Contributing', href: 'https://github.com/VahidAlizadeh/NexQ/blob/main/CONTRIBUTING.md' },
+  { label: 'License', href: 'https://github.com/VahidAlizadeh/NexQ/blob/main/LICENSE' },
+];
+---
+
+<footer class="bg-[#08080e]">
+  <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-6 py-16 md:grid-cols-4">
+    <!-- Col 1: Logo + tagline -->
+    <div>
+      <a href={baseUrl} class="flex items-center gap-2.5">
+        <img
+          src={`${baseUrl}nexq-logo.png`}
+          alt="NexQ"
+          width="32"
+          height="32"
+          class="rounded-lg"
+        />
+        <span class="text-lg font-bold text-text-primary">NexQ</span>
+      </a>
+      <p class="mt-3 text-sm text-text-muted">AI Meeting Assistant</p>
+    </div>
+
+    <!-- Col 2: Product -->
+    <div>
+      <h4 class="mb-4 text-xs font-bold uppercase text-text-muted">Product</h4>
+      <ul class="space-y-2">
+        {productLinks.map((link) => (
+          <li>
+            <a href={link.href} class="text-sm text-text-secondary transition-colors duration-150 hover:text-text-primary">
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Col 3: Docs -->
+    <div>
+      <h4 class="mb-4 text-xs font-bold uppercase text-text-muted">Docs</h4>
+      <ul class="space-y-2">
+        {docsLinks.map((link) => {
+          const isExternal = link.href.startsWith('http');
+          return (
+            <li>
+              <a
+                href={link.href}
+                class="text-sm text-text-secondary transition-colors duration-150 hover:text-text-primary"
+                {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
+                {link.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+
+    <!-- Col 4: Community -->
+    <div>
+      <h4 class="mb-4 text-xs font-bold uppercase text-text-muted">Community</h4>
+      <ul class="space-y-2">
+        {communityLinks.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-text-secondary transition-colors duration-150 hover:text-text-primary"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="mx-auto max-w-6xl border-t border-white/5 px-6">
+    <div class="flex flex-col items-center justify-between gap-2 py-8 sm:flex-row">
+      <span class="text-sm text-text-muted">Made by Vahid Alizadeh</span>
+      <span class="text-sm text-text-muted">MIT License &middot; &copy; 2026</span>
+    </div>
+  </div>
+</footer>

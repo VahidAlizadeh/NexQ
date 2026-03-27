@@ -46,46 +46,47 @@ jobs:
           includeUpdaterJson: false
 
       - name: Upload updater artifacts and generate latest.json
-        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          REPO_SLUG: ${{ github.repository }}
         run: |
-          TAG="${{ github.ref_name }}"
-          VERSION="${TAG#v}"
-          BUNDLE_DIR="src-tauri/target/release/bundle/nsis"
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const { execFileSync } = require('child_process');
 
-          # Upload .nsis.zip (updater bundle)
-          NSIS_ZIP=$(ls "$BUNDLE_DIR"/*.nsis.zip 2>/dev/null | head -1)
-          if [ -n "$NSIS_ZIP" ]; then
-            echo "Uploading $(basename "$NSIS_ZIP")..."
-            gh release upload "$TAG" "$NSIS_ZIP" --clobber
-          fi
+            const tag = process.env.RELEASE_TAG;
+            const version = tag.replace(/^v/, '');
+            const repo = process.env.REPO_SLUG;
+            const bundleDir = path.join('src-tauri', 'target', 'release', 'bundle', 'nsis');
 
-          # Read the signature
-          SIG_FILE="${NSIS_ZIP}.sig"
-          if [ ! -f "$SIG_FILE" ]; then
-            echo "ERROR: Signature file not found at $SIG_FILE"
-            exit 1
-          fi
-          SIGNATURE=$(cat "$SIG_FILE")
-          NSIS_ZIP_NAME=$(basename "$NSIS_ZIP")
+            const files = fs.readdirSync(bundleDir);
+            const nsisZip = files.find(f => f.endsWith('.nsis.zip'));
+            if (!nsisZip) { console.error('No .nsis.zip found in ' + bundleDir); process.exit(1); }
 
-          # Generate latest.json
-          cat > latest.json << EOF2
-          {
-            "version": "$VERSION",
-            "notes": "See https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md for details.",
-            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "platforms": {
-              "windows-x86_64": {
-                "signature": "$SIGNATURE",
-                "url": "https://github.com/${{ github.repository }}/releases/download/$TAG/$NSIS_ZIP_NAME"
+            const nsisZipPath = path.join(bundleDir, nsisZip);
+            const sigPath = nsisZipPath + '.sig';
+            if (!fs.existsSync(sigPath)) { console.error('No .sig at ' + sigPath); process.exit(1); }
+
+            console.log('Uploading ' + nsisZip + '...');
+            execFileSync('gh', ['release', 'upload', tag, nsisZipPath, '--clobber'], { stdio: 'inherit' });
+
+            const signature = fs.readFileSync(sigPath, 'utf8').trim();
+            const latest = {
+              version: version,
+              notes: 'See https://github.com/' + repo + '/blob/main/CHANGELOG.md for details.',
+              pub_date: new Date().toISOString(),
+              platforms: {
+                'windows-x86_64': {
+                  signature: signature,
+                  url: 'https://github.com/' + repo + '/releases/download/' + tag + '/' + nsisZip
+                }
               }
-            }
-          }
-          EOF2
+            };
 
-          echo "Uploading latest.json..."
-          gh release upload "$TAG" latest.json --clobber
-
-          echo "Done! Updater artifacts uploaded."
+            fs.writeFileSync('latest.json', JSON.stringify(latest, null, 2));
+            console.log('Uploading latest.json...');
+            execFileSync('gh', ['release', 'upload', tag, 'latest.json', '--clobber'], { stdio: 'inherit' });
+            console.log('Done!');
+          "

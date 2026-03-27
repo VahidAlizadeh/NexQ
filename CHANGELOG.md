@@ -1,3 +1,9 @@
+## [2.20.8](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.7...v2.20.8) (2026-03-27)
+
+
+### Bug Fixes
+
+* **installer:** auto-install VC++ Redistributable if missing ([00b1e79](https://github.com/VahidAlizadeh/NexQ/commit/00b1e79c73c6e8f0ba85d3fff5d23568c71ee436))
 ## [2.20.7](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.6...v2.20.7) (2026-03-27)
 
 

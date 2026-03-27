@@ -1,3 +1,9 @@
+## [2.20.4](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.3...v2.20.4) (2026-03-27)
+
+
+### Bug Fixes
+
+* **release:** use bash find + printf for updater JSON (no node dependency) ([4334097](https://github.com/VahidAlizadeh/NexQ/commit/43340978471f8465c78f9eab20d616de3441b44e))
 ## [2.20.3](https://github.com/VahidAlizadeh/NexQ/compare/v2.20.2...v2.20.3) (2026-03-27)
 
 

@@ -68,7 +68,8 @@
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
         "headerImage": "nsis-header.bmp",
-        "sidebarImage": "nsis-sidebar.bmp"
+        "sidebarImage": "nsis-sidebar.bmp",
+        "installerHooks": "./nsis-hooks.nsh"
       }
     }
   },

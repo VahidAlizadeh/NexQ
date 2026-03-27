@@ -46,50 +46,8 @@ jobs:
           includeUpdaterJson: true
 
       - name: Upload updater artifacts and generate latest.json
-        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
           REPO_SLUG: ${{ github.repository }}
-        run: |
-          TAG="$RELEASE_TAG"
-          VERSION="${TAG#v}"
-
-          # Search for .nsis.zip recursively in the target directory
-          echo "Searching for .nsis.zip..."
-          NSIS_ZIP=$(find src-tauri/target/release -name "*.nsis.zip" -type f 2>/dev/null | head -1)
-
-          if [ -z "$NSIS_ZIP" ]; then
-            echo "WARNING: No .nsis.zip found. Listing bundle directory contents:"
-            find src-tauri/target/release/bundle -type f 2>/dev/null || echo "No bundle directory found"
-            echo "Skipping updater JSON upload."
-            exit 0
-          fi
-
-          echo "Found: $NSIS_ZIP"
-
-          SIG_FILE="${NSIS_ZIP}.sig"
-          if [ ! -f "$SIG_FILE" ]; then
-            echo "WARNING: No .sig file found at $SIG_FILE"
-            exit 0
-          fi
-
-          # Upload .nsis.zip
-          echo "Uploading $(basename "$NSIS_ZIP")..."
-          gh release upload "$TAG" "$NSIS_ZIP" --clobber
-
-          # Read signature and generate latest.json
-          SIGNATURE=$(cat "$SIG_FILE")
-          NSIS_NAME=$(basename "$NSIS_ZIP")
-
-          printf '{\n  "version": "%s",\n  "notes": "See https://github.com/%s/blob/main/CHANGELOG.md for details.",\n  "pub_date": "%s",\n  "platforms": {\n    "windows-x86_64": {\n      "signature": "%s",\n      "url": "https://github.com/%s/releases/download/%s/%s"\n    }\n  }\n}\n' \
-            "$VERSION" "$REPO_SLUG" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$SIGNATURE" "$REPO_SLUG" "$TAG" "$NSIS_NAME" \
-            > latest.json
-
-          echo "Generated latest.json:"
-          cat latest.json
-
-          echo "Uploading latest.json..."
-          gh release upload "$TAG" latest.json --clobber
-
-          echo "Done! Updater artifacts uploaded."
+        run: node scripts/upload-updater.js

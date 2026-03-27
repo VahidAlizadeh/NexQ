@@ -50,4 +50,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
           REPO_SLUG: ${{ github.repository }}
-        run: node scripts/upload-updater.js
+        run: node scripts/upload-updater.cjs

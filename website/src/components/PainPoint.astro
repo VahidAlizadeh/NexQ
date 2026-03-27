@@ -1,0 +1,52 @@
+---
+// PainPoint.astro — static section with 3 problem cards, no React needed
+---
+
+<section class="section-container">
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+    <!-- Card 1: Bots -->
+    <div
+      class="animate-on-scroll rounded-xl p-6"
+      style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); transition-delay: 0ms;"
+    >
+      <div class="mb-3 text-center text-3xl" aria-hidden="true">🤖</div>
+      <h3 class="text-center text-lg font-bold text-accent-red">
+        Bots join your calls
+      </h3>
+      <p class="mt-2 text-center text-sm text-text-secondary">
+        Otter, Fireflies, and MeetGeek send visible bots that announce
+        themselves to everyone
+      </p>
+    </div>
+
+    <!-- Card 2: Cloud -->
+    <div
+      class="animate-on-scroll rounded-xl p-6"
+      style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); transition-delay: 150ms;"
+    >
+      <div class="mb-3 text-center text-3xl" aria-hidden="true">☁️</div>
+      <h3 class="text-center text-lg font-bold text-accent-red">
+        Audio sent to cloud
+      </h3>
+      <p class="mt-2 text-center text-sm text-text-secondary">
+        Even Granola &mdash; marketed as &lsquo;local&rsquo; &mdash; uploads
+        your audio to cloud servers for transcription
+      </p>
+    </div>
+
+    <!-- Card 3: Cost -->
+    <div
+      class="animate-on-scroll rounded-xl p-6"
+      style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); transition-delay: 300ms;"
+    >
+      <div class="mb-3 text-center text-3xl" aria-hidden="true">💸</div>
+      <h3 class="text-center text-lg font-bold text-accent-red">
+        $8&ndash;20+/mo per user
+      </h3>
+      <p class="mt-2 text-center text-sm text-text-secondary">
+        Basic features are free, but anything useful requires a monthly
+        subscription
+      </p>
+    </div>
+  </div>
+</section>

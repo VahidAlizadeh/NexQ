@@ -1,8 +1,11 @@
-# NexQ
+<p align="center">
+  <img src="src-tauri/icons/nexq-clean.png" alt="NexQ" width="120">
+</p>
+<p align="center">
+  <strong>AI Meeting Assistant & Real-Time Interview Copilot</strong>
+</p>
 
-**AI Meeting Assistant & Real-Time Interview Copilot**
-
-NexQ is a desktop AI copilot that captures both sides of any conversation in real time and provides intelligent assistance during meetings and interviews. Built with Tauri 2, it runs natively on Windows with a Rust backend and React frontend.
+<p align="center">
 
 [![Release](https://img.shields.io/github/v/release/VahidAlizadeh/NexQ?style=flat-square&color=blue)](https://github.com/VahidAlizadeh/NexQ/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
@@ -15,25 +18,62 @@ NexQ is a desktop AI copilot that captures both sides of any conversation in rea
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
+</p>
+
+<p align="center">
+  <img src="website/public/screenshots/placeholder-1.png" alt="NexQ in action" width="700">
+</p>
+<p align="center"><em>NexQ overlay during a live interview — real-time transcription and AI suggestions</em></p>
+
+### Why NexQ?
+
+🔒 **100% Local** — your audio and data never leave your machine
+
+🆓 **Free & Open Source** — no subscriptions, no limits, ever
+
+⚡ **10 STT + 8 LLM providers** — from local Whisper & Ollama to cloud Deepgram & OpenAI
+
 ## Features
 
-- **Real-time dual-party transcription** — captures mic and system audio simultaneously for complete conversation coverage
-- **AI-powered meeting assistance** — get real-time suggestions for what to say, follow-up questions, and meeting recaps
-- **Multiple STT providers** — Web Speech API, Deepgram, Groq, and local Whisper (via whisper-rs / ONNX Runtime)
-- **Multiple LLM providers** — Ollama, OpenAI, Anthropic, Groq, Gemini, LM Studio, and OpenRouter
+- **Dual-party transcription** — captures mic ("You") and system audio ("Them") simultaneously
+- **Real-time AI copilot** — get streaming answers, follow-up suggestions, and meeting recaps from 8 LLM providers
 - **Local RAG pipeline** — index your own documents (PDF, DOCX, TXT, MD) for context-aware AI responses
-- **Always-on-top overlay** — a compact, transparent overlay window for use during live meetings
+- **10 STT providers** — Web Speech API, Deepgram, Groq, Whisper, ONNX Runtime, and more
+- **Always-on-top overlay** — compact, transparent floating window visible only to you
+- **Bookmarks & action items** — pin key moments and auto-extract tasks
+- **Speaker labeling** — identify and name each speaker in the transcript
+- **Multi-language translation** — real-time translation via 5 providers (100+ languages)
+- **Audio recording & playback** — record meetings as WAV, replay with synced transcript
+- **Meeting scenarios** — pre-configured templates for interviews, lectures, and team meetings
 
 ## Quick Start
 
-1. **Download** the latest release from the [Releases](https://github.com/VahidAlizadeh/NexQ/releases) page
-2. **Run the installer** (NSIS-based `.exe`)
-3. **Configure your providers** — choose an STT provider for transcription and an LLM provider for AI assistance
-4. **Start a meeting** — NexQ captures both sides of the conversation and provides real-time AI support
+1. **Download** the [latest release](https://github.com/VahidAlizadeh/NexQ/releases/latest)
+2. **Configure** your STT and LLM providers (or use free local models)
+3. **Start** any meeting — NexQ captures system audio automatically
+
+[Getting Started Guide](docs/user-guide/getting-started.md) | [All User Guides](docs/user-guide/)
+
+## Why NexQ vs. Others?
+
+| | NexQ | Otter.ai | Granola | Krisp |
+|---|:---:|:---:|:---:|:---:|
+| **Price** | **Free** | $8+/mo | $18/mo | $16/mo |
+| **100% Local** | Yes | No | Partial | Partial |
+| **Open Source** | Yes | No | No | No |
+| **No Bot Joins** | Yes | No | Yes | Yes |
+| **STT Providers** | **10** | 1 | 1 | 1 |
+| **LLM Providers** | **8** | 1 | 1 | 1 |
+| **Local LLM** | Yes | No | No | No |
+| **RAG / Doc Context** | Yes | No | No | No |
 
 ## Screenshots
 
-<!-- TODO: Add screenshots -->
+<!-- TODO: Replace placeholders with real screenshots -->
+
+| Launcher | Overlay | Settings |
+|:---:|:---:|:---:|
+| ![Launcher](website/public/screenshots/placeholder-4.png) | ![Overlay](website/public/screenshots/placeholder-1.png) | ![Settings](website/public/screenshots/placeholder-9.png) |
 
 ## Tech Stack
 
@@ -80,10 +120,6 @@ npm run dev       # Vite dev server only (port 5173)
 npm run build     # TypeScript check + Vite production build
 ```
 
-## Contributing
-
-Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.
-
 ## Windows SmartScreen
 
 When you first run NexQ, Windows SmartScreen may display a warning. This is normal for open-source applications that are not code-signed. To proceed:
@@ -93,9 +129,13 @@ When you first run NexQ, Windows SmartScreen may display a warning. This is norm
 
 Code signing certificates are expensive and not feasible for most open-source projects. The application is safe to run — you can verify by building from source.
 
+## Contributing
+
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT License](LICENSE) — free forever.
 
 ## Acknowledgments
 

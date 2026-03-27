@@ -4,6 +4,7 @@ target/
 
 # Build output
 dist/
+.astro/
 
 # Environment & secrets
 .env

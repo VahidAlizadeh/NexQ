@@ -19,6 +19,12 @@ import Footer from '../components/Footer.astro';
   <main class="pt-16">
     <Hero client:load />
     <PainPoint />
+
+    <!-- Divider: PainPoint → Features -->
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+    </div>
+
     <section id="features">
       <FeatureScroller client:visible />
     </section>
@@ -26,13 +32,31 @@ import Footer from '../components/Footer.astro';
       <UseCases client:visible />
     </section>
     <FeatureGrid client:visible />
+
+    <!-- Divider: FeatureGrid → Compare -->
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+    </div>
+
     <section id="compare">
       <Comparison />
     </section>
     <section id="docs">
       <HowItWorks />
     </section>
+
+    <!-- Divider: HowItWorks → TechStack -->
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+    </div>
+
     <TechStack />
+
+    <!-- Divider: TechStack → OpenSource -->
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+    </div>
+
     <OpenSource />
     <FinalCTA />
   </main>

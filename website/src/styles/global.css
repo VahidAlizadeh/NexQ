@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Custom Properties ─── */
+:root {
+  --surface:        #0c0c14;
+  --surface-raised: #12121c;
+  --surface-overlay:#1a1a28;
+
+  --accent-purple:  #a78bfa;
+  --accent-blue:    #60a5fa;
+  --accent-green:   #34d399;
+  --accent-red:     #ef4444;
+  --accent-amber:   #fbbf24;
+
+  --text-primary:   #f0f0f5;
+  --text-secondary: #8888a0;
+  --text-muted:     #555566;
+
+  --border:         #1e1e2e;
+  --border-subtle:  #16161f;
+}
+
+/* ─── Base Styles ─── */
+html {
+  background-color: var(--surface);
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--accent-purple);
+  color: var(--surface);
+}
+
+/* ─── Component Classes ─── */
+@layer components {
+  .section-container {
+    @apply mx-auto max-w-6xl px-6 py-24;
+  }
+
+  .section-title {
+    @apply text-4xl font-bold tracking-tight text-text-primary sm:text-5xl;
+  }
+
+  .section-subtitle {
+    @apply mt-4 max-w-2xl text-lg text-text-secondary;
+  }
+
+  .badge-new {
+    @apply inline-flex items-center rounded-full bg-accent-green/15 px-2.5 py-0.5 text-xs font-medium text-accent-green ring-1 ring-inset ring-accent-green/25;
+  }
+
+  .badge-version {
+    @apply inline-flex items-center rounded-full bg-accent-purple/15 px-2.5 py-0.5 text-xs font-medium text-accent-purple ring-1 ring-inset ring-accent-purple/25;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent-green px-6 py-3 text-sm font-semibold text-surface transition-all duration-200 hover:brightness-110 hover:shadow-lg hover:shadow-accent-green/20 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border px-6 py-3 text-sm font-semibold text-text-primary transition-all duration-200 hover:border-text-muted hover:bg-surface-raised active:scale-[0.98];
+  }
+}
+
+/* ─── Scroll-Triggered Animation ─── */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

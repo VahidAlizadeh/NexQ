@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar.astro';
 import Hero from '../components/Hero.tsx';
 import PainPoint from '../components/PainPoint.astro';
 import FeatureScroller from '../components/FeatureScroller.tsx';
+import UseCases from '../components/UseCases.tsx';
+import FeatureGrid from '../components/FeatureGrid.tsx';
 ---
 
 <Layout>
@@ -14,5 +16,9 @@ import FeatureScroller from '../components/FeatureScroller.tsx';
     <section id="features">
       <FeatureScroller client:visible />
     </section>
+    <section id="use-cases">
+      <UseCases client:visible />
+    </section>
+    <FeatureGrid client:visible />
   </main>
 </Layout>

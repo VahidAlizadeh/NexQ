@@ -4,7 +4,7 @@ NexQ supports multiple STT and LLM providers, configurable audio devices, and lo
 
 ## Speech-to-Text (STT) Providers
 
-NexQ uses a two-party audio model: **"You"** (microphone) and **"Them"** (system audio) each have independent STT providers, devices, and mute controls.
+NexQ uses a two-party audio model: **"You"** (microphone) and **"Them"** (system audio) each have independent STT providers, devices, and mute controls. See the [AI Providers Guide](ai-providers.md) for a detailed comparison of all STT providers and help choosing the right one.
 
 ### Web Speech API (Built-in)
 
@@ -58,7 +58,7 @@ NexQ uses a two-party audio model: **"You"** (microphone) and **"Them"** (system
 
 ## LLM Providers
 
-The LLM provider powers all AI features: Assist, What to Say, Shorten, Follow-Up, Recap, Ask Question, Meeting Summary, and Action Items.
+The LLM provider powers all AI features: Assist, What to Say, Shorten, Follow-Up, Recap, Ask Question, Meeting Summary, and Action Items. See the [AI Providers Guide](ai-providers.md) for a detailed comparison of all LLM providers, including local vs cloud tradeoffs and setup instructions.
 
 ### Ollama (Local)
 
@@ -128,6 +128,8 @@ Keys are scoped to your Windows user account and persist across app updates.
 
 ## Audio Device Configuration
 
+See the [Audio Setup Guide](audio-setup.md) for a comprehensive guide to audio configuration, including device selection, WASAPI loopback details, and troubleshooting common audio issues.
+
 ### Microphone ("You")
 
 Select the input device used for capturing your voice. The device picker shows all available input devices with a live audio level meter for verification.
@@ -146,7 +148,7 @@ Enable **Recording** to save meeting audio as WAV files alongside the transcript
 
 ## Context Intelligence (RAG)
 
-NexQ supports loading documents (PDF, TXT, MD, DOCX) as context for AI responses. When RAG is enabled, the AI uses relevant document chunks to provide more informed answers.
+NexQ supports loading documents (PDF, TXT, MD, DOCX) as context for AI responses. When RAG is enabled, the AI uses relevant document chunks to provide more informed answers. See [Using Context Intelligence (RAG)](rag-context.md) for a complete guide to loading documents, best practices by use case, and optimization tips.
 
 ### Setup
 

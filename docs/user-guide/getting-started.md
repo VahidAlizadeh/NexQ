@@ -13,7 +13,7 @@ NexQ is an AI Meeting Assistant and Real-Time Interview Copilot for Windows. It 
 
 ### 1. Download the Installer
 
-Download the latest `.exe` installer from the [GitHub Releases](https://github.com/nexq-ai/nexq/releases) page. The file is named `NexQ_x.x.x_x64-setup.exe`.
+Download the latest `.exe` installer from the [GitHub Releases](https://github.com/VahidAlizadeh/NexQ/releases) page. The file is named `NexQ_x.x.x_x64-setup.exe`.
 
 ### 2. Run the Installer
 
@@ -85,6 +85,11 @@ The meeting is saved automatically with full transcript, AI interactions, and su
 
 ## Next Steps
 
-- [Configuration Guide](configuration.md) -- Detailed provider setup and audio configuration
+- [Interview Copilot Guide](interview-copilot.md) -- Use NexQ as your real-time interview assistant
+- [Lecture Assistant Guide](lecture-assistant.md) -- Transcribe and study from lectures
+- [Audio Setup Guide](audio-setup.md) -- Detailed audio device configuration and troubleshooting
+- [AI Providers Guide](ai-providers.md) -- Compare all STT and LLM providers to find the best fit
+- [Using Context Intelligence (RAG)](rag-context.md) -- Load documents for AI-enhanced responses
+- [Configuration Guide](configuration.md) -- Full provider setup and configuration options
 - [Keyboard Shortcuts](keyboard-shortcuts.md) -- Full shortcuts reference
 - [Troubleshooting](troubleshooting.md) -- Common issues and solutions

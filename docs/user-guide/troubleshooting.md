@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Common issues and solutions for NexQ.
+Common issues and solutions for NexQ. For detailed setup instructions, see the [Audio Setup Guide](audio-setup.md) and [AI Providers Guide](ai-providers.md).
 
 ## Installation Issues
 
@@ -47,8 +47,10 @@ This only appears the first time you install. Subsequent launches will not trigg
 
 1. Verify the correct **output device** is selected for "Them" -- this should be the device your meeting app plays audio through
 2. Check that audio is actually playing through that device (Windows sound mixer should show activity)
-3. Some devices may not support WASAPI loopback capture. Try selecting a different output device
-4. If using a virtual audio cable or routing software, ensure it is configured correctly
+3. Open **Windows Settings > System > Sound** and confirm the correct default output device is set
+4. Some devices may not support WASAPI loopback capture. Try selecting a different output device
+5. If using a virtual audio cable or routing software, ensure it is configured correctly
+6. See the [Audio Setup Guide](audio-setup.md) for detailed WASAPI loopback troubleshooting
 
 ### Microphone Echo or Feedback
 
@@ -71,8 +73,10 @@ This only appears the first time you install. Subsequent launches will not trigg
 1. **Check provider config**: Open Settings > STT and verify your provider is correctly configured
 2. **Test connection**: Click **Test Connection** to verify the STT provider is reachable
 3. **Check API key**: For cloud providers (Deepgram, Groq), ensure your API key is valid and has not expired
-4. **Try Web Speech API**: Switch to Web Speech API temporarily to verify audio is reaching the STT pipeline
-5. **Check STT debug log**: Look at the STT connection status indicators in the overlay for error messages
+4. **Check internet connection**: Cloud STT providers require a stable internet connection. If your connection is intermittent, transcription may fail silently
+5. **Try Web Speech API**: Switch to Web Speech API temporarily to verify audio is reaching the STT pipeline. If Web Speech works but your chosen provider does not, the issue is with the provider configuration
+6. **Check STT debug log**: Look at the STT connection status indicators in the overlay for error messages
+7. See the [AI Providers Guide](ai-providers.md) for provider-specific setup instructions
 
 ### Web Speech API Stops Working
 
@@ -120,6 +124,18 @@ This only appears the first time you install. Subsequent launches will not trigg
 3. Ensure Ollama is serving on the default port: `http://localhost:11434`
 4. Restart NexQ after starting Ollama -- auto-detection runs on startup
 
+### AI Responses Slow
+
+**Problem**: AI suggestions take a long time to appear, or responses stream very slowly.
+
+**Solution**:
+
+1. **Switch to a faster LLM provider.** Groq provides the fastest cloud inference with a free tier. See the [AI Providers Guide](ai-providers.md) for speed comparisons.
+2. **Use a smaller local model.** If using Ollama, switch from a large model to a smaller one (e.g., llama3.2 3B instead of 8B).
+3. **Check your internet connection.** Cloud providers require a stable connection. Slow or intermittent connections cause delayed responses.
+4. **Reduce the context window.** In Settings, reduce the amount of transcript data sent to the LLM. Less input means faster responses.
+5. **Close other resource-intensive applications.** Local LLMs compete with other apps for CPU/RAM.
+
 ## Overlay Issues
 
 ### Overlay Not Showing
@@ -128,9 +144,11 @@ This only appears the first time you install. Subsequent launches will not trigg
 
 **Solution**:
 
-1. Press `Ctrl+B` to toggle the overlay window
-2. The overlay may be positioned off-screen. Try moving it by checking the taskbar for the "NexQ Overlay" entry
-3. Restart NexQ -- the overlay resets to position (50, 50) on startup
+1. **Verify a meeting is active.** The overlay only appears during an active meeting. Press `Ctrl+M` to start a meeting first.
+2. Press `Ctrl+B` to toggle the overlay window
+3. The overlay may be positioned off-screen. Try moving it by checking the taskbar for the "NexQ Overlay" entry
+4. Check Windows taskbar for a second NexQ window entry -- the overlay might be minimized
+5. Restart NexQ -- the overlay resets to position (50, 50) on startup
 
 ### Overlay Not Staying on Top
 
@@ -185,3 +203,12 @@ This includes:
 ### API Keys
 
 API keys are stored in **Windows Credential Manager**, not in files. You can view or remove them through Windows Settings > Credential Manager, or through NexQ's Settings panel.
+
+## Still Need Help?
+
+If your issue is not covered here, these guides may help:
+
+- [Audio Setup Guide](audio-setup.md) -- Detailed audio device configuration and troubleshooting
+- [AI Providers Guide](ai-providers.md) -- Provider setup, comparison, and configuration
+- [Using Context Intelligence (RAG)](rag-context.md) -- Document loading and indexing issues
+- [Getting Started](getting-started.md) -- Initial setup walkthrough

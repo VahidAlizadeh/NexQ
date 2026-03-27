@@ -43,4 +43,49 @@ jobs:
           releaseBody: "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
           releaseDraft: false
           prerelease: false
-          includeUpdaterJson: true
+          includeUpdaterJson: false
+
+      - name: Upload updater artifacts and generate latest.json
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          BUNDLE_DIR="src-tauri/target/release/bundle/nsis"
+
+          # Upload .nsis.zip (updater bundle)
+          NSIS_ZIP=$(ls "$BUNDLE_DIR"/*.nsis.zip 2>/dev/null | head -1)
+          if [ -n "$NSIS_ZIP" ]; then
+            echo "Uploading $(basename "$NSIS_ZIP")..."
+            gh release upload "$TAG" "$NSIS_ZIP" --clobber
+          fi
+
+          # Read the signature
+          SIG_FILE="${NSIS_ZIP}.sig"
+          if [ ! -f "$SIG_FILE" ]; then
+            echo "ERROR: Signature file not found at $SIG_FILE"
+            exit 1
+          fi
+          SIGNATURE=$(cat "$SIG_FILE")
+          NSIS_ZIP_NAME=$(basename "$NSIS_ZIP")
+
+          # Generate latest.json
+          cat > latest.json << EOF2
+          {
+            "version": "$VERSION",
+            "notes": "See https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md for details.",
+            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platforms": {
+              "windows-x86_64": {
+                "signature": "$SIGNATURE",
+                "url": "https://github.com/${{ github.repository }}/releases/download/$TAG/$NSIS_ZIP_NAME"
+              }
+            }
+          }
+          EOF2
+
+          echo "Uploading latest.json..."
+          gh release upload "$TAG" latest.json --clobber
+
+          echo "Done! Updater artifacts uploaded."

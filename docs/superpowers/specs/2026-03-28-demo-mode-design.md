@@ -58,7 +58,7 @@ Enable capturing pixel-perfect screenshots and GIF recordings of the real NexQ a
 - `streamStore`: AI response text (complete), not streaming
 - `callLogStore`: 1 entry (Assist mode, GPT-4o, with response)
 - `speakerStore`: 2 speakers ("You", "Interviewer")
-- `audioPlayerStore`: mic level ~40%, system level ~60% (simulated)
+- Audio levels: skip simulation — live levels come from Rust backend events, not stores. The level bars will show 0% which is acceptable for demo screenshots.
 
 ### 2.2 Live Lecture (Play + Screenshot)
 
@@ -233,7 +233,7 @@ A small floating badge in the bottom-right corner:
 
 ### Keyboard Shortcut
 
-Register `Ctrl+Shift+D` in the existing keyboard shortcut system. When pressed:
+Register `Ctrl+Shift+D` via a `window.addEventListener("keydown")` handler (not global shortcut — only needs to work when app is focused). When pressed:
 - If no demo active → open DemoPicker
 - If demo active → exit demo and restore state
 

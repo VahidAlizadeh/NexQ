@@ -12,6 +12,7 @@ import { useCallLogStore } from '../../stores/callLogStore';
 import { useBookmarkStore } from '../../stores/bookmarkStore';
 import { useActionItemStore } from '../../stores/actionItemStore';
 import { useSpeakerStore } from '../../stores/speakerStore';
+import { useStreamStore } from '../../stores/streamStore';
 
 // ---------------------------------------------------------------------------
 // Recent meetings data
@@ -369,6 +370,113 @@ function populate(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Meeting summary content for streaming
+// ---------------------------------------------------------------------------
+
+const MEETING_SUMMARY_CONTENT = `**Technical Interview — Google (Summary)**
+
+**Overview:** 45-minute technical interview covering system design fundamentals, distributed systems experience, and a URL shortener design exercise.
+
+**Key Topics Discussed:**
+1. **Distributed Event Processing** — Candidate described a system handling 2M events/sec using consistent hashing with virtual nodes and a spillover mechanism for hot partitions.
+2. **Failure Handling** — Gossip protocol for detection (3s timeout), WAL replication to two secondaries, automatic failover within 5 seconds.
+3. **Data Consistency** — Write-ahead logs with secondary promotion based on most recent WAL position during failover windows.
+4. **URL Shortener Design** — Proposed base62 encoding of Snowflake-style IDs, globally distributed architecture with high read throughput and low latency.
+
+**Strengths:** Strong distributed systems knowledge, clear communication of trade-offs, practical experience with production systems at scale.
+
+**Follow-up Items:** Send thank-you email, prepare deeper system design materials for potential final round.`;
+
+// ---------------------------------------------------------------------------
+// play() — 15-second animated timeline for reviewing a past meeting
+// ---------------------------------------------------------------------------
+
+function play(): () => void {
+  const timers: ReturnType<typeof setTimeout>[] = [];
+
+  // Helper to schedule a timeout and track it
+  function schedule(fn: () => void, delayMs: number) {
+    timers.push(setTimeout(fn, delayMs));
+  }
+
+  // 0s — Show launcher with 5 meetings in the list
+  useMeetingStore.setState({
+    currentView: 'launcher',
+    activeMeeting: null,
+    recentMeetings: makeRecentMeetings(),
+  });
+
+  // 2s — "Select" meeting #1: populate transcript, speakers, bookmarks
+  schedule(() => {
+    // Populate transcript with 10 segments
+    const { appendSegment } = useTranscriptStore.getState();
+    for (const seg of SEGMENTS) {
+      appendSegment(seg);
+    }
+
+    // Initialize speakers
+    useSpeakerStore.getState().initForOnline();
+    useSpeakerStore.getState().renameSpeaker('them', 'Interviewer');
+    const totalTalkMs = 2700000;
+    for (let i = 0; i < 5; i++) {
+      useSpeakerStore.getState().updateStats('you', 36, Math.round((totalTalkMs * 0.42) / 5));
+    }
+    for (let i = 0; i < 5; i++) {
+      useSpeakerStore.getState().updateStats('them', 26, Math.round((totalTalkMs * 0.58) / 5));
+    }
+  }, 2000);
+
+  // 4s — Show call log entries appearing (3 entries: Assist, WhatToSay, MeetingSummary)
+  schedule(() => {
+    const entries = makeCallLogEntries();
+    for (const entry of entries) {
+      useCallLogStore.getState().beginEntry(entry);
+      useCallLogStore.getState().completeEntry(entry.id, entry.totalTokens ?? 380, entry.latencyMs ?? 950);
+    }
+  }, 4000);
+
+  // 6s — "Generate Summary" — start streaming a meeting summary
+  schedule(() => {
+    useStreamStore.getState().startStream('MeetingSummary', 'gpt-4o', 'openai');
+
+    // Stream tokens rapidly over ~3.5 seconds
+    const tokens = MEETING_SUMMARY_CONTENT.split(' ');
+    const tokenDelay = 3500 / tokens.length;
+
+    tokens.forEach((token, i) => {
+      schedule(() => {
+        useStreamStore.getState().appendToken((i === 0 ? '' : ' ') + token);
+      }, i * tokenDelay);
+    });
+
+    // 10s — Summary complete (4s after start)
+    schedule(() => {
+      useStreamStore.getState().endStream(1400);
+    }, 4000);
+  }, 6000);
+
+  // 10s — Show action items (2 items)
+  schedule(() => {
+    const items = makeActionItems();
+    for (const item of items) {
+      useActionItemStore.getState().addItem(item);
+    }
+  }, 10000);
+
+  // 12s — Show bookmarks (3 bookmarks with notes)
+  schedule(() => {
+    useBookmarkStore.setState({ bookmarks: makeBookmarks() });
+  }, 12000);
+
+  // Cleanup function — cancel all timers
+  return () => {
+    for (const id of timers) {
+      clearTimeout(id);
+    }
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Export
 // ---------------------------------------------------------------------------
 
@@ -377,7 +485,8 @@ export const pastMeetingScenario: DemoScenario = {
   name: 'Past Meeting History',
   description: 'Launcher with 5 recent meetings, transcript, call log, bookmarks, and action items',
   icon: '📋',
-  supportsPlay: false,
+  supportsPlay: true,
   window: 'launcher',
   populate,
+  play,
 };

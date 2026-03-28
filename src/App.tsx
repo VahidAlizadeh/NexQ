@@ -22,6 +22,9 @@ import { ActiveMeetingProvider } from "./components/ActiveMeetingProvider";
 import { listen } from "@tauri-apps/api/event";
 import { NEXQ_VERSION } from "./lib/version";
 import type { AppView } from "./lib/types";
+import { useDemoShortcut } from "./demo/useDemoShortcut";
+import { DemoPicker } from "./demo/DemoPicker";
+import { DemoBadge } from "./demo/DemoBadge";
 
 function App() {
   const currentView = useMeetingStore((s) => s.currentView);
@@ -37,6 +40,9 @@ function App() {
   // Wire up theme and global shortcuts
   useTheme();
   useGlobalShortcut();
+
+  // Demo mode keyboard shortcut (Ctrl+Shift+D)
+  useDemoShortcut();
 
   // Translation event subscriptions (needed for SelectionToolbar in all views)
   useTranslation();
@@ -286,6 +292,10 @@ function App() {
           <UpdateReadyToast version={availableUpdate.version} onRestart={restart} />
         </div>
       )}
+
+      {/* Demo mode — scenario picker modal + floating exit badge */}
+      <DemoPicker />
+      <DemoBadge />
     </div>
   );
 }

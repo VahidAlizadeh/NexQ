@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img src="website/public/screenshots/placeholder-1.png" alt="NexQ in action" width="700">
+  <img src="website/public/screenshots/live-meeting-demo.gif" alt="NexQ in action — live meeting with transcript, translation, and AI assist" width="700">
 </p>
 <p align="center"><em>NexQ overlay during a live interview — real-time transcription and AI suggestions</em></p>
 
@@ -69,11 +69,9 @@
 
 ## Screenshots
 
-<!-- TODO: Replace placeholders with real screenshots -->
-
-| Launcher | Overlay | Settings |
+| Live Interview | Lecture Mode | Past Meeting Review |
 |:---:|:---:|:---:|
-| ![Launcher](website/public/screenshots/placeholder-4.png) | ![Overlay](website/public/screenshots/placeholder-1.png) | ![Settings](website/public/screenshots/placeholder-9.png) |
+| ![Interview](website/public/screenshots/Interview.png) | ![Lecture](website/public/screenshots/Lecture.png) | ![Past Meeting](website/public/screenshots/Past-meeting.png) |
 
 ## Tech Stack
 

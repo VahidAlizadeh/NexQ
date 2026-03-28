@@ -101,15 +101,17 @@ function makeRecentMeetings(): MeetingSummary[] {
 
 // ---------------------------------------------------------------------------
 // Transcript data — interview conversation for first meeting
+// Offsets are relative to meeting start; makeSegments() converts to absolute.
 // ---------------------------------------------------------------------------
 
-const SEGMENTS: TranscriptSegment[] = [
+const SEGMENT_OFFSETS = [30000, 65000, 120000, 185000, 250000, 380000, 520000, 680000, 850000, 1020000];
+
+const SEGMENT_DATA: Omit<TranscriptSegment, 'timestamp_ms'>[] = [
   {
     id: 'demo-past-seg-001',
     text: "Welcome! Let's start with your background. Tell me about a system you designed at scale.",
     speaker: 'Interviewer',
     speaker_id: 'them',
-    timestamp_ms: 30000,
     is_final: true,
     confidence: 0.96,
   },
@@ -118,7 +120,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: 'At my previous role, I designed a distributed event processing system handling 2 million events per second.',
     speaker: 'User',
     speaker_id: 'you',
-    timestamp_ms: 65000,
     is_final: true,
     confidence: 0.94,
   },
@@ -127,7 +128,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: 'Interesting. What was the partition strategy and how did you handle hot partitions?',
     speaker: 'Interviewer',
     speaker_id: 'them',
-    timestamp_ms: 120000,
     is_final: true,
     confidence: 0.95,
   },
@@ -136,7 +136,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: 'We used consistent hashing with virtual nodes. For hot partitions, we implemented a spillover mechanism that dynamically redistributes load.',
     speaker: 'User',
     speaker_id: 'you',
-    timestamp_ms: 185000,
     is_final: true,
     confidence: 0.93,
   },
@@ -145,7 +144,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: "Good approach. Now let's talk about failure scenarios. What happens when a node goes down?",
     speaker: 'Interviewer',
     speaker_id: 'them',
-    timestamp_ms: 250000,
     is_final: true,
     confidence: 0.97,
   },
@@ -154,7 +152,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: 'We have a gossip protocol for failure detection with a 3-second timeout. On failure, the partition map is recalculated and traffic is rerouted within 5 seconds.',
     speaker: 'User',
     speaker_id: 'you',
-    timestamp_ms: 380000,
     is_final: true,
     confidence: 0.92,
   },
@@ -163,7 +160,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: 'How do you ensure data consistency during that failover window?',
     speaker: 'Interviewer',
     speaker_id: 'them',
-    timestamp_ms: 520000,
     is_final: true,
     confidence: 0.95,
   },
@@ -172,7 +168,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: 'We use write-ahead logs replicated to two secondary nodes. During failover, the secondary with the most recent WAL position is promoted.',
     speaker: 'User',
     speaker_id: 'you',
-    timestamp_ms: 680000,
     is_final: true,
     confidence: 0.94,
   },
@@ -181,7 +176,6 @@ const SEGMENTS: TranscriptSegment[] = [
     text: "Excellent. Let's move to the system design question. How would you design a URL shortener at Google scale?",
     speaker: 'Interviewer',
     speaker_id: 'them',
-    timestamp_ms: 850000,
     is_final: true,
     confidence: 0.96,
   },
@@ -190,11 +184,17 @@ const SEGMENTS: TranscriptSegment[] = [
     text: "I'd start with the core requirements: high read throughput, low latency, and globally distributed. For the ID generation, I'd use a base62 encoding of a Snowflake-style ID.",
     speaker: 'User',
     speaker_id: 'you',
-    timestamp_ms: 1020000,
     is_final: true,
     confidence: 0.93,
   },
 ];
+
+function makeSegments(meetingStartMs: number): TranscriptSegment[] {
+  return SEGMENT_DATA.map((s, i) => ({
+    ...s,
+    timestamp_ms: meetingStartMs + SEGMENT_OFFSETS[i],
+  }));
+}
 
 // ---------------------------------------------------------------------------
 // Call log entries
@@ -266,28 +266,30 @@ function makeCallLogEntries(): LogEntry[] {
 }
 
 // ---------------------------------------------------------------------------
-// Bookmarks
+// Bookmarks — offsets relative to meeting start, converted to absolute
 // ---------------------------------------------------------------------------
 
-function makeBookmarks(): MeetingBookmark[] {
+const BOOKMARK_OFFSETS = [120000, 520000, 850000];
+
+function makeBookmarks(meetingStartMs: number): MeetingBookmark[] {
   return [
     {
       id: 'demo-past-bk-001',
-      timestamp_ms: 120000,
+      timestamp_ms: meetingStartMs + BOOKMARK_OFFSETS[0],
       segment_id: 'demo-past-seg-003',
       note: 'Hot partition question — good answer',
       created_at: new Date(Date.now() - 2400000).toISOString(),
     },
     {
       id: 'demo-past-bk-002',
-      timestamp_ms: 520000,
+      timestamp_ms: meetingStartMs + BOOKMARK_OFFSETS[1],
       segment_id: 'demo-past-seg-007',
       note: 'Data consistency during failover',
       created_at: new Date(Date.now() - 1800000).toISOString(),
     },
     {
       id: 'demo-past-bk-003',
-      timestamp_ms: 850000,
+      timestamp_ms: meetingStartMs + BOOKMARK_OFFSETS[2],
       segment_id: 'demo-past-seg-009',
       note: 'System design question starts here',
       created_at: new Date(Date.now() - 1200000).toISOString(),
@@ -296,21 +298,23 @@ function makeBookmarks(): MeetingBookmark[] {
 }
 
 // ---------------------------------------------------------------------------
-// Action items
+// Action items — offsets relative to meeting start, converted to absolute
 // ---------------------------------------------------------------------------
 
-function makeActionItems(): ActionItem[] {
+const ACTION_ITEM_OFFSETS = [1020000, 850000];
+
+function makeActionItems(meetingStartMs: number): ActionItem[] {
   return [
     {
       id: 'demo-past-ai-001',
       text: 'Send follow-up thank you email',
-      timestamp_ms: 1020000,
+      timestamp_ms: meetingStartMs + ACTION_ITEM_OFFSETS[0],
       completed: false,
     },
     {
       id: 'demo-past-ai-002',
       text: 'Prepare system design deep-dive for final round',
-      timestamp_ms: 850000,
+      timestamp_ms: meetingStartMs + ACTION_ITEM_OFFSETS[1],
       completed: false,
     },
   ];
@@ -322,6 +326,7 @@ function makeActionItems(): ActionItem[] {
 
 function populate(): void {
   const meetings = makeRecentMeetings();
+  const meetingStartMs = new Date(meetings[0].start_time).getTime();
 
   // 1. Set launcher view with no active meeting, select first meeting
   useMeetingStore.setState({
@@ -331,9 +336,10 @@ function populate(): void {
     selectedMeetingId: meetings[0].id,
   });
 
-  // 2. Transcript — 10 segments from the first meeting
+  // 2. Transcript — 10 segments from the first meeting (absolute timestamps)
+  const segments = makeSegments(meetingStartMs);
   const { appendSegment } = useTranscriptStore.getState();
-  for (const seg of SEGMENTS) {
+  for (const seg of segments) {
     appendSegment(seg);
   }
 
@@ -344,11 +350,11 @@ function populate(): void {
     useCallLogStore.getState().completeEntry(entry.id, entry.totalTokens ?? 380, entry.latencyMs ?? 950);
   }
 
-  // 4. Bookmarks — 3 at different timestamps
-  useBookmarkStore.setState({ bookmarks: makeBookmarks() });
+  // 4. Bookmarks — 3 at different timestamps (absolute)
+  useBookmarkStore.setState({ bookmarks: makeBookmarks(meetingStartMs) });
 
-  // 5. Action items — 2 items
-  const items = makeActionItems();
+  // 5. Action items — 2 items (absolute timestamps)
+  const items = makeActionItems(meetingStartMs);
   for (const item of items) {
     useActionItemStore.getState().addItem(item);
   }
@@ -399,6 +405,7 @@ function play(): () => void {
   }
 
   const meetings = makeRecentMeetings();
+  const meetingStartMs = new Date(meetings[0].start_time).getTime();
   const targetMeetingId = meetings[0].id; // 'demo-past-001'
 
   // 0s — Show launcher with 5 meetings in the list
@@ -411,9 +418,10 @@ function play(): () => void {
 
   // 2s — "Click" meeting #1: populate data then navigate into detail view
   schedule(() => {
-    // Populate transcript with 10 segments
+    // Populate transcript with 10 segments (absolute timestamps)
+    const segments = makeSegments(meetingStartMs);
     const { appendSegment } = useTranscriptStore.getState();
-    for (const seg of SEGMENTS) {
+    for (const seg of segments) {
       appendSegment(seg);
     }
 
@@ -428,8 +436,8 @@ function play(): () => void {
       useSpeakerStore.getState().updateStats('them', 26, Math.round((totalTalkMs * 0.58) / 5));
     }
 
-    // Bookmarks — show immediately with the meeting
-    useBookmarkStore.setState({ bookmarks: makeBookmarks() });
+    // Bookmarks — show immediately with the meeting (absolute timestamps)
+    useBookmarkStore.setState({ bookmarks: makeBookmarks(meetingStartMs) });
 
     // Navigate into the meeting detail view
     useMeetingStore.setState({ selectedMeetingId: targetMeetingId });
@@ -444,9 +452,9 @@ function play(): () => void {
     }
   }, 5000);
 
-  // 7s — Show action items (2 items)
+  // 7s — Show action items (2 items, absolute timestamps)
   schedule(() => {
-    const items = makeActionItems();
+    const items = makeActionItems(meetingStartMs);
     for (const item of items) {
       useActionItemStore.getState().addItem(item);
     }

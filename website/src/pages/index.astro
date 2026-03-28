@@ -7,6 +7,7 @@ import UseCases from '../components/UseCases.tsx';
 import FeatureGrid from '../components/FeatureGrid.tsx';
 import Comparison from '../components/Comparison.astro';
 import HowItWorks from '../components/HowItWorks.astro';
+import SettingsShowcase from '../components/SettingsShowcase.astro';
 import TechStack from '../components/TechStack.astro';
 import OpenSource from '../components/OpenSource.astro';
 import FinalCTA from '../components/FinalCTA.astro';
@@ -24,6 +25,7 @@ import Footer from '../components/Footer.astro';
       <UseCases client:visible />
     </section>
     <FeatureGrid client:visible />
+    <SettingsShowcase />
 
     <!-- Divider: FeatureGrid → Compare -->
     <div class="max-w-6xl mx-auto px-6">

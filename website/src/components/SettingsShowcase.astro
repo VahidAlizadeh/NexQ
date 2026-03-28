@@ -1,0 +1,47 @@
+---
+const baseUrl = '/NexQ/';
+
+interface SettingPanel {
+  name: string;
+  screenshot: string;
+}
+
+const settings: SettingPanel[] = [
+  { name: 'STT Providers', screenshot: 'Setting-STT%20Providers.png' },
+  { name: 'LLM Providers', screenshot: 'Setting-LLM%20Providers.png' },
+  { name: 'AI Actions', screenshot: 'Setting-AI%20Actions.png' },
+  { name: 'Audio & Devices', screenshot: 'Setting-Audio%20and%20Devices.png' },
+  { name: 'Translation', screenshot: 'Setting-Translation.png' },
+  { name: 'General', screenshot: 'Setting-General.png' },
+];
+---
+
+<section class="section-container">
+  <div class="mb-12 text-center">
+    <h2 class="section-title">Highly customizable</h2>
+    <p class="section-subtitle mx-auto">
+      11 settings panels. Every provider, shortcut, and behavior tuned to your workflow.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {settings.map((setting, i) => (
+      <div
+        class="animate-on-scroll group overflow-hidden rounded-xl border border-white/[0.06] bg-surface-raised transition-colors hover:border-white/10"
+        style={`transition-delay: ${i * 80}ms;`}
+      >
+        <div class="overflow-hidden" style="aspect-ratio: 16 / 10;">
+          <img
+            src={`${baseUrl}screenshots/Setting/${setting.screenshot}`}
+            alt={`${setting.name} settings panel`}
+            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+        </div>
+        <div class="px-4 py-3">
+          <span class="text-sm font-medium text-text-secondary">{setting.name}</span>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>

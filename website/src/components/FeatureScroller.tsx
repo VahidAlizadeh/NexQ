@@ -20,7 +20,7 @@ const heroFeatures: HeroFeature[] = [
       'Separate "You" and "Them" audio streams with independent STT providers for each side.',
     version: 'v2.18',
     isNew: true,
-    screenshot: 'placeholder-1.png',
+    screenshot: 'Dual-Party%20Transcription.png',
   },
   {
     id: 'ai-copilot',
@@ -29,7 +29,7 @@ const heroFeatures: HeroFeature[] = [
       'Ask questions mid-meeting and get streaming, context-aware answers from 8 LLM providers.',
     version: 'v2.15',
     isNew: false,
-    screenshot: 'placeholder-5.png',
+    screenshot: 'Real-Time%20AI%20Copilot.png',
   },
   {
     id: 'rag',
@@ -38,7 +38,7 @@ const heroFeatures: HeroFeature[] = [
       'Load PDFs, docs, and notes. AI answers grounded in YOUR context with hybrid vector + full-text search.',
     version: 'v2.20',
     isNew: true,
-    screenshot: 'placeholder-6.png',
+    screenshot: 'Local%20RAG%20Pipeline.png',
   },
   {
     id: 'stt',
@@ -47,16 +47,7 @@ const heroFeatures: HeroFeature[] = [
       'From local Whisper and ONNX Runtime to cloud Deepgram and Groq. Choose accuracy, speed, or privacy.',
     version: 'v2.16',
     isNew: false,
-    screenshot: 'placeholder-7.png',
-  },
-  {
-    id: 'overlay',
-    name: 'Always-On-Top Overlay',
-    description:
-      'Compact, transparent floating window sits above your meeting app. Visible only to you.',
-    version: 'v1.0',
-    isNew: false,
-    screenshot: 'placeholder-1.png',
+    screenshot: '10%20STT%20Providers.png',
   },
   {
     id: 'llm',
@@ -65,7 +56,7 @@ const heroFeatures: HeroFeature[] = [
       'OpenAI, Anthropic, Groq, Gemini, Ollama, LM Studio, OpenRouter, or bring your own.',
     version: 'v2.12',
     isNew: false,
-    screenshot: 'placeholder-8.png',
+    screenshot: '8%20LLM%20Providers.gif',
   },
   {
     id: 'recording',
@@ -74,7 +65,7 @@ const heroFeatures: HeroFeature[] = [
       'Record full meetings as WAV files. Replay with synced transcript for post-meeting review.',
     version: 'v2.16',
     isNew: false,
-    screenshot: 'placeholder-1.png',
+    screenshot: 'Audio%20Recording%20and%20Playback.png',
   },
   {
     id: 'translation',
@@ -83,7 +74,16 @@ const heroFeatures: HeroFeature[] = [
       'Real-time translation via Microsoft, Google, DeepL, OPUS-MT, or LLM-based translation.',
     version: 'v2.19',
     isNew: true,
-    screenshot: 'placeholder-11.png',
+    screenshot: 'Multi-Language%20Translation.png',
+  },
+  {
+    id: 'past-meeting',
+    name: 'Past Meeting Review',
+    description:
+      'Review past meetings with full transcript, AI summary, action items, bookmarks, and audio playback timeline.',
+    version: 'v2.0',
+    isNew: false,
+    screenshot: 'Past-meeting.png',
   },
 ];
 
@@ -304,9 +304,9 @@ export default function FeatureScroller() {
         }
       },
       {
-        // Observe when items are within 40% of the viewport center
-        rootMargin: '-30% 0px -30% 0px',
-        threshold: [0, 0.5, 1],
+        // Observe when items are within the middle 20% of the viewport
+        rootMargin: '-40% 0px -40% 0px',
+        threshold: [0, 0.25, 0.5, 0.75, 1],
       },
     );
 

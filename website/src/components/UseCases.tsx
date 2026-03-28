@@ -20,7 +20,7 @@ const scenarios: Scenario[] = [
     description:
       'Ace every interview. Get real-time AI-suggested follow-up questions, key talking points, and context from your resume. NexQ listens to both sides and helps you shine.',
     tags: ['AI Suggestions', 'Resume RAG', 'Dual Transcription'],
-    screenshot: 'placeholder-1.png',
+    screenshot: 'Interview.png',
   },
   {
     id: 'lecture',
@@ -29,7 +29,7 @@ const scenarios: Scenario[] = [
     description:
       'Never miss a key concept. Auto-transcribe lectures, bookmark important moments, extract action items, and get AI summaries of each topic section.',
     tags: ['Bookmarks', 'Action Items', 'Topic Detection', 'Long-Session STT'],
-    screenshot: 'placeholder-2.png',
+    screenshot: 'Lecture.png',
   },
   {
     id: 'team',
@@ -38,7 +38,7 @@ const scenarios: Scenario[] = [
     description:
       'Stay focused, let NexQ handle the notes. Dual-party transcription captures everyone, AI extracts action items, and speaker labels keep track of who said what.',
     tags: ['Speaker Labels', 'Action Items', 'Dual Transcription'],
-    screenshot: 'placeholder-3.png',
+    screenshot: 'Past-meeting.png',
   },
 ];
 

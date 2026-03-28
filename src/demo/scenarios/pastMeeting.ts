@@ -321,40 +321,39 @@ function makeActionItems(): ActionItem[] {
 // ---------------------------------------------------------------------------
 
 function populate(): void {
-  // 1. Set launcher view with no active meeting
+  const meetings = makeRecentMeetings();
+
+  // 1. Set launcher view with no active meeting, select first meeting
   useMeetingStore.setState({
     currentView: 'launcher',
     activeMeeting: null,
+    recentMeetings: meetings,
+    selectedMeetingId: meetings[0].id,
   });
 
-  // 2. Populate recent meetings
-  useMeetingStore.setState({
-    recentMeetings: makeRecentMeetings(),
-  });
-
-  // 3. Transcript — 10 segments from the first meeting
+  // 2. Transcript — 10 segments from the first meeting
   const { appendSegment } = useTranscriptStore.getState();
   for (const seg of SEGMENTS) {
     appendSegment(seg);
   }
 
-  // 4. Call log — 3 entries
+  // 3. Call log — 3 entries
   const entries = makeCallLogEntries();
   for (const entry of entries) {
     useCallLogStore.getState().beginEntry(entry);
     useCallLogStore.getState().completeEntry(entry.id, entry.totalTokens ?? 380, entry.latencyMs ?? 950);
   }
 
-  // 5. Bookmarks — 3 at different timestamps
+  // 4. Bookmarks — 3 at different timestamps
   useBookmarkStore.setState({ bookmarks: makeBookmarks() });
 
-  // 6. Action items — 2 items
+  // 5. Action items — 2 items
   const items = makeActionItems();
   for (const item of items) {
     useActionItemStore.getState().addItem(item);
   }
 
-  // 7. Speaker stats — 2 speakers
+  // 6. Speaker stats — 2 speakers
   useSpeakerStore.getState().initForOnline();
   useSpeakerStore.getState().renameSpeaker('them', 'Interviewer');
   // "You" — 42% talk time: 5 segments, ~180 words, ~1134000ms * 0.42
@@ -399,14 +398,18 @@ function play(): () => void {
     timers.push(setTimeout(fn, delayMs));
   }
 
+  const meetings = makeRecentMeetings();
+  const targetMeetingId = meetings[0].id; // 'demo-past-001'
+
   // 0s — Show launcher with 5 meetings in the list
   useMeetingStore.setState({
     currentView: 'launcher',
     activeMeeting: null,
-    recentMeetings: makeRecentMeetings(),
+    recentMeetings: meetings,
+    selectedMeetingId: null,
   });
 
-  // 2s — "Select" meeting #1: populate transcript, speakers, bookmarks
+  // 2s — "Click" meeting #1: populate data then navigate into detail view
   schedule(() => {
     // Populate transcript with 10 segments
     const { appendSegment } = useTranscriptStore.getState();
@@ -424,18 +427,32 @@ function play(): () => void {
     for (let i = 0; i < 5; i++) {
       useSpeakerStore.getState().updateStats('them', 26, Math.round((totalTalkMs * 0.58) / 5));
     }
+
+    // Bookmarks — show immediately with the meeting
+    useBookmarkStore.setState({ bookmarks: makeBookmarks() });
+
+    // Navigate into the meeting detail view
+    useMeetingStore.setState({ selectedMeetingId: targetMeetingId });
   }, 2000);
 
-  // 4s — Show call log entries appearing (3 entries: Assist, WhatToSay, MeetingSummary)
+  // 5s — Show call log entries appearing (3 entries: Assist, WhatToSay, MeetingSummary)
   schedule(() => {
     const entries = makeCallLogEntries();
     for (const entry of entries) {
       useCallLogStore.getState().beginEntry(entry);
       useCallLogStore.getState().completeEntry(entry.id, entry.totalTokens ?? 380, entry.latencyMs ?? 950);
     }
-  }, 4000);
+  }, 5000);
 
-  // 6s — "Generate Summary" — start streaming a meeting summary
+  // 7s — Show action items (2 items)
+  schedule(() => {
+    const items = makeActionItems();
+    for (const item of items) {
+      useActionItemStore.getState().addItem(item);
+    }
+  }, 7000);
+
+  // 9s — "Generate Summary" — start streaming a meeting summary
   schedule(() => {
     useStreamStore.getState().startStream('MeetingSummary', 'gpt-4o', 'openai');
 
@@ -449,30 +466,18 @@ function play(): () => void {
       }, i * tokenDelay);
     });
 
-    // 10s — Summary complete (4s after start)
+    // Summary complete (4s after start)
     schedule(() => {
       useStreamStore.getState().endStream(1400);
     }, 4000);
-  }, 6000);
+  }, 9000);
 
-  // 10s — Show action items (2 items)
-  schedule(() => {
-    const items = makeActionItems();
-    for (const item of items) {
-      useActionItemStore.getState().addItem(item);
-    }
-  }, 10000);
-
-  // 12s — Show bookmarks (3 bookmarks with notes)
-  schedule(() => {
-    useBookmarkStore.setState({ bookmarks: makeBookmarks() });
-  }, 12000);
-
-  // Cleanup function — cancel all timers
+  // Cleanup function — cancel all timers and reset selected meeting
   return () => {
     for (const id of timers) {
       clearTimeout(id);
     }
+    useMeetingStore.setState({ selectedMeetingId: null });
   };
 }
 

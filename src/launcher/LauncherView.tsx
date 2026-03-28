@@ -78,7 +78,8 @@ export function LauncherView() {
   const [searchResults, setSearchResults] = useState<MeetingSummary[] | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const selectedMeetingId = useMeetingStore((s) => s.selectedMeetingId);
+  const setSelectedMeetingId = useMeetingStore((s) => s.setSelectedMeetingId);
   const [filter, setFilter] = useState<MeetingFilter>("all");
   const [showConflictPrompt, setShowConflictPrompt] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);

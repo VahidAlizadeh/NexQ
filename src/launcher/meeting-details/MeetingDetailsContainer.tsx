@@ -13,6 +13,11 @@ import { useBookmarkSuggestions } from "../../hooks/useBookmarkSuggestions";
 import { useAudioKeyboardShortcuts } from "../../hooks/useAudioKeyboardShortcuts";
 import { exportMeetingAsMarkdown } from "../../lib/export";
 import { mergeConsecutiveSegments } from "../../lib/mergeSegments";
+import { useDemoStore } from "../../demo/demoStore";
+import { useTranscriptStore } from "../../stores/transcriptStore";
+import { useBookmarkStore } from "../../stores/bookmarkStore";
+import { useActionItemStore } from "../../stores/actionItemStore";
+import { useSpeakerStore } from "../../stores/speakerStore";
 import { MeetingHeader } from "./MeetingHeader";
 import { MeetingTabBar, type MeetingTab } from "./MeetingTabBar";
 import { TranscriptView } from "./TranscriptView";
@@ -52,9 +57,47 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
   const autoTranslateEnabled = useTranslationStore((s) => s.autoTranslateEnabled);
   const showPostMeetingTranslation = useConfigStore((s) => s.showPostMeetingTranslation);
 
+  // Demo mode — build Meeting from Zustand stores instead of IPC
+  const isDemoActive = useDemoStore((s) => s.isDemoActive);
+
+  // Build a Meeting from demo stores (reads current state at call time)
+  const buildDemoMeeting = useCallback((): Meeting | null => {
+    const { recentMeetings } = useMeetingStore.getState();
+    const summary = recentMeetings.find((m) => m.id === meetingId);
+    if (!summary) return null;
+    return {
+      id: summary.id,
+      title: summary.title,
+      start_time: summary.start_time,
+      end_time: summary.end_time ?? null,
+      duration_seconds: summary.duration_seconds ?? null,
+      transcript: useTranscriptStore.getState().segments,
+      ai_interactions: [],
+      summary: null,
+      config_snapshot: null,
+      audio_mode: summary.audio_mode,
+      ai_scenario: summary.ai_scenario,
+      speakers: useSpeakerStore.getState().getAllSpeakers(),
+      bookmarks: useBookmarkStore.getState().bookmarks,
+      action_items: useActionItemStore.getState().items,
+    };
+  }, [meetingId]);
+
   const loadMeeting = useCallback(async () => {
     setLoading(true);
     setError(null);
+
+    if (isDemoActive) {
+      const demoMeeting = buildDemoMeeting();
+      if (demoMeeting) {
+        setMeeting(demoMeeting);
+      } else {
+        setError("Demo meeting not found");
+      }
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await getMeeting(meetingId);
       setMeeting(data);
@@ -63,9 +106,20 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
     } finally {
       setLoading(false);
     }
-  }, [meetingId]);
+  }, [meetingId, isDemoActive, buildDemoMeeting]);
 
   useEffect(() => { loadMeeting(); }, [loadMeeting]);
+
+  // In demo mode, keep meeting data in sync with stores as they update
+  const demoSegments = useTranscriptStore((s) => isDemoActive ? s.segments : null);
+  const demoBookmarks = useBookmarkStore((s) => isDemoActive ? s.bookmarks : null);
+  const demoActionItems = useActionItemStore((s) => isDemoActive ? s.items : null);
+
+  useEffect(() => {
+    if (!isDemoActive) return;
+    const updated = buildDemoMeeting();
+    if (updated) setMeeting(updated);
+  }, [isDemoActive, buildDemoMeeting, demoSegments, demoBookmarks, demoActionItems]);
 
   // Live transcript subscription
   const activeMeetingId = useMeetingStore((s) => s.activeMeeting?.id);
@@ -84,13 +138,13 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
   // Load recording info when meeting loads (waveform_data is included in the response)
   useEffect(() => {
-    if (!meeting?.id) return;
+    if (!meeting?.id || isDemoActive) return;
     getRecordingInfo(meeting.id).then((info) => {
       if (info) {
         setRecordingInfo(info);
       }
-    });
-  }, [meeting?.id]);
+    }).catch(() => { /* no recording for this meeting */ });
+  }, [meeting?.id, isDemoActive]);
 
   // Listen for recording_ready event (fires when post-meeting processing completes)
   useEffect(() => {
@@ -109,7 +163,7 @@ export function MeetingDetails({ meetingId, onBack }: MeetingDetailsProps) {
 
   // Load all translations for this meeting
   useEffect(() => {
-    if (!meetingId) return;
+    if (!meetingId || isDemoActive) return;
     getAllMeetingTranslations(meetingId).then((results) => {
       const map = new Map<string, TranslationResult>();
       // Results are ordered by created_at DESC — first match per segment wins

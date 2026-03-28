@@ -62,6 +62,8 @@ The top matching chunks are included in the AI prompt, limited by the token budg
 
 ## Configuration
 
+![Context Strategy settings panel](../../website/public/screenshots/Setting/Setting-Context%20Strategy.png)
+
 Open Settings (`Ctrl+,`) > Context to configure RAG parameters:
 
 | Setting | Description | Default |

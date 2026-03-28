@@ -35,6 +35,10 @@ After installation, NexQ starts automatically. You will see:
 
 ## Quick Setup
 
+![General Settings panel](../../website/public/screenshots/Setting/Setting-General.png)
+
+Open Settings (click the gear icon or press `Ctrl+,`) to access all configuration options. The General settings panel is shown above.
+
 ### Configure a Speech-to-Text Provider
 
 NexQ needs an STT provider to transcribe audio. The fastest way to get started:

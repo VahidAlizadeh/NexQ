@@ -4,6 +4,8 @@ NexQ uses two types of AI providers: **Speech-to-Text (STT)** for transcription 
 
 ## STT Provider Comparison
 
+![STT Providers settings panel](../../website/public/screenshots/Setting/Setting-STT%20Providers.png)
+
 NexQ supports 10 STT providers. Each channel ("You" and "Them") can use a different provider.
 
 | Provider | Type | Cost | Accuracy | Speed | Best For |
@@ -28,6 +30,8 @@ NexQ supports 10 STT providers. Each channel ("You" and "Them") can use a differ
 **Use a local provider** if privacy is critical or you need offline capability. Whisper with the large-v3 model provides the best local accuracy, but requires significant CPU/RAM. Smaller models (tiny, base) are faster but less accurate.
 
 ## LLM Provider Comparison
+
+![LLM Providers settings panel](../../website/public/screenshots/Setting/Setting-LLM%20Providers.png)
 
 NexQ supports 8 LLM providers. The LLM powers all AI features: Assist, What to Say, Shorten, Follow-Up, Recap, Ask Question, Meeting Summary, and Action Items.
 

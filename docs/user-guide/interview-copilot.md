@@ -1,5 +1,7 @@
 # How to Use NexQ as Your Interview Copilot
 
+![NexQ Interview Copilot overlay](../../website/public/screenshots/Interview.png)
+
 NexQ can act as your real-time interview copilot -- transcribing both sides of the conversation, surfacing AI-powered suggestions, and referencing your resume or job description on the fly.
 
 ## Prerequisites
@@ -29,6 +31,8 @@ Open Settings > LLM and configure one of these:
 - **OpenAI GPT-4o** -- cloud, highest quality suggestions. Best when you want the most accurate and nuanced AI assistance.
 
 ### 3. Select the Interview Scenario
+
+![AI Scenarios settings panel](../../website/public/screenshots/Setting/Setting-AI%20Scenarios.png)
 
 In NexQ Settings, select the **Interview** scenario. This configures the AI prompts to focus on interview-specific assistance: follow-up suggestions, answer framing, and conversational guidance.
 

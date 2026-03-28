@@ -2,6 +2,12 @@
 
 NexQ has two levels of keyboard shortcuts: **global shortcuts** that work even when the app is not focused, and **meeting shortcuts** that work during an active meeting when the NexQ window is focused.
 
+## Hotkey Configuration
+
+![Hotkey settings panel](../../website/public/screenshots/Setting/Setting-Hotkey.png)
+
+You can customize all keyboard shortcuts in Settings > Hotkeys. The panel above shows the hotkey configuration interface where you can remap global and meeting shortcuts to your preferred key combinations.
+
 ## Global Shortcuts
 
 These shortcuts are registered system-wide and work regardless of which application has focus.

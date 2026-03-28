@@ -2,7 +2,21 @@
 
 NexQ supports multiple STT and LLM providers, configurable audio devices, and local RAG for document context. All settings are accessible via **Settings** (`Ctrl+,`).
 
+## General Settings
+
+![General Settings panel](../../website/public/screenshots/Setting/Setting-General.png)
+
+The General settings panel controls app-wide behavior and preferences. Here you can configure:
+
+- **App behavior** -- startup options, system tray behavior, and window preferences
+- **Theme and appearance** -- light/dark mode and visual customization
+- **Language** -- interface language selection
+- **Update preferences** -- automatic update checks and notification settings
+- **Data management** -- storage location and cleanup options
+
 ## Speech-to-Text (STT) Providers
+
+![STT Providers settings panel](../../website/public/screenshots/Setting/Setting-STT%20Providers.png)
 
 NexQ uses a two-party audio model: **"You"** (microphone) and **"Them"** (system audio) each have independent STT providers, devices, and mute controls. See the [AI Providers Guide](ai-providers.md) for a detailed comparison of all STT providers and help choosing the right one.
 
@@ -57,6 +71,8 @@ NexQ uses a two-party audio model: **"You"** (microphone) and **"Them"** (system
 - **Best For**: Offline fallback
 
 ## LLM Providers
+
+![LLM Providers settings panel](../../website/public/screenshots/Setting/Setting-LLM%20Providers.png)
 
 The LLM provider powers all AI features: Assist, What to Say, Shorten, Follow-Up, Recap, Ask Question, Meeting Summary, and Action Items. See the [AI Providers Guide](ai-providers.md) for a detailed comparison of all LLM providers, including local vs cloud tradeoffs and setup instructions.
 
@@ -128,6 +144,8 @@ Keys are scoped to your Windows user account and persist across app updates.
 
 ## Audio Device Configuration
 
+![Audio and Devices settings panel](../../website/public/screenshots/Setting/Setting-Audio%20and%20Devices.png)
+
 See the [Audio Setup Guide](audio-setup.md) for a comprehensive guide to audio configuration, including device selection, WASAPI loopback details, and troubleshooting common audio issues.
 
 ### Microphone ("You")
@@ -148,6 +166,8 @@ Enable **Recording** to save meeting audio as WAV files alongside the transcript
 
 ## Context Intelligence (RAG)
 
+![Context Strategy settings panel](../../website/public/screenshots/Setting/Setting-Context%20Strategy.png)
+
 NexQ supports loading documents (PDF, TXT, MD, DOCX) as context for AI responses. When RAG is enabled, the AI uses relevant document chunks to provide more informed answers. See [Using Context Intelligence (RAG)](rag-context.md) for a complete guide to loading documents, best practices by use case, and optimization tips.
 
 ### Setup
@@ -163,3 +183,77 @@ NexQ supports loading documents (PDF, TXT, MD, DOCX) as context for AI responses
 - **Top-K results**: Number of relevant chunks included in AI context
 - **Similarity threshold**: Minimum relevance score for chunk inclusion
 - **Search mode**: Semantic, keyword (FTS), or hybrid search
+
+## AI Actions
+
+![AI Actions settings panel](../../website/public/screenshots/Setting/Setting-AI%20Actions.png)
+
+The AI Actions panel configures how NexQ's AI assistance behaves during meetings. Key options include:
+
+- **Action types** -- enable or disable specific AI modes (Assist, What to Say, Shorten, Follow-Up, Recap, Ask Question)
+- **Auto-trigger settings** -- configure whether AI suggestions appear automatically based on conversation flow, or only when manually triggered
+- **Response style** -- adjust the tone, length, and format of AI responses
+- **Context window** -- control how much conversation history is sent to the LLM with each request
+
+## AI Scenarios
+
+![AI Scenarios settings panel](../../website/public/screenshots/Setting/Setting-AI%20Scenarios.png)
+
+AI Scenarios let you switch between pre-configured prompt profiles optimized for different use cases. Each scenario tunes the AI's behavior, tone, and focus:
+
+- **Interview** -- focuses on answer framing, follow-up suggestions, and conversational guidance tailored to job interviews
+- **Lecture** -- emphasizes summarization, key concept extraction, and study-relevant assistance
+- **Meeting** -- provides general meeting assistance with action items, decisions tracking, and discussion summaries
+- **Custom** -- create your own scenario with custom system prompts and behavior settings
+
+Select a scenario in Settings before starting a meeting to get the most relevant AI assistance.
+
+## Confidence Display
+
+![Confidence display settings panel](../../website/public/screenshots/Setting/Setting-Confidence.png)
+
+The Confidence settings control how NexQ displays transcription confidence indicators. Configure:
+
+- **Confidence threshold** -- set the minimum confidence level for displaying transcribed text
+- **Visual indicators** -- toggle color-coded confidence highlighting on transcript segments
+- **Low-confidence handling** -- choose how to display uncertain transcriptions (dim, strikethrough, or hide)
+
+Higher confidence thresholds filter out uncertain transcriptions, giving you a cleaner transcript at the cost of potentially missing some words.
+
+## Hotkeys
+
+![Hotkey settings panel](../../website/public/screenshots/Setting/Setting-Hotkey.png)
+
+The Hotkey settings let you customize keyboard shortcuts for NexQ's core actions. Configure:
+
+- **Global shortcuts** -- system-wide shortcuts that work even when NexQ is not focused (e.g., start/stop meeting, toggle overlay)
+- **Meeting shortcuts** -- shortcuts active during meetings for AI actions
+- **Custom key bindings** -- remap any action to your preferred key combination
+
+See [Keyboard Shortcuts](keyboard-shortcuts.md) for a full reference of all available shortcuts and their default bindings.
+
+## Noise Preset
+
+![Noise Preset settings panel](../../website/public/screenshots/Setting/Setting-Noise%20Preset.png)
+
+Noise Preset settings help optimize audio quality for transcription accuracy. Configure:
+
+- **Noise reduction level** -- adjust the aggressiveness of background noise suppression
+- **Environment presets** -- select from pre-configured profiles for common environments (quiet room, office, cafe, outdoors)
+- **Voice activity detection (VAD)** -- tune sensitivity for detecting when someone is speaking vs. silence
+- **Audio enhancement** -- enable or disable audio processing filters that improve STT accuracy
+
+Choose the preset that matches your typical meeting environment for the best transcription results.
+
+## Translation
+
+![Translation settings panel](../../website/public/screenshots/Setting/Setting-Translation.png)
+
+The Translation settings configure real-time translation of meeting transcripts. Key options include:
+
+- **Target language** -- select the language you want transcripts translated into
+- **Source language** -- set the expected language of speakers, or use auto-detect
+- **Translation provider** -- choose the translation engine (uses the configured LLM provider)
+- **Display mode** -- show translations inline alongside the original text, or replace the original text entirely
+
+Translation works in real-time during meetings, providing translated text alongside or in place of the original transcription.

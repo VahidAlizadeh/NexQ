@@ -17,6 +17,12 @@ Each channel has its own:
 
 This separation ensures clean transcription with accurate speaker labels.
 
+## Audio Device Settings
+
+![Audio and Devices settings panel](../../website/public/screenshots/Setting/Setting-Audio%20and%20Devices.png)
+
+The Audio and Devices settings panel provides controls for selecting and testing both input and output devices, configuring recording options, and monitoring audio levels in real-time.
+
 ## Selecting Your Microphone
 
 ### Configuration
@@ -140,6 +146,12 @@ NexQ can record meeting audio alongside the live transcript.
 - For USB audio devices, disable USB selective suspend in Power Options
 - Web Speech API handles long sessions best -- consider switching to it for extended meetings
 - If the issue persists, end and restart the meeting to reinitialize audio capture
+
+## Noise and Audio Quality
+
+![Noise Preset settings panel](../../website/public/screenshots/Setting/Setting-Noise%20Preset.png)
+
+NexQ includes noise preset configurations to optimize audio quality for transcription. Select an environment preset that matches your meeting conditions (quiet room, office, cafe) to improve STT accuracy. Noise reduction and voice activity detection settings help filter out background noise and ensure clean audio reaches the transcription engine.
 
 ## Tips
 

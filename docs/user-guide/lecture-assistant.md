@@ -1,5 +1,7 @@
 # How to Use NexQ as Your Lecture Assistant
 
+![NexQ Lecture Assistant overlay](../../website/public/screenshots/Lecture.png)
+
 NexQ can transcribe lectures in real-time, automatically detect topics and extract action items, and let you bookmark key moments for later review.
 
 ## Prerequisites

@@ -31,10 +31,10 @@ export default function Hero() {
       />
 
       <div className="section-container relative flex items-center" style={{ minHeight: 'calc(100vh - 4rem)' }}>
-        <div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="flex w-full flex-col items-center gap-10">
 
-          {/* ─── Left: Text Content ─── */}
-          <div className="flex flex-col gap-6">
+          {/* ─── Top: Text Content ─── */}
+          <div className="flex flex-col items-center gap-6 text-center">
             {/* Eyebrow badge */}
             <motion.div
               initial={reducedMotion ? false : { opacity: 0, y: 16 }}
@@ -74,7 +74,7 @@ export default function Hero() {
 
             {/* Subheadline */}
             <motion.p
-              className="max-w-lg text-base leading-relaxed md:text-lg"
+              className="max-w-2xl text-base leading-relaxed md:text-lg"
               style={{ color: '#8888a0' }}
               initial={reducedMotion ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -115,12 +115,13 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* ─── Right: Live Demo GIF ─── */}
+          {/* ─── Below: Full-Width Live Demo GIF ─── */}
           <motion.div
-            className="lg:pl-4"
-            initial={reducedMotion ? false : { opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ ...springSubtle, delay: reducedMotion ? 0 : 0.3 }}
+            className="w-full"
+            style={{ maxWidth: '960px' }}
+            initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springSubtle, delay: reducedMotion ? 0 : 0.5 }}
           >
             <div className="relative">
               {!reducedMotion && (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 /* ─── Data ─── */
@@ -95,225 +95,14 @@ const springTransition = {
   damping: 28,
 };
 
-/* ─── Screenshot Panel (right side) ─── */
-
-function ScreenshotPanel({
-  feature,
-  reducedMotion,
-  baseUrl,
-}: {
-  feature: HeroFeature;
-  reducedMotion: boolean;
-  baseUrl: string;
-}) {
-  return (
-    <div
-      className="overflow-hidden rounded-xl"
-      style={{
-        backgroundColor: '#12121c',
-        border: '1px solid rgba(255,255,255,0.06)',
-        aspectRatio: '16 / 10',
-      }}
-    >
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={feature.id}
-          src={`${baseUrl}screenshots/${feature.screenshot}`}
-          alt={`${feature.name} screenshot`}
-          className="h-full w-full object-cover"
-          initial={
-            reducedMotion
-              ? false
-              : { opacity: 0, scale: 0.97 }
-          }
-          animate={{ opacity: 1, scale: 1 }}
-          exit={
-            reducedMotion
-              ? {}
-              : { opacity: 0, scale: 0.97 }
-          }
-          transition={
-            reducedMotion
-              ? { duration: 0 }
-              : springTransition
-          }
-        />
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ─── Feature Item (left side) ─── */
-
-function FeatureItem({
-  feature,
-  isActive,
-  onClick,
-  itemRef,
-}: {
-  feature: HeroFeature;
-  isActive: boolean;
-  onClick: () => void;
-  itemRef: (el: HTMLDivElement | null) => void;
-}) {
-  return (
-    <div
-      ref={itemRef}
-      data-feature-id={feature.id}
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      className="cursor-pointer transition-colors duration-200"
-      style={{
-        padding: '16px 20px',
-        borderLeft: `3px solid ${isActive ? '#a78bfa' : 'transparent'}`,
-        backgroundColor: isActive ? 'rgba(18,18,28,0.5)' : 'transparent',
-        borderRadius: '0 8px 8px 0',
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="text-sm font-semibold"
-          style={{ color: isActive ? '#f0f0f5' : '#8888a0' }}
-        >
-          {feature.name}
-        </span>
-        <span className="badge-version">{feature.version}</span>
-        {feature.isNew && <span className="badge-new">NEW</span>}
-      </div>
-
-      {/* Description — visible only when active */}
-      <div
-        className="overflow-hidden transition-all duration-300"
-        style={{
-          maxHeight: isActive ? '80px' : '0',
-          opacity: isActive ? 1 : 0,
-        }}
-      >
-        <p className="mt-2 text-sm" style={{ color: '#8888a0' }}>
-          {feature.description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Mobile Feature Card (inline screenshot) ─── */
-
-function MobileFeatureCard({
-  feature,
-  baseUrl,
-}: {
-  feature: HeroFeature;
-  baseUrl: string;
-}) {
-  return (
-    <div
-      className="animate-on-scroll rounded-xl p-5"
-      style={{
-        backgroundColor: 'rgba(18,18,28,0.5)',
-        border: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold" style={{ color: '#f0f0f5' }}>
-          {feature.name}
-        </span>
-        <span className="badge-version">{feature.version}</span>
-        {feature.isNew && <span className="badge-new">NEW</span>}
-      </div>
-      <p className="mt-2 text-sm" style={{ color: '#8888a0' }}>
-        {feature.description}
-      </p>
-      <div
-        className="mt-4 overflow-hidden rounded-lg"
-        style={{
-          border: '1px solid rgba(255,255,255,0.06)',
-          aspectRatio: '16 / 10',
-        }}
-      >
-        <img
-          src={`${baseUrl}screenshots/${feature.screenshot}`}
-          alt={`${feature.name} screenshot`}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
-      </div>
-    </div>
-  );
-}
+const baseUrl = '/NexQ/';
 
 /* ─── Main Component ─── */
 
 export default function FeatureScroller() {
   const prefersReduced = useReducedMotion();
   const reducedMotion = prefersReduced ?? false;
-
-  const baseUrl = '/NexQ/';
   const [activeIndex, setActiveIndex] = useState(0);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Store ref setter callbacks to avoid creating new functions each render
-  const setItemRef = useCallback(
-    (index: number) => (el: HTMLDivElement | null) => {
-      itemRefs.current[index] = el;
-    },
-    [],
-  );
-
-  // IntersectionObserver: track which feature's center is closest to viewport center
-  useEffect(() => {
-    // Only run on desktop (lg+)
-    const mq = window.matchMedia('(min-width: 1024px)');
-    if (!mq.matches) return;
-
-    const items = itemRefs.current.filter(Boolean) as HTMLDivElement[];
-    if (items.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find the entry closest to the vertical center of the viewport
-        const viewportCenter = window.innerHeight / 2;
-
-        let bestIndex = -1;
-        let bestDistance = Infinity;
-
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-
-          const rect = entry.boundingClientRect;
-          const elementCenter = rect.top + rect.height / 2;
-          const distance = Math.abs(elementCenter - viewportCenter);
-
-          if (distance < bestDistance) {
-            bestDistance = distance;
-            const id = (entry.target as HTMLDivElement).dataset.featureId;
-            bestIndex = heroFeatures.findIndex((f) => f.id === id);
-          }
-        }
-
-        if (bestIndex !== -1) {
-          setActiveIndex(bestIndex);
-        }
-      },
-      {
-        // Observe when items are within the middle 20% of the viewport
-        rootMargin: '-40% 0px -40% 0px',
-        threshold: [0, 0.25, 0.5, 0.75, 1],
-      },
-    );
-
-    items.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
 
   const activeFeature = heroFeatures[activeIndex];
 
@@ -327,44 +116,86 @@ export default function FeatureScroller() {
         </p>
       </div>
 
-      {/* Desktop: sticky scroll layout (lg+) */}
-      <div className="hidden lg:flex lg:gap-12">
-        {/* Left sidebar — feature list (40%) */}
-        <div ref={containerRef} className="w-[40%] flex-shrink-0">
-          <div className="flex flex-col gap-1 py-[20vh]">
-            {heroFeatures.map((feature, i) => (
-              <FeatureItem
-                key={feature.id}
-                feature={feature}
-                isActive={i === activeIndex}
-                onClick={() => setActiveIndex(i)}
-                itemRef={setItemRef(i)}
-              />
-            ))}
+      {/* Desktop: click-based tab layout (lg+) */}
+      <div className="hidden lg:flex lg:gap-8">
+        {/* Left sidebar — clickable feature list (35%) */}
+        <div className="w-[35%] flex-shrink-0">
+          <div className="flex flex-col gap-1">
+            {heroFeatures.map((feature, i) => {
+              const isActive = i === activeIndex;
+              return (
+                <button
+                  key={feature.id}
+                  type="button"
+                  onClick={() => setActiveIndex(i)}
+                  className="cursor-pointer text-left transition-colors duration-200"
+                  style={{
+                    padding: '14px 20px',
+                    borderLeft: `3px solid ${isActive ? '#a78bfa' : 'transparent'}`,
+                    backgroundColor: isActive ? 'rgba(18,18,28,0.5)' : 'transparent',
+                    borderRadius: '0 8px 8px 0',
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: isActive ? '#f0f0f5' : '#8888a0' }}
+                    >
+                      {feature.name}
+                    </span>
+                    <span className="badge-version">{feature.version}</span>
+                    {feature.isNew && <span className="badge-new">NEW</span>}
+                  </div>
+
+                  {/* Description — visible only when active */}
+                  <div
+                    className="overflow-hidden transition-all duration-300"
+                    style={{
+                      maxHeight: isActive ? '80px' : '0',
+                      opacity: isActive ? 1 : 0,
+                    }}
+                  >
+                    <p className="mt-2 text-sm" style={{ color: '#8888a0' }}>
+                      {feature.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right panel — sticky screenshot (60%) */}
-        <div className="w-[60%]">
+        {/* Right panel — screenshot (65%) */}
+        <div className="w-[65%]">
           <div
-            className="sticky"
-            style={{ top: '30vh' }}
+            className="overflow-hidden rounded-xl"
+            style={{
+              backgroundColor: '#12121c',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
           >
-            <ScreenshotPanel
-              feature={activeFeature}
-              reducedMotion={reducedMotion}
-              baseUrl={baseUrl}
-            />
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeFeature.id}
+                src={`${baseUrl}screenshots/${activeFeature.screenshot}`}
+                alt={`${activeFeature.name} screenshot`}
+                className="w-full object-contain"
+                initial={reducedMotion ? false : { opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={reducedMotion ? {} : { opacity: 0, scale: 0.97 }}
+                transition={reducedMotion ? { duration: 0 } : springTransition}
+              />
+            </AnimatePresence>
+          </div>
 
-            {/* Active feature name below screenshot */}
-            <div className="mt-4 text-center">
-              <span
-                className="text-xs font-medium tracking-wide"
-                style={{ color: '#555566', textTransform: 'uppercase', letterSpacing: '0.08em' }}
-              >
-                {activeFeature.name}
-              </span>
-            </div>
+          {/* Active feature name below screenshot */}
+          <div className="mt-4 text-center">
+            <span
+              className="text-xs font-medium tracking-wide"
+              style={{ color: '#555566', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+            >
+              {activeFeature.name}
+            </span>
           </div>
         </div>
       </div>
@@ -372,11 +203,36 @@ export default function FeatureScroller() {
       {/* Mobile: vertical card stack (below lg) */}
       <div className="flex flex-col gap-4 lg:hidden">
         {heroFeatures.map((feature) => (
-          <MobileFeatureCard
+          <div
             key={feature.id}
-            feature={feature}
-            baseUrl={baseUrl}
-          />
+            className="animate-on-scroll rounded-xl p-5"
+            style={{
+              backgroundColor: 'rgba(18,18,28,0.5)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold" style={{ color: '#f0f0f5' }}>
+                {feature.name}
+              </span>
+              <span className="badge-version">{feature.version}</span>
+              {feature.isNew && <span className="badge-new">NEW</span>}
+            </div>
+            <p className="mt-2 text-sm" style={{ color: '#8888a0' }}>
+              {feature.description}
+            </p>
+            <div
+              className="mt-4 overflow-hidden rounded-lg"
+              style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <img
+                src={`${baseUrl}screenshots/${feature.screenshot}`}
+                alt={`${feature.name} screenshot`}
+                className="w-full object-contain"
+                loading="lazy"
+              />
+            </div>
+          </div>
         ))}
       </div>
     </div>

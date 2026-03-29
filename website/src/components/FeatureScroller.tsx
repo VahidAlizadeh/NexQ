@@ -168,10 +168,11 @@ export default function FeatureScroller() {
         {/* Right panel — screenshot (65%) */}
         <div className="w-[65%]">
           <div
-            className="overflow-hidden rounded-xl"
+            className="flex items-center justify-center overflow-hidden rounded-xl"
             style={{
               backgroundColor: '#12121c',
               border: '1px solid rgba(255,255,255,0.06)',
+              height: '600px',
             }}
           >
             <AnimatePresence mode="wait">
@@ -179,7 +180,8 @@ export default function FeatureScroller() {
                 key={activeFeature.id}
                 src={`${baseUrl}screenshots/${activeFeature.screenshot}`}
                 alt={`${activeFeature.name} screenshot`}
-                className="w-full object-contain"
+                className="object-contain"
+                style={{ maxWidth: '100%', maxHeight: '100%' }}
                 initial={reducedMotion ? false : { opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={reducedMotion ? {} : { opacity: 0, scale: 0.97 }}
